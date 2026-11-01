@@ -2,6 +2,12 @@
 
 Status date: 1 November 2026 (Asia/Kolkata). The owner authorized committing/publishing the verified implementation and preparing Render. Paid services remain subject to a current price quote and separate explicit approval. No hosted resources or public website have been created.
 
+## Verified publication receipt
+
+The application commit **`7edf47e27f17dad27fe3ecb24652626ed3baad7a`** was published successfully to GitHub `main` with a normal fast-forward push from initial commit `5914160`. A subsequent `git ls-remote origin refs/heads/main` returned that exact SHA, matching local HEAD. GitHub accepted the push without requiring a pull request; no branch protection was bypassed. The reviewed snapshot contains 309 tracked files, with no ignored uploads, environment secrets, dependency caches or database dumps. Gitleaks scanned the actual two-commit history and found zero leaks with the documented narrow provenance exception. This documentation receipt is a follow-up commit and does not change application code.
+
+No Render application has been created. GitHub API/Actions status could not be queried under current policy, so the passing local test/build results below are not claimed to be remote GitHub Actions results. The public provider-assigned website URL remains unavailable until account setup, pricing approval and a real deployment are complete.
+
 ## Repository publication scope
 
 Target: `https://github.com/Deepakreddy1510/invoiceguard-ai`, default branch `main`. Initial remote tip was `59141608406d19885b6711c34a3fc3e6ee6e354a`. Publish with a normal fast-forward push only; never force-push or bypass branch protection. If GitHub requires a pull request, publish a feature branch and follow that requirement. The connected HTTPS Git transport accepts read operations and the publication dry run; GitHub API/CLI access is separately unavailable in the current network configuration. A dry run alone does not prove a completed publication: verify the remote tip against the resulting local commit and report the actual commit in the delivery message.
