@@ -1,0 +1,24 @@
+{
+  "answer_sha256": {
+    "development": "e811d29e02e0dc6e4843c1e710e4326d6cc5de6746cd43b1fdb945570889783b",
+    "heldout": "93f3008507949ef86988313378beebb3b594de94d2beea3228cc96788853eeb6"
+  },
+  "catalogue_sha256": "1b36a12dcb48cc86a9fe8ab2f03bd3805ef060818423caf984e41b10b754f49f",
+  "generation_environment": {
+    "pillow": "12.3.0",
+    "pymupdf": "1.28.2"
+  },
+  "generator_sha256": {
+    "catalogue.py": "e9b07fa811293cdd49506ceaca15cd2464a15b2a2c0756842095c5f435d74957",
+    "common.py": "4dc188e7ffc2f2207cd05289f84dd491c4c995434048b29b5660f24e7bb5223d",
+    "facts.py": "63723d391bec1a29e39353aeb512ea56fcf0b070095881942c0d00bd5b1a1f6b",
+    "generate.py": "29c016c2560821979c593d75c5f934884174b9bb49f5212935d1662a1eca0e3e",
+    "oracle.py": "3f224c406fb7ae12d47a8176baab452b29f71d5fe6125676bce177e0e4776e6f",
+    "render.py": "3c5f41a1b57241a67f48dfc8273e69b9906139412b7b979d71feaac2952848ae"
+  },
+  "manifest_sha256": "1b37bf1c32e055151cc3511b6ca8681968b31356a172cb3c007a030c159c444c",
+  "scoring_policy_sha256": "81ad0b85daef7c0e379e23a7b4bc33d8efb32fbc79f62304dafe976ea17a19eb",
+  "seed": 20261101,
+  "status": "frozen-before-scored-heldout-evaluation",
+  "version": "synthetic-v2.0.0"
+}

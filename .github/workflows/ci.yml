@@ -1,0 +1,59 @@
+name: InvoiceGuard integrated checks
+on: [push, pull_request]
+permissions:
+  contents: read
+jobs:
+  application:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:17-bookworm
+        env:
+          POSTGRES_USER: invoiceguard
+          POSTGRES_PASSWORD: local_demo_only
+          POSTGRES_DB: invoiceguard_test
+        ports: [5432:5432]
+        options: >-
+          --health-cmd "pg_isready -U invoiceguard -d invoiceguard_test"
+          --health-interval 2s --health-timeout 3s --health-retries 20
+    env:
+      DATABASE_URL: postgresql+psycopg://invoiceguard:local_demo_only@127.0.0.1:5432/invoiceguard_test
+      TEST_DATABASE_URL: postgresql+psycopg://invoiceguard:local_demo_only@127.0.0.1:5432/invoiceguard_test
+    steps:
+      - uses: actions/checkout@v4
+      - uses: astral-sh/setup-uv@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+      - name: Install OCR
+        run: sudo apt-get update && sudo apt-get install -y tesseract-ocr tesseract-ocr-eng
+      - run: uv sync --frozen
+        working-directory: backend
+      - run: uv run ruff check app tests migrations scripts && uv run ruff format --check app tests migrations scripts
+        working-directory: backend
+      - run: uv run pytest -q
+        working-directory: backend
+      - run: uv run alembic check
+        working-directory: backend
+      - run: npm ci && npm test && npm run build
+        working-directory: frontend
+      - run: npx playwright install --with-deps chromium
+        working-directory: frontend
+      - name: Start real application and run browser workflows
+        run: |
+          cd backend
+          uv run python -m scripts.reset_test_database
+          uv run python -m app.worker.main > /tmp/invoiceguard-worker.log 2>&1 &
+          uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/invoiceguard-api.log 2>&1 &
+          cd ../frontend
+          npm run dev -- --port 5173 --strictPort > /tmp/invoiceguard-ui.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            if curl -fsS http://127.0.0.1:8000/api/v1/health/ready && curl -fsS http://127.0.0.1:5173/ > /dev/null; then break; fi
+            sleep 1
+          done
+          npm run test:e2e
+
+      - name: Build production image
+        run: docker build -t invoiceguard-ai:ci .

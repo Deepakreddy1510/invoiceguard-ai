@@ -1,0 +1,10 @@
+{
+  "repeat_seed_did_not_add_documents_runs_commitments": true,
+  "legacy_workspace_documents": 10,
+  "legacy_workspace_commitments": 5,
+  "counts_before_and_after": {
+    "invoice_documents": 26,
+    "financial_commitments": 17,
+    "processing_runs": 26
+  }
+}

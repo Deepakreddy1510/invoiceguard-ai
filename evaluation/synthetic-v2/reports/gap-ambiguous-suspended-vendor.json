@@ -1,0 +1,22 @@
+{
+  "actual": "NEEDS_REVIEW",
+  "case": "5a60807cba1fc09a",
+  "database_removed": true,
+  "expected": "BLOCKED",
+  "matching_rules": [
+    {
+      "actual": null,
+      "expected": null,
+      "explanation": "Vendor must resolve unambiguously using supported source identifiers.",
+      "outcome": "REVIEW",
+      "rule_id": "VENDOR_IDENTITY"
+    },
+    {
+      "actual": null,
+      "expected": null,
+      "explanation": "Invoice vendor must match PO vendor.",
+      "outcome": "REVIEW",
+      "rule_id": "VENDOR_PO"
+    }
+  ]
+}

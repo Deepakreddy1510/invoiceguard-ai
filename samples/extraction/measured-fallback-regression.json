@@ -1,0 +1,66 @@
+{
+  "provider": "FALLBACK",
+  "live_gemini_evaluated": false,
+  "eligible_present_fields": 23,
+  "correct_present_fields": 23,
+  "correct_missing_abstentions": 1,
+  "unsupported_values": 0,
+  "review_count": 1,
+  "invoice_count": 3,
+  "technical_failures": 0,
+  "cases": [
+    {
+      "file": "heldout-digital.pdf",
+      "provider": "FALLBACK",
+      "ocr_pages": [],
+      "correct_fields": {
+        "invoice_number": true,
+        "invoice_date": true,
+        "vendor_name": true,
+        "currency": true,
+        "po_number": true,
+        "subtotal": true,
+        "tax": true,
+        "total": true
+      },
+      "outcome": "VALIDATED",
+      "expected_outcome": "VALIDATED"
+    },
+    {
+      "file": "heldout-scan.pdf",
+      "provider": "FALLBACK",
+      "ocr_pages": [
+        1,
+        2
+      ],
+      "correct_fields": {
+        "invoice_number": true,
+        "invoice_date": true,
+        "vendor_name": true,
+        "currency": true,
+        "po_number": true,
+        "subtotal": true,
+        "tax": true,
+        "total": true
+      },
+      "outcome": "VALIDATED",
+      "expected_outcome": "VALIDATED"
+    },
+    {
+      "file": "heldout-missing.pdf",
+      "provider": "FALLBACK",
+      "ocr_pages": [],
+      "correct_fields": {
+        "invoice_date": true,
+        "vendor_name": true,
+        "currency": true,
+        "po_number": true,
+        "subtotal": true,
+        "tax": true,
+        "total": true
+      },
+      "outcome": "NEEDS_REVIEW",
+      "expected_outcome": "NEEDS_REVIEW"
+    }
+  ]
+}

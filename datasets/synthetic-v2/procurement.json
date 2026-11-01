@@ -1,0 +1,1178 @@
+{
+  "purchase_orders": [
+    {
+      "authorized_gross": "2200.00",
+      "billing_mode": "ITEMIZED",
+      "currency": "USD",
+      "id": "00000000-0000-0000-0000-0000000000c9",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "PAPER-A4 synthetic procurement",
+          "id": "00000000-0000-0000-0000-00000000012d",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "PAPER-A4",
+          "tax_rate": ".10",
+          "unit_price": "20"
+        }
+      ],
+      "number": "PO-2026-001",
+      "split": "development",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "00000000-0000-0000-0000-000000000065",
+      "vendor_index": 0
+    },
+    {
+      "authorized_gross": "6000.00",
+      "billing_mode": "AMOUNT_BASED",
+      "currency": "USD",
+      "id": "00000000-0000-0000-0000-0000000000ca",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "IT-SUPPORT synthetic procurement",
+          "id": "00000000-0000-0000-0000-00000000012e",
+          "line_number": 1,
+          "quantity": "12",
+          "sku": "IT-SUPPORT",
+          "tax_rate": "0",
+          "unit_price": "500"
+        }
+      ],
+      "number": "PO-2026-002",
+      "split": "development",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "00000000-0000-0000-0000-000000000066",
+      "vendor_index": 1
+    },
+    {
+      "authorized_gross": "59000.00",
+      "billing_mode": "ITEMIZED",
+      "currency": "INR",
+      "id": "00000000-0000-0000-0000-0000000000cb",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "CHAIR synthetic procurement",
+          "id": "00000000-0000-0000-0000-00000000012f",
+          "line_number": 1,
+          "quantity": "10",
+          "sku": "CHAIR",
+          "tax_rate": ".18",
+          "unit_price": "5000"
+        }
+      ],
+      "number": "PO-2026-003",
+      "split": "development",
+      "status": "CLOSED",
+      "valid_until": "2026-12-31",
+      "vendor_id": "00000000-0000-0000-0000-000000000065",
+      "vendor_index": 0
+    },
+    {
+      "authorized_gross": "1000.00",
+      "billing_mode": "AMOUNT_BASED",
+      "currency": "USD",
+      "id": "00000000-0000-0000-0000-0000000000cc",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "FREIGHT synthetic procurement",
+          "id": "00000000-0000-0000-0000-000000000130",
+          "line_number": 1,
+          "quantity": "1",
+          "sku": "FREIGHT",
+          "tax_rate": "0",
+          "unit_price": "1000"
+        }
+      ],
+      "number": "PO-2026-004",
+      "split": "development",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "00000000-0000-0000-0000-000000000067",
+      "vendor_index": 2
+    },
+    {
+      "authorized_gross": "2213.750",
+      "billing_mode": "ITEMIZED",
+      "currency": "KWD",
+      "id": "444aac73-c40a-5812-907e-0b82582950c5",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "aa69f811-819a-54ca-adaf-0da1b851b5ae",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-02-1",
+          "tax_rate": ".10",
+          "unit_price": "20.125"
+        }
+      ],
+      "number": "V2-PO-005",
+      "split": "development",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "00000000-0000-0000-0000-000000000066",
+      "vendor_index": 1
+    },
+    {
+      "authorized_gross": "3888.40",
+      "billing_mode": "ITEMIZED",
+      "currency": "USD",
+      "id": "9bad7a68-7e7b-5d6d-bad1-38cb4762f71d",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "b5be3988-80f5-5771-86dc-a8242d0a8881",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-03-1",
+          "tax_rate": ".18",
+          "unit_price": "20.05"
+        },
+        {
+          "description": "Service periods (Synthetic)",
+          "id": "be394f0d-823f-5046-9271-45b431a0f436",
+          "line_number": 2,
+          "quantity": "100",
+          "sku": "V2-SKU-03-2",
+          "tax_rate": ".05",
+          "unit_price": "7.25"
+        },
+        {
+          "description": "Consumables (Synthetic)",
+          "id": "c2da8e64-c001-5ff3-be18-417fb34b3ba3",
+          "line_number": 3,
+          "quantity": "100",
+          "sku": "V2-SKU-03-3",
+          "tax_rate": ".05",
+          "unit_price": "7.25"
+        }
+      ],
+      "number": "V2-PO-006",
+      "split": "development",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "00000000-0000-0000-0000-000000000067",
+      "vendor_index": 2
+    },
+    {
+      "authorized_gross": "2365.90",
+      "billing_mode": "ITEMIZED",
+      "currency": "USD",
+      "id": "b465174d-1653-59bf-8869-f204802ac714",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "826fe71d-d388-55af-829b-eb713c2838df",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-04-1",
+          "tax_rate": ".18",
+          "unit_price": "20.05"
+        }
+      ],
+      "number": "V2-PO-007",
+      "split": "development",
+      "status": "PARTIALLY_BILLED",
+      "valid_until": "2026-12-31",
+      "vendor_id": "6c6b9023-c043-5358-85c8-68b368c78da1",
+      "vendor_index": 3
+    },
+    {
+      "authorized_gross": "2406.00",
+      "billing_mode": "ITEMIZED",
+      "currency": "INR",
+      "id": "d2f9094c-c247-5976-9a4d-2c01751f0858",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "c03162db-7e20-5881-a52e-d9ce9788d44b",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-04-1",
+          "tax_rate": ".20",
+          "unit_price": "20.05"
+        }
+      ],
+      "number": "V2-PO-008",
+      "split": "development",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "6c6b9023-c043-5358-85c8-68b368c78da1",
+      "vendor_index": 3
+    },
+    {
+      "authorized_gross": "2406.00",
+      "billing_mode": "AMOUNT_BASED",
+      "currency": "INR",
+      "id": "b387fd65-dc35-5f47-9be8-40fa0f37b9da",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "848340e7-a229-58c7-8ffc-b96b84349961",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-05-1",
+          "tax_rate": ".20",
+          "unit_price": "20.05"
+        }
+      ],
+      "number": "V2-PO-009",
+      "split": "development",
+      "status": "PARTIALLY_BILLED",
+      "valid_until": "2026-12-31",
+      "vendor_id": "7a4c3de4-8d37-52f0-848c-5d6c2a9a985d",
+      "vendor_index": 4
+    },
+    {
+      "authorized_gross": "3677.88",
+      "billing_mode": "AMOUNT_BASED",
+      "currency": "EUR",
+      "id": "6b252f8f-123b-5207-9151-6e87bea23d29",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "efc57f44-10eb-56ea-8324-e5feb8664337",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-05-1",
+          "tax_rate": ".075",
+          "unit_price": "20.05"
+        },
+        {
+          "description": "Service periods (Synthetic)",
+          "id": "10ac7e78-3092-508d-a5e6-a55a40a2261e",
+          "line_number": 2,
+          "quantity": "100",
+          "sku": "V2-SKU-05-2",
+          "tax_rate": ".05",
+          "unit_price": "7.25"
+        },
+        {
+          "description": "Consumables (Synthetic)",
+          "id": "1dbd313d-4869-5116-9775-d9c8c9b6b95f",
+          "line_number": 3,
+          "quantity": "100",
+          "sku": "V2-SKU-05-3",
+          "tax_rate": ".05",
+          "unit_price": "7.25"
+        }
+      ],
+      "number": "V2-PO-010",
+      "split": "development",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "7a4c3de4-8d37-52f0-848c-5d6c2a9a985d",
+      "vendor_index": 4
+    },
+    {
+      "authorized_gross": "2155.38",
+      "billing_mode": "ITEMIZED",
+      "currency": "EUR",
+      "id": "dd783443-6a68-5dad-832e-50708454ad5a",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "d50ada33-61b6-565f-b1d2-8d89abcf97fb",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-06-1",
+          "tax_rate": ".075",
+          "unit_price": "20.05"
+        }
+      ],
+      "number": "V2-PO-011",
+      "split": "development",
+      "status": "PARTIALLY_BILLED",
+      "valid_until": "2026-12-31",
+      "vendor_id": "f9007659-3326-519f-aa7f-423bf743e2ea",
+      "vendor_index": 5
+    },
+    {
+      "authorized_gross": "2005.00",
+      "billing_mode": "ITEMIZED",
+      "currency": "GBP",
+      "id": "29cfdbaa-c276-57ee-9703-3ab28ddcff8f",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "4bf69596-56fa-596a-9ffe-547d48e81969",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-06-1",
+          "tax_rate": "0",
+          "unit_price": "20.05"
+        }
+      ],
+      "number": "V2-PO-012",
+      "split": "development",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "f9007659-3326-519f-aa7f-423bf743e2ea",
+      "vendor_index": 5
+    },
+    {
+      "authorized_gross": "2005.00",
+      "billing_mode": "ITEMIZED",
+      "currency": "GBP",
+      "id": "34e83aaa-cff4-5ca2-9623-72ebc321d523",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "c5ca42bd-aa3a-51f9-a0d2-9bdf3186555d",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-07-1",
+          "tax_rate": "0",
+          "unit_price": "20.05"
+        }
+      ],
+      "number": "V2-PO-013",
+      "split": "heldout",
+      "status": "PARTIALLY_BILLED",
+      "valid_until": "2026-12-31",
+      "vendor_id": "762ec6f4-dde2-539f-94d7-098aca4b0d3a",
+      "vendor_index": 6
+    },
+    {
+      "authorized_gross": "3570",
+      "billing_mode": "ITEMIZED",
+      "currency": "JPY",
+      "id": "721dd753-c32c-5733-96b8-ea58a8aea4a6",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "cd9911b1-f514-5986-a1f3-25a1e1e2c8c0",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-07-1",
+          "tax_rate": ".05",
+          "unit_price": "20"
+        },
+        {
+          "description": "Service periods (Synthetic)",
+          "id": "1686abb9-a8f8-5f95-9521-5b1e83fab223",
+          "line_number": 2,
+          "quantity": "100",
+          "sku": "V2-SKU-07-2",
+          "tax_rate": ".05",
+          "unit_price": "7"
+        },
+        {
+          "description": "Consumables (Synthetic)",
+          "id": "fc5599cd-fd58-5d00-bfd5-aed77164769a",
+          "line_number": 3,
+          "quantity": "100",
+          "sku": "V2-SKU-07-3",
+          "tax_rate": ".05",
+          "unit_price": "7"
+        }
+      ],
+      "number": "V2-PO-014",
+      "split": "heldout",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "762ec6f4-dde2-539f-94d7-098aca4b0d3a",
+      "vendor_index": 6
+    },
+    {
+      "authorized_gross": "2100",
+      "billing_mode": "ITEMIZED",
+      "currency": "JPY",
+      "id": "5ae916c9-38b2-5da7-9e64-613eb335ec0a",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "c4aaa8c1-7ac4-50ae-ae43-b7f3c99fc97f",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-08-1",
+          "tax_rate": ".05",
+          "unit_price": "20"
+        }
+      ],
+      "number": "V2-PO-015",
+      "split": "heldout",
+      "status": "PARTIALLY_BILLED",
+      "valid_until": "2026-12-31",
+      "vendor_id": "d5289a7c-9657-5422-91b9-92509741f596",
+      "vendor_index": 7
+    },
+    {
+      "authorized_gross": "2213.750",
+      "billing_mode": "ITEMIZED",
+      "currency": "KWD",
+      "id": "b1bd47ce-a1f4-5dd9-bee1-ae6b895b939c",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "e1bd6daf-4adf-5705-8dba-7ffc0cd3d3f1",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-08-1",
+          "tax_rate": ".10",
+          "unit_price": "20.125"
+        }
+      ],
+      "number": "V2-PO-016",
+      "split": "heldout",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "d5289a7c-9657-5422-91b9-92509741f596",
+      "vendor_index": 7
+    },
+    {
+      "authorized_gross": "2213.750",
+      "billing_mode": "AMOUNT_BASED",
+      "currency": "KWD",
+      "id": "ad22d103-4cbd-5686-9206-303c734be0cc",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "530b3c8d-dd56-58f0-b4c2-f89f91491714",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-09-1",
+          "tax_rate": ".10",
+          "unit_price": "20.125"
+        }
+      ],
+      "number": "V2-PO-017",
+      "split": "heldout",
+      "status": "PARTIALLY_BILLED",
+      "valid_until": "2026-12-31",
+      "vendor_id": "c840db98-f746-5047-8d48-215626419aeb",
+      "vendor_index": 8
+    },
+    {
+      "authorized_gross": "3888.40",
+      "billing_mode": "AMOUNT_BASED",
+      "currency": "USD",
+      "id": "4eb390c2-b611-5e51-8fd8-aedcaa3ca1aa",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "a291b9cd-99a4-5a73-9f5a-c1721eaef061",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-09-1",
+          "tax_rate": ".18",
+          "unit_price": "20.05"
+        },
+        {
+          "description": "Service periods (Synthetic)",
+          "id": "cfd302f7-64b4-5543-bb63-d38cd82c2977",
+          "line_number": 2,
+          "quantity": "100",
+          "sku": "V2-SKU-09-2",
+          "tax_rate": ".05",
+          "unit_price": "7.25"
+        },
+        {
+          "description": "Consumables (Synthetic)",
+          "id": "ece21f6f-cdd8-5fbc-888a-4f7bb470c59c",
+          "line_number": 3,
+          "quantity": "100",
+          "sku": "V2-SKU-09-3",
+          "tax_rate": ".05",
+          "unit_price": "7.25"
+        }
+      ],
+      "number": "V2-PO-018",
+      "split": "heldout",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "c840db98-f746-5047-8d48-215626419aeb",
+      "vendor_index": 8
+    },
+    {
+      "authorized_gross": "2365.90",
+      "billing_mode": "ITEMIZED",
+      "currency": "USD",
+      "id": "1ac208aa-676d-578d-85a7-1ce279e8daf0",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "12a9c6e1-6d29-5462-b1f5-293bb01a3c8b",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-10-1",
+          "tax_rate": ".18",
+          "unit_price": "20.05"
+        }
+      ],
+      "number": "V2-PO-019",
+      "split": "heldout",
+      "status": "PARTIALLY_BILLED",
+      "valid_until": "2026-12-31",
+      "vendor_id": "2d3581ad-ed5a-5f27-b1ab-2bf3f33390b8",
+      "vendor_index": 9
+    },
+    {
+      "authorized_gross": "2406.00",
+      "billing_mode": "ITEMIZED",
+      "currency": "INR",
+      "id": "a3cb4780-23ac-5456-a48a-3b1dd65845bc",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "235f3969-03d1-58d5-852c-85e0df04a4ec",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-10-1",
+          "tax_rate": ".20",
+          "unit_price": "20.05"
+        }
+      ],
+      "number": "V2-PO-020",
+      "split": "heldout",
+      "status": "CLOSED",
+      "valid_until": "2026-12-31",
+      "vendor_id": "2d3581ad-ed5a-5f27-b1ab-2bf3f33390b8",
+      "vendor_index": 9
+    },
+    {
+      "authorized_gross": "2406.00",
+      "billing_mode": "ITEMIZED",
+      "currency": "INR",
+      "id": "fbabe7fa-e700-5e67-87c9-a7e7be1c9b2a",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "2c8a8e6a-5d26-56fa-9691-7e6fbb449397",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-11-1",
+          "tax_rate": ".20",
+          "unit_price": "20.05"
+        }
+      ],
+      "number": "V2-PO-021",
+      "split": "development",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "d420e4a7-135e-506b-93d9-bb28df8a6660",
+      "vendor_index": 10
+    },
+    {
+      "authorized_gross": "3677.88",
+      "billing_mode": "ITEMIZED",
+      "currency": "EUR",
+      "id": "8765609c-36a4-5bf8-bc84-2e6d61f052f2",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "3479b14e-8bbb-50d5-928d-d047ed5fe1f1",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-11-1",
+          "tax_rate": ".075",
+          "unit_price": "20.05"
+        },
+        {
+          "description": "Service periods (Synthetic)",
+          "id": "30f54d0c-82e5-5689-8996-a106792035f2",
+          "line_number": 2,
+          "quantity": "100",
+          "sku": "V2-SKU-11-2",
+          "tax_rate": ".05",
+          "unit_price": "7.25"
+        },
+        {
+          "description": "Consumables (Synthetic)",
+          "id": "a11f1b76-0a5c-5702-b81e-e6c11aa538b2",
+          "line_number": 3,
+          "quantity": "100",
+          "sku": "V2-SKU-11-3",
+          "tax_rate": ".05",
+          "unit_price": "7.25"
+        }
+      ],
+      "number": "V2-PO-022",
+      "split": "development",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "d420e4a7-135e-506b-93d9-bb28df8a6660",
+      "vendor_index": 10
+    },
+    {
+      "authorized_gross": "2155.38",
+      "billing_mode": "ITEMIZED",
+      "currency": "EUR",
+      "id": "462aeca9-ba34-55d4-9834-35f7e82a42a1",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "6aacfa9a-09f8-545a-8d58-1a8491366b6f",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-12-1",
+          "tax_rate": ".075",
+          "unit_price": "20.05"
+        }
+      ],
+      "number": "V2-PO-023",
+      "split": "development",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "20d4f69d-cf1d-5503-811b-0759eeb5b305",
+      "vendor_index": 11
+    },
+    {
+      "authorized_gross": "2005.00",
+      "billing_mode": "ITEMIZED",
+      "currency": "GBP",
+      "id": "ed498488-4810-5edb-953b-af7f5409315f",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "8bb10a30-0c09-571d-a765-dab3e5bdc464",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-12-1",
+          "tax_rate": "0",
+          "unit_price": "20.05"
+        }
+      ],
+      "number": "V2-PO-024",
+      "split": "development",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "20d4f69d-cf1d-5503-811b-0759eeb5b305",
+      "vendor_index": 11
+    },
+    {
+      "authorized_gross": "2005.00",
+      "billing_mode": "AMOUNT_BASED",
+      "currency": "GBP",
+      "id": "67592d19-eb18-5a1a-9e48-93c8cd21f6d7",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "b9ad9a87-1847-50d2-abf1-fe6b932b064e",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-13-1",
+          "tax_rate": "0",
+          "unit_price": "20.05"
+        }
+      ],
+      "number": "V2-PO-025",
+      "split": "development",
+      "status": "PARTIALLY_BILLED",
+      "valid_until": "2026-12-31",
+      "vendor_id": "3a4ca784-2d95-594b-ac6f-e79feb120f2a",
+      "vendor_index": 12
+    },
+    {
+      "authorized_gross": "3570",
+      "billing_mode": "AMOUNT_BASED",
+      "currency": "JPY",
+      "id": "7b2d1703-7a17-5516-a0da-63d8942d8813",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "94b940cb-15f1-5d7e-aba2-dd860a66aabd",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-13-1",
+          "tax_rate": ".05",
+          "unit_price": "20"
+        },
+        {
+          "description": "Service periods (Synthetic)",
+          "id": "2b98ffa4-1c62-5166-8527-82218dcf9a3c",
+          "line_number": 2,
+          "quantity": "100",
+          "sku": "V2-SKU-13-2",
+          "tax_rate": ".05",
+          "unit_price": "7"
+        },
+        {
+          "description": "Consumables (Synthetic)",
+          "id": "f9cd9aec-9960-500b-adc7-af8e0e754d5f",
+          "line_number": 3,
+          "quantity": "100",
+          "sku": "V2-SKU-13-3",
+          "tax_rate": ".05",
+          "unit_price": "7"
+        }
+      ],
+      "number": "V2-PO-026",
+      "split": "development",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "3a4ca784-2d95-594b-ac6f-e79feb120f2a",
+      "vendor_index": 12
+    },
+    {
+      "authorized_gross": "2100",
+      "billing_mode": "ITEMIZED",
+      "currency": "JPY",
+      "id": "17c71c97-e13c-5e5c-9e02-5f5a3fc0d3e5",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "c2a6d4e4-cecf-550f-80a3-20eb25b108e1",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-14-1",
+          "tax_rate": ".05",
+          "unit_price": "20"
+        }
+      ],
+      "number": "V2-PO-027",
+      "split": "development",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "d4a9e413-0d81-5f5d-a0df-b8f7b61c0933",
+      "vendor_index": 13
+    },
+    {
+      "authorized_gross": "2213.750",
+      "billing_mode": "ITEMIZED",
+      "currency": "KWD",
+      "id": "752b3403-cb31-5163-a249-4c34e593a23a",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "14a2eae3-0173-561d-8b7f-37a5b3429640",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-14-1",
+          "tax_rate": ".10",
+          "unit_price": "20.125"
+        }
+      ],
+      "number": "V2-PO-028",
+      "split": "development",
+      "status": "CANCELLED",
+      "valid_until": "2026-12-31",
+      "vendor_id": "d4a9e413-0d81-5f5d-a0df-b8f7b61c0933",
+      "vendor_index": 13
+    },
+    {
+      "authorized_gross": "2213.750",
+      "billing_mode": "ITEMIZED",
+      "currency": "KWD",
+      "id": "00420cca-79bb-5028-939e-2c73860a7bb1",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "600d1899-9e6d-5c70-b17c-95d746600f37",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-15-1",
+          "tax_rate": ".10",
+          "unit_price": "20.125"
+        }
+      ],
+      "number": "V2-PO-029",
+      "split": "heldout",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "0288d88f-b8ff-5984-9bfa-7871fee303b9",
+      "vendor_index": 14
+    },
+    {
+      "authorized_gross": "3888.40",
+      "billing_mode": "ITEMIZED",
+      "currency": "USD",
+      "id": "faa1fb0f-d6f5-569a-9259-df04bc3268d0",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "5a45bfb3-2e8b-504f-ae15-8fa8922b8a25",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-15-1",
+          "tax_rate": ".18",
+          "unit_price": "20.05"
+        },
+        {
+          "description": "Service periods (Synthetic)",
+          "id": "9ed850e7-f367-5bf8-9f37-fdde84e764ce",
+          "line_number": 2,
+          "quantity": "100",
+          "sku": "V2-SKU-15-2",
+          "tax_rate": ".05",
+          "unit_price": "7.25"
+        },
+        {
+          "description": "Consumables (Synthetic)",
+          "id": "0102b8f2-e61b-54a7-933f-9ae678ad7b93",
+          "line_number": 3,
+          "quantity": "100",
+          "sku": "V2-SKU-15-3",
+          "tax_rate": ".05",
+          "unit_price": "7.25"
+        }
+      ],
+      "number": "V2-PO-030",
+      "split": "heldout",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "0288d88f-b8ff-5984-9bfa-7871fee303b9",
+      "vendor_index": 14
+    },
+    {
+      "authorized_gross": "2365.90",
+      "billing_mode": "ITEMIZED",
+      "currency": "USD",
+      "id": "f2afac1d-1c12-5a98-a82b-de35a9ae180c",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "d02e7162-b2eb-583b-8487-0448cd543d29",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-16-1",
+          "tax_rate": ".18",
+          "unit_price": "20.05"
+        }
+      ],
+      "number": "V2-PO-031",
+      "split": "development",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "7b519adf-5c3e-5b19-b936-b73bdac46ffd",
+      "vendor_index": 15
+    },
+    {
+      "authorized_gross": "2406.00",
+      "billing_mode": "ITEMIZED",
+      "currency": "INR",
+      "id": "0e688698-0439-584b-b189-1182396c4d6d",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "1e2270ab-ae26-562f-9f87-8da489ff0cc2",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-16-1",
+          "tax_rate": ".20",
+          "unit_price": "20.05"
+        }
+      ],
+      "number": "V2-PO-032",
+      "split": "development",
+      "status": "CLOSED",
+      "valid_until": "2026-12-31",
+      "vendor_id": "7b519adf-5c3e-5b19-b936-b73bdac46ffd",
+      "vendor_index": 15
+    },
+    {
+      "authorized_gross": "2406.00",
+      "billing_mode": "AMOUNT_BASED",
+      "currency": "INR",
+      "id": "ce2df6c0-6a53-5e55-992d-5a7fd4e4b1ef",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "08be4e17-4a92-5b86-b1ad-87a4da945661",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-17-1",
+          "tax_rate": ".20",
+          "unit_price": "20.05"
+        }
+      ],
+      "number": "V2-PO-033",
+      "split": "development",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "274a06b3-3f3d-5150-98de-5c9962ab4e9a",
+      "vendor_index": 16
+    },
+    {
+      "authorized_gross": "3677.88",
+      "billing_mode": "AMOUNT_BASED",
+      "currency": "EUR",
+      "id": "3b75b9a9-e66a-5c15-90a2-5b5240beff57",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "44576824-c717-5985-8a72-4ca413ca2a7a",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-17-1",
+          "tax_rate": ".075",
+          "unit_price": "20.05"
+        },
+        {
+          "description": "Service periods (Synthetic)",
+          "id": "bf19a47a-0e91-58be-849d-2a1e0df541fa",
+          "line_number": 2,
+          "quantity": "100",
+          "sku": "V2-SKU-17-2",
+          "tax_rate": ".05",
+          "unit_price": "7.25"
+        },
+        {
+          "description": "Consumables (Synthetic)",
+          "id": "9be5275b-c6b6-5067-b483-67d996d26345",
+          "line_number": 3,
+          "quantity": "100",
+          "sku": "V2-SKU-17-3",
+          "tax_rate": ".05",
+          "unit_price": "7.25"
+        }
+      ],
+      "number": "V2-PO-034",
+      "split": "development",
+      "status": "CLOSED",
+      "valid_until": "2026-12-31",
+      "vendor_id": "274a06b3-3f3d-5150-98de-5c9962ab4e9a",
+      "vendor_index": 16
+    },
+    {
+      "authorized_gross": "2155.38",
+      "billing_mode": "ITEMIZED",
+      "currency": "EUR",
+      "id": "51eb71e1-e967-5b17-bbb1-9a83c7aa2c9e",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "ce967a2b-ab10-589f-bd77-1ccd8a571bb2",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-18-1",
+          "tax_rate": ".075",
+          "unit_price": "20.05"
+        }
+      ],
+      "number": "V2-PO-035",
+      "split": "heldout",
+      "status": "OPEN",
+      "valid_until": "2026-12-31",
+      "vendor_id": "8c5b574d-d9d1-514d-83e6-3138d9e85e04",
+      "vendor_index": 17
+    },
+    {
+      "authorized_gross": "2005.00",
+      "billing_mode": "ITEMIZED",
+      "currency": "GBP",
+      "id": "f0ce96da-cafd-5cb1-ac9c-4c9e2e330324",
+      "issued_on": "2026-01-01",
+      "items": [
+        {
+          "description": "Components (Synthetic)",
+          "id": "eca8d566-fdf9-5712-a3b0-0fda76f815e2",
+          "line_number": 1,
+          "quantity": "100",
+          "sku": "V2-SKU-18-1",
+          "tax_rate": "0",
+          "unit_price": "20.05"
+        }
+      ],
+      "number": "V2-PO-036",
+      "split": "heldout",
+      "status": "CANCELLED",
+      "valid_until": "2026-12-31",
+      "vendor_id": "8c5b574d-d9d1-514d-83e6-3138d9e85e04",
+      "vendor_index": 17
+    }
+  ],
+  "synthetic": true,
+  "vendors": [
+    {
+      "code": "SYN-001",
+      "id": "00000000-0000-0000-0000-000000000065",
+      "index": 0,
+      "legal_name": "Northstar Office Supplies (Synthetic)",
+      "split": "development",
+      "status": "APPROVED",
+      "tax_id": "SYNTHETIC-TAX-1"
+    },
+    {
+      "code": "SYN-002",
+      "id": "00000000-0000-0000-0000-000000000066",
+      "index": 1,
+      "legal_name": "Harbor IT Services (Synthetic)",
+      "split": "development",
+      "status": "APPROVED",
+      "tax_id": "SYNTHETIC-TAX-2"
+    },
+    {
+      "code": "SYN-003",
+      "id": "00000000-0000-0000-0000-000000000067",
+      "index": 2,
+      "legal_name": "Summit Logistics (Synthetic)",
+      "split": "development",
+      "status": "SUSPENDED",
+      "tax_id": "SYNTHETIC-TAX-3"
+    },
+    {
+      "code": "V2-004",
+      "id": "6c6b9023-c043-5358-85c8-68b368c78da1",
+      "index": 3,
+      "legal_name": "Cedar Lab Equipment (Synthetic)",
+      "split": "development",
+      "status": "APPROVED",
+      "tax_id": "SYNTHETIC-V2-TAX-004"
+    },
+    {
+      "code": "V2-005",
+      "id": "7a4c3de4-8d37-52f0-848c-5d6c2a9a985d",
+      "index": 4,
+      "legal_name": "Orchard Facilities (Synthetic)",
+      "split": "development",
+      "status": "APPROVED",
+      "tax_id": "SYNTHETIC-V2-TAX-005"
+    },
+    {
+      "code": "V2-006",
+      "id": "f9007659-3326-519f-aa7f-423bf743e2ea",
+      "index": 5,
+      "legal_name": "Silverline Packaging (Synthetic)",
+      "split": "development",
+      "status": "APPROVED",
+      "tax_id": "SYNTHETIC-V2-TAX-006"
+    },
+    {
+      "code": "V2-007",
+      "id": "762ec6f4-dde2-539f-94d7-098aca4b0d3a",
+      "index": 6,
+      "legal_name": "Atlas Design Studio (Synthetic)",
+      "split": "heldout",
+      "status": "APPROVED",
+      "tax_id": "SYNTHETIC-V2-TAX-007"
+    },
+    {
+      "code": "V2-008",
+      "id": "d5289a7c-9657-5422-91b9-92509741f596",
+      "index": 7,
+      "legal_name": "Juniper Electronics (Synthetic)",
+      "split": "heldout",
+      "status": "APPROVED",
+      "tax_id": "SYNTHETIC-V2-TAX-008"
+    },
+    {
+      "code": "V2-009",
+      "id": "c840db98-f746-5047-8d48-215626419aeb",
+      "index": 8,
+      "legal_name": "Meridian Calibration (Synthetic)",
+      "split": "heldout",
+      "status": "APPROVED",
+      "tax_id": "SYNTHETIC-V2-TAX-009"
+    },
+    {
+      "code": "V2-010",
+      "id": "2d3581ad-ed5a-5f27-b1ab-2bf3f33390b8",
+      "index": 9,
+      "legal_name": "Seabrook Components (Synthetic)",
+      "split": "heldout",
+      "status": "APPROVED",
+      "tax_id": "SYNTHETIC-V2-TAX-010"
+    },
+    {
+      "code": "V2-011",
+      "id": "d420e4a7-135e-506b-93d9-bb28df8a6660",
+      "index": 10,
+      "legal_name": "Common Trading (Synthetic)",
+      "split": "development",
+      "status": "APPROVED",
+      "tax_id": "SYNTHETIC-V2-TAX-011"
+    },
+    {
+      "code": "V2-012",
+      "id": "20d4f69d-cf1d-5503-811b-0759eeb5b305",
+      "index": 11,
+      "legal_name": "Common Trading (Synthetic)",
+      "split": "development",
+      "status": "APPROVED",
+      "tax_id": "SYNTHETIC-V2-TAX-012"
+    },
+    {
+      "code": "V2-013",
+      "id": "3a4ca784-2d95-594b-ac6f-e79feb120f2a",
+      "index": 12,
+      "legal_name": "Copperfield Maintenance (Synthetic)",
+      "split": "development",
+      "status": "APPROVED",
+      "tax_id": "SYNTHETIC-V2-TAX-013"
+    },
+    {
+      "code": "V2-014",
+      "id": "d4a9e413-0d81-5f5d-a0df-b8f7b61c0933",
+      "index": 13,
+      "legal_name": "Granite Freight (Synthetic)",
+      "split": "development",
+      "status": "SUSPENDED",
+      "tax_id": "SYNTHETIC-V2-TAX-014"
+    },
+    {
+      "code": "V2-015",
+      "id": "0288d88f-b8ff-5984-9bfa-7871fee303b9",
+      "index": 14,
+      "legal_name": "Coastal Trading (Synthetic)",
+      "split": "heldout",
+      "status": "SUSPENDED",
+      "tax_id": "SYNTHETIC-V2-TAX-015"
+    },
+    {
+      "code": "V2-016",
+      "id": "7b519adf-5c3e-5b19-b936-b73bdac46ffd",
+      "index": 15,
+      "legal_name": "Cobalt Printworks (Synthetic)",
+      "split": "development",
+      "status": "SUSPENDED",
+      "tax_id": "SYNTHETIC-V2-TAX-016"
+    },
+    {
+      "code": "V2-017",
+      "id": "274a06b3-3f3d-5150-98de-5c9962ab4e9a",
+      "index": 16,
+      "legal_name": "Prairie Consulting (Synthetic)",
+      "split": "development",
+      "status": "INACTIVE",
+      "tax_id": "SYNTHETIC-V2-TAX-017"
+    },
+    {
+      "code": "V2-018",
+      "id": "8c5b574d-d9d1-514d-83e6-3138d9e85e04",
+      "index": 17,
+      "legal_name": "Coastal Trading (Synthetic)",
+      "split": "heldout",
+      "status": "INACTIVE",
+      "tax_id": "SYNTHETIC-V2-TAX-018"
+    }
+  ],
+  "version": "synthetic-v2.0.0"
+}

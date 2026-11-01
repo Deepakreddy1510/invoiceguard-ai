@@ -1,0 +1,46 @@
+# PAID RESOURCE TEMPLATE: do not apply until the owner approves the current price quote.
+# Create the private invoiceguard-runtime environment group before applying (deploy/README.md).
+# Publishing this file does not provision anything. Automatic deployments are disabled.
+databases:
+- name: invoiceguard-db
+  plan: basic-256mb
+  databaseName: invoiceguard
+  user: invoiceguard
+  ipAllowList: []
+  region: oregon
+services:
+- type: web
+  name: invoiceguard-web
+  runtime: docker
+  plan: starter
+  repo: https://github.com/Deepakreddy1510/invoiceguard-ai
+  branch: main
+  dockerfilePath: ./Dockerfile
+  dockerContext: .
+  healthCheckPath: /api/v1/health/ready
+  preDeployCommand: alembic upgrade head
+  envVars:
+  - fromGroup: invoiceguard-runtime
+  - key: DATABASE_URL
+    fromDatabase:
+      name: invoiceguard-db
+      property: connectionString
+  region: oregon
+  autoDeploy: false
+- type: worker
+  name: invoiceguard-worker
+  runtime: docker
+  plan: starter
+  repo: https://github.com/Deepakreddy1510/invoiceguard-ai
+  branch: main
+  dockerfilePath: ./Dockerfile
+  dockerContext: .
+  dockerCommand: python -m app.worker.main
+  envVars:
+  - fromGroup: invoiceguard-runtime
+  - key: DATABASE_URL
+    fromDatabase:
+      name: invoiceguard-db
+      property: connectionString
+  region: oregon
+  autoDeploy: false

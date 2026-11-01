@@ -218,3 +218,26 @@ __marimo__/
 
 # Streamlit
 .streamlit/secrets.toml
+
+# InvoiceGuard local outputs
+backend/.venv/
+frontend/node_modules/
+frontend/dist/
+frontend/test-results/
+frontend/playwright-report/
+.env
+.ruff_cache/
+
+# Private uploaded artifacts (never source fixtures)
+.local/
+
+# Secret environment variants and private credential/key exports
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+*.pgpass
+*.dump
+*.backup

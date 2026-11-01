@@ -1,0 +1,17 @@
+{
+  "currency_minor_digits": {
+    "EUR": 2,
+    "GBP": 2,
+    "INR": 2,
+    "JPY": 0,
+    "KWD": 3,
+    "USD": 2
+  },
+  "decision_correctness": "strict; review on a gold-valid invoice is missed automation, not success",
+  "false_validation": "VALIDATED when independent gold requires BLOCKED or NEEDS_REVIEW",
+  "field_denominators": "present gold fields; missing-field abstentions separate; exact bytes deduplicated",
+  "rounding": "ROUND_HALF_UP",
+  "technical_failures": "included in attempted invoice denominator; no financial outcome fabricated",
+  "unsupported": "non-null output without valid source evidence; factual errors reported separately",
+  "version": "independent-rational-v1"
+}

@@ -1,0 +1,7 @@
+# Synthetic invoice fixtures
+
+All vendors, invoices, tax identifiers and transactions are synthetic. PDF names are for humans; processing never branches on filenames.
+
+Development fixtures are generated from `backend/scripts/generate_samples.py`. The digital valid and re-exported duplicate represent the same vendor invoice with different file bytes. The scanned invoice has a separate identity and amount. Missing information requires review. Partial invoices of 880 and 770, followed by 660, demonstrate cumulative overbilling against the 2,200 PO **in a clean, independent seeded database**. Other uploads consume capacity too; do not assume the same results after mixing scenarios.
+
+The three `extraction/heldout-*.pdf` fixtures were created with a separate renderer and manually labeled expected fields. Initial evaluation exposed column-merging failures. They subsequently informed a correction and are now a **regression corpus**, not an untouched accuracy benchmark. `measured-fallback-initial.json` preserves the failed initial result. `measured-fallback-regression.json` contains the executed post-correction result. The manifest and expectation data are never passed to extraction or matching. The check covers 23 present header fields, one missing-field abstention, two valid invoice outcomes and one required-review outcome. It does not measure arbitrary vendor accuracy or live Gemini quality. Broader untouched independent evaluation remains necessary.

@@ -1,0 +1,22 @@
+# Evaluation assets must never be included in an application deployment image.
+evaluation/
+datasets/
+.local/
+.env
+.env.*
+.git/
+**/node_modules/
+**/.venv/
+**/__pycache__/
+backend/tests/
+frontend/test-results/
+frontend/playwright-report/
+# Never copy nested local credentials or database exports into a build context.
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/*.dump
+**/*.backup

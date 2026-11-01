@@ -1,0 +1,304 @@
+from datetime import date, datetime
+from decimal import Decimal
+from uuid import UUID, uuid4
+
+from sqlalchemy import (
+    BigInteger,
+    CheckConstraint,
+    DateTime,
+    ForeignKey,
+    ForeignKeyConstraint,
+    Index,
+    Numeric,
+    String,
+    UniqueConstraint,
+    func,
+    text,
+)
+from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column, relationship
+
+
+class Base(DeclarativeBase):
+    pass
+
+
+class Workspace(Base):
+    __tablename__ = "workspaces"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    name: Mapped[str] = mapped_column(String(160))
+
+
+class Vendor(Base):
+    __tablename__ = "vendors"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "code"),
+        UniqueConstraint("workspace_id", "id"),
+        CheckConstraint("status IN ('APPROVED','SUSPENDED','INACTIVE')", name="vendor_status"),
+        Index("ix_vendors_workspace_status", "workspace_id", "status"),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"))
+    code: Mapped[str] = mapped_column(String(40))
+    legal_name: Mapped[str] = mapped_column(String(200))
+    tax_id: Mapped[str | None] = mapped_column(String(80))
+    status: Mapped[str] = mapped_column(String(20))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class PurchaseOrder(Base):
+    __tablename__ = "purchase_orders"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "number"),
+        ForeignKeyConstraint(["workspace_id", "vendor_id"], ["vendors.workspace_id", "vendors.id"]),
+        CheckConstraint("authorized_gross > 0", name="po_positive_amount"),
+        CheckConstraint("currency ~ '^[A-Z]{3}$'", name="po_currency"),
+        CheckConstraint(
+            "status IN ('OPEN','PARTIALLY_BILLED','CLOSED','CANCELLED')", name="po_status"
+        ),
+        CheckConstraint("valid_until >= issued_on", name="po_dates"),
+        CheckConstraint("billing_mode IN ('ITEMIZED','AMOUNT_BASED')", name="po_billing_mode"),
+        Index("ix_po_workspace_vendor_status", "workspace_id", "vendor_id", "status"),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"))
+    vendor_id: Mapped[UUID] = mapped_column()
+    number: Mapped[str] = mapped_column(String(60))
+    currency: Mapped[str] = mapped_column(String(3))
+    authorized_gross: Mapped[Decimal] = mapped_column(Numeric(20, 6))
+    status: Mapped[str] = mapped_column(String(20))
+    billing_mode: Mapped[str] = mapped_column(String(20))
+    issued_on: Mapped[date]
+    valid_until: Mapped[date]
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    vendor: Mapped[Vendor] = relationship()
+    items: Mapped[list["PurchaseOrderItem"]] = relationship(
+        order_by="PurchaseOrderItem.line_number"
+    )
+
+
+class PurchaseOrderItem(Base):
+    __tablename__ = "purchase_order_items"
+    __table_args__ = (
+        UniqueConstraint("po_id", "line_number"),
+        CheckConstraint("line_number > 0 AND quantity > 0 AND unit_price >= 0", name="item_values"),
+        CheckConstraint("tax_rate >= 0 AND tax_rate <= 1", name="item_tax_rate"),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    po_id: Mapped[UUID] = mapped_column(ForeignKey("purchase_orders.id"))
+    line_number: Mapped[int]
+    sku: Mapped[str] = mapped_column(String(60))
+    description: Mapped[str] = mapped_column(String(300))
+    quantity: Mapped[Decimal] = mapped_column(Numeric(20, 6))
+    unit_price: Mapped[Decimal] = mapped_column(Numeric(20, 6))
+    tax_rate: Mapped[Decimal] = mapped_column(Numeric(12, 8))
+
+
+# Workflow identities are separate from procurement and from each other.
+
+
+class InvoiceDocument(Base):
+    __tablename__ = "invoice_documents"
+    __table_args__ = (UniqueConstraint("workspace_id", "sha256"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"))
+    sha256: Mapped[str] = mapped_column(String(64))
+    storage_key: Mapped[str] = mapped_column(String(80), unique=True)
+    byte_size: Mapped[int]
+    page_count: Mapped[int]
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ProcessingRun(Base):
+    __tablename__ = "processing_runs"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('QUEUED','RUNNING','RETRY_WAIT','SUCCEEDED','FAILED')", name="run_status"
+        ),
+        Index("ix_runs_claim", "status", "lease_until"),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    document_id: Mapped[UUID] = mapped_column(ForeignKey("invoice_documents.id"))
+    parent_run_id: Mapped[UUID | None] = mapped_column(ForeignKey("processing_runs.id"))
+    status: Mapped[str] = mapped_column(String(20), default="QUEUED")
+    attempt: Mapped[int] = mapped_column(default=0)
+    lease_token: Mapped[UUID | None]
+    lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    pages: Mapped[list | None] = mapped_column(JSONB)
+    extraction: Mapped[dict | None] = mapped_column(JSONB)
+    error: Mapped[str | None] = mapped_column(String(300))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class DocumentSubmission(Base):
+    __tablename__ = "document_submissions"
+    __table_args__ = (UniqueConstraint("workspace_id", "idempotency_key"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"))
+    document_id: Mapped[UUID] = mapped_column(ForeignKey("invoice_documents.id"))
+    run_id: Mapped[UUID] = mapped_column(ForeignKey("processing_runs.id"))
+    idempotency_key: Mapped[str | None] = mapped_column(String(100))
+    original_filename: Mapped[str] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class RunEvent(Base):
+    __tablename__ = "run_events"
+    __table_args__ = (Index("ix_events_run_id", "run_id", "id"),)
+    id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
+    run_id: Mapped[UUID] = mapped_column(ForeignKey("processing_runs.id"))
+    attempt: Mapped[int]
+    stage: Mapped[str] = mapped_column(String(40))
+    outcome: Mapped[str] = mapped_column(String(20))
+    detail: Mapped[str] = mapped_column(String(500))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class BusinessInvoice(Base):
+    __tablename__ = "invoices"
+    __table_args__ = (UniqueConstraint("workspace_id", "identity_key"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"))
+    vendor_id: Mapped[UUID] = mapped_column(ForeignKey("vendors.id"))
+    identity_key: Mapped[str] = mapped_column(String(240))
+    source_document_id: Mapped[UUID] = mapped_column(ForeignKey("invoice_documents.id"))
+    invoice_number: Mapped[str] = mapped_column(String(160))
+    invoice_date: Mapped[date | None]
+    currency: Mapped[str | None] = mapped_column(String(3))
+    total: Mapped[Decimal | None] = mapped_column(Numeric(20, 6))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class InvoiceRevision(Base):
+    __tablename__ = "invoice_revisions"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    invoice_id: Mapped[UUID | None] = mapped_column(ForeignKey("invoices.id"))
+    run_id: Mapped[UUID] = mapped_column(ForeignKey("processing_runs.id"), unique=True)
+    extraction: Mapped[dict] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class Decision(Base):
+    __tablename__ = "decisions"
+    __table_args__ = (
+        CheckConstraint(
+            "outcome IN ('VALIDATED','NEEDS_REVIEW','BLOCKED')", name="decision_outcome"
+        ),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    run_id: Mapped[UUID] = mapped_column(ForeignKey("processing_runs.id"), unique=True)
+    revision_id: Mapped[UUID] = mapped_column(ForeignKey("invoice_revisions.id"))
+    invoice_id: Mapped[UUID | None] = mapped_column(ForeignKey("invoices.id"))
+    po_id: Mapped[UUID | None] = mapped_column(ForeignKey("purchase_orders.id"))
+    outcome: Mapped[str] = mapped_column(String(20))
+    rules: Mapped[list] = mapped_column(JSONB)
+    summary: Mapped[dict] = mapped_column(JSONB)
+    policy_version: Mapped[str] = mapped_column(String(60), default="gross-zero-overrun-v1")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class FinancialCommitment(Base):
+    __tablename__ = "financial_commitments"
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('RESERVED','HELD','RELEASED','SETTLED')", name="commitment_status"
+        ),
+        CheckConstraint("amount > 0 AND amount < 'Infinity'::numeric", name="commitment_amount"),
+        Index(
+            "uq_consuming_commitment",
+            "invoice_id",
+            unique=True,
+            postgresql_where=text("status IN ('RESERVED','HELD','SETTLED')"),
+        ),
+        Index("ix_commitments_po_status", "po_id", "status"),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    invoice_id: Mapped[UUID] = mapped_column(ForeignKey("invoices.id"))
+    decision_id: Mapped[UUID] = mapped_column(ForeignKey("decisions.id"), unique=True)
+    po_id: Mapped[UUID] = mapped_column(ForeignKey("purchase_orders.id"))
+    amount: Mapped[Decimal] = mapped_column(Numeric(20, 6))
+    currency: Mapped[str] = mapped_column(String(3))
+    status: Mapped[str] = mapped_column(String(20), default="RESERVED")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class CommitmentAllocation(Base):
+    __tablename__ = "commitment_allocations"
+    __table_args__ = (
+        UniqueConstraint("commitment_id", "po_item_id"),
+        CheckConstraint(
+            "quantity > 0 AND quantity < 'Infinity'::numeric", name="allocation_quantity"
+        ),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    commitment_id: Mapped[UUID] = mapped_column(ForeignKey("financial_commitments.id"))
+    po_item_id: Mapped[UUID] = mapped_column(ForeignKey("purchase_order_items.id"))
+    quantity: Mapped[Decimal] = mapped_column(Numeric(20, 6))
+
+
+class Membership(Base):
+    __tablename__ = "memberships"
+    __table_args__ = (
+        UniqueConstraint("workspace_id", "subject"),
+        CheckConstraint("role IN ('VIEWER','REVIEWER','ADMIN')", name="membership_role"),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"))
+    subject: Mapped[str] = mapped_column(String(255))
+    role: Mapped[str] = mapped_column(String(20))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ReviewTask(Base):
+    __tablename__ = "review_tasks"
+    __table_args__ = (
+        CheckConstraint("status IN ('OPEN','REVALIDATING','RESOLVED')", name="review_status"),
+        Index(
+            "uq_open_review_document",
+            "document_id",
+            unique=True,
+            postgresql_where=text("status IN ('OPEN','REVALIDATING')"),
+        ),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    document_id: Mapped[UUID] = mapped_column(ForeignKey("invoice_documents.id"))
+    latest_run_id: Mapped[UUID] = mapped_column(ForeignKey("processing_runs.id"))
+    invoice_id: Mapped[UUID | None] = mapped_column(ForeignKey("invoices.id"))
+    status: Mapped[str] = mapped_column(String(20), default="OPEN")
+    version: Mapped[int] = mapped_column(default=1)
+    assignee: Mapped[str | None] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ReviewCorrection(Base):
+    __tablename__ = "review_corrections"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    task_id: Mapped[UUID] = mapped_column(ForeignKey("review_tasks.id"))
+    run_id: Mapped[UUID] = mapped_column(ForeignKey("processing_runs.id"), unique=True)
+    base_run_id: Mapped[UUID] = mapped_column(ForeignKey("processing_runs.id"))
+    actor: Mapped[str] = mapped_column(String(255))
+    comment: Mapped[str] = mapped_column(String(2000))
+    extraction: Mapped[dict] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class AuditEvent(Base):
+    __tablename__ = "audit_events"
+    __table_args__ = (Index("ix_audit_workspace_time", "workspace_id", "created_at"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"))
+    actor: Mapped[str] = mapped_column(String(255))
+    action: Mapped[str] = mapped_column(String(80))
+    document_id: Mapped[UUID | None] = mapped_column(ForeignKey("invoice_documents.id"))
+    run_id: Mapped[UUID | None] = mapped_column(ForeignKey("processing_runs.id"))
+    detail: Mapped[dict] = mapped_column(JSONB)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class WorkerHeartbeat(Base):
+    __tablename__ = "worker_heartbeats"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    last_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(String(30))

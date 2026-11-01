@@ -1,0 +1,329 @@
+{
+  "dataset": {
+    "baseline_pdfs": 8,
+    "billing_modes": {
+      "AMOUNT_BASED": 10,
+      "ITEMIZED": 26
+    },
+    "currencies": {
+      "EUR": 6,
+      "GBP": 5,
+      "INR": 7,
+      "JPY": 4,
+      "KWD": 5,
+      "USD": 9
+    },
+    "layout_counts": {
+      "D0": 10,
+      "D1": 10,
+      "D2": 10,
+      "D3": 10,
+      "D4": 9,
+      "D5": 9,
+      "D6": 11,
+      "D7": 11,
+      "H0": 11,
+      "H1": 11,
+      "H2": 9,
+      "H3": 9
+    },
+    "po_statuses": {
+      "CANCELLED": 2,
+      "CLOSED": 4,
+      "OPEN": 22,
+      "PARTIALLY_BILLED": 8
+    },
+    "purchase_orders": 36,
+    "scanning": {
+      "digital": 74,
+      "scanned": 46
+    },
+    "scored_pdfs": 120,
+    "vendor_statuses": {
+      "APPROVED": 12,
+      "INACTIVE": 2,
+      "SUSPENDED": 4
+    },
+    "vendors": 18
+  },
+  "evaluations": [
+    {
+      "counts": {
+        "absent_gold_fields": 14,
+        "attempted_submissions": 80,
+        "backend_unverified_fields": 54,
+        "correct_abstentions": 12,
+        "correct_document_types": 78,
+        "correct_fields": 848,
+        "document_type_checks": 78,
+        "expected_line_items": 88,
+        "extra_line_items": 0,
+        "false_populations": 2,
+        "matched_line_items": 22,
+        "missing_extractions": 708,
+        "populated_fields": 910,
+        "present_gold_fields": 1616,
+        "technical_failures": 0,
+        "unsupported_extractions": 62,
+        "wrong_extractions": 60
+      },
+      "decision_correctness": null,
+      "field_correctness": {
+        "denominator": 1616,
+        "numerator": 848
+      },
+      "mode": "extraction",
+      "provider": "fallback",
+      "review_rate": null,
+      "split": "development",
+      "unique_pdf_payloads": 78
+    },
+    {
+      "counts": {
+        "absent_gold_fields": 7,
+        "attempted_submissions": 40,
+        "backend_unverified_fields": 0,
+        "correct_abstentions": 7,
+        "correct_document_types": 39,
+        "correct_fields": 340,
+        "document_type_checks": 39,
+        "expected_line_items": 45,
+        "extra_line_items": 0,
+        "false_populations": 0,
+        "matched_line_items": 14,
+        "missing_extractions": 474,
+        "populated_fields": 341,
+        "present_gold_fields": 815,
+        "technical_failures": 0,
+        "unsupported_extractions": 1,
+        "wrong_extractions": 1
+      },
+      "decision_correctness": null,
+      "field_correctness": {
+        "denominator": 815,
+        "numerator": 340
+      },
+      "mode": "extraction",
+      "provider": "fallback",
+      "review_rate": null,
+      "split": "heldout",
+      "unique_pdf_payloads": 39
+    },
+    {
+      "counts": {
+        "allocations_checks": 80,
+        "allocations_correct": 79,
+        "attempted_submissions": 80,
+        "balance_after_checks": 80,
+        "balance_after_correct": 79,
+        "balance_before_checks": 80,
+        "balance_before_correct": 80,
+        "commitment_checks": 80,
+        "commitment_correct": 79,
+        "correct_decisions": 79,
+        "correct_rules": 1499,
+        "decision_checks": 80,
+        "missed_validations": 1,
+        "po_checks": 80,
+        "po_correct": 80,
+        "replay_checks": 80,
+        "replay_correct": 80,
+        "reviews": 19,
+        "rule_checks": 1502,
+        "technical_failures": 0,
+        "unsafe_validations": 0,
+        "vendor_checks": 80,
+        "vendor_correct": 79
+      },
+      "decision_correctness": {
+        "denominator": 80,
+        "numerator": 79
+      },
+      "field_correctness": {
+        "denominator": 0,
+        "numerator": 0
+      },
+      "mode": "gold",
+      "provider": "GOLD_ORACLE",
+      "review_rate": {
+        "denominator": 80,
+        "numerator": 19
+      },
+      "split": "development",
+      "unique_pdf_payloads": 78
+    },
+    {
+      "counts": {
+        "allocations_checks": 40,
+        "allocations_correct": 40,
+        "attempted_submissions": 40,
+        "balance_after_checks": 40,
+        "balance_after_correct": 40,
+        "balance_before_checks": 40,
+        "balance_before_correct": 40,
+        "commitment_checks": 40,
+        "commitment_correct": 40,
+        "correct_decisions": 38,
+        "correct_rules": 745,
+        "decision_checks": 40,
+        "missed_validations": 0,
+        "po_checks": 40,
+        "po_correct": 40,
+        "replay_checks": 40,
+        "replay_correct": 40,
+        "reviews": 12,
+        "rule_checks": 754,
+        "technical_failures": 0,
+        "unsafe_validations": 0,
+        "vendor_checks": 40,
+        "vendor_correct": 37
+      },
+      "decision_correctness": {
+        "denominator": 40,
+        "numerator": 38
+      },
+      "field_correctness": {
+        "denominator": 0,
+        "numerator": 0
+      },
+      "mode": "gold",
+      "provider": "GOLD_ORACLE",
+      "review_rate": {
+        "denominator": 40,
+        "numerator": 12
+      },
+      "split": "heldout",
+      "unique_pdf_payloads": 39
+    },
+    {
+      "counts": {
+        "absent_gold_fields": 14,
+        "allocations_checks": 80,
+        "allocations_correct": 47,
+        "attempted_submissions": 80,
+        "backend_unverified_fields": 54,
+        "balance_after_checks": 80,
+        "balance_after_correct": 42,
+        "balance_before_checks": 80,
+        "balance_before_correct": 72,
+        "commitment_checks": 80,
+        "commitment_correct": 48,
+        "correct_abstentions": 12,
+        "correct_decisions": 40,
+        "correct_document_types": 78,
+        "correct_fields": 848,
+        "correct_rules": 1012,
+        "decision_checks": 80,
+        "document_type_checks": 78,
+        "expected_line_items": 88,
+        "extra_line_items": 0,
+        "false_populations": 2,
+        "matched_line_items": 22,
+        "missed_validations": 33,
+        "missing_extractions": 708,
+        "po_checks": 80,
+        "po_correct": 59,
+        "populated_fields": 910,
+        "present_gold_fields": 1616,
+        "replay_checks": 80,
+        "replay_correct": 80,
+        "reviews": 52,
+        "rule_checks": 1502,
+        "technical_failures": 0,
+        "unsafe_validations": 0,
+        "unsupported_extractions": 62,
+        "vendor_checks": 80,
+        "vendor_correct": 60,
+        "wrong_extractions": 60
+      },
+      "decision_correctness": {
+        "denominator": 80,
+        "numerator": 40
+      },
+      "field_correctness": {
+        "denominator": 1616,
+        "numerator": 848
+      },
+      "mode": "worker",
+      "provider": "fallback",
+      "review_rate": {
+        "denominator": 80,
+        "numerator": 52
+      },
+      "split": "development",
+      "unique_pdf_payloads": 78
+    },
+    {
+      "counts": {
+        "absent_gold_fields": 7,
+        "allocations_checks": 40,
+        "allocations_correct": 22,
+        "attempted_submissions": 40,
+        "backend_unverified_fields": 0,
+        "balance_after_checks": 40,
+        "balance_after_correct": 16,
+        "balance_before_checks": 40,
+        "balance_before_correct": 32,
+        "commitment_checks": 40,
+        "commitment_correct": 22,
+        "correct_abstentions": 7,
+        "correct_decisions": 14,
+        "correct_document_types": 39,
+        "correct_fields": 340,
+        "correct_rules": 363,
+        "decision_checks": 40,
+        "document_type_checks": 39,
+        "expected_line_items": 45,
+        "extra_line_items": 0,
+        "false_populations": 0,
+        "matched_line_items": 14,
+        "missed_validations": 19,
+        "missing_extractions": 474,
+        "po_checks": 40,
+        "po_correct": 22,
+        "populated_fields": 341,
+        "present_gold_fields": 815,
+        "replay_checks": 40,
+        "replay_correct": 40,
+        "reviews": 36,
+        "rule_checks": 754,
+        "technical_failures": 0,
+        "unsafe_validations": 0,
+        "unsupported_extractions": 1,
+        "vendor_checks": 40,
+        "vendor_correct": 19,
+        "wrong_extractions": 1
+      },
+      "decision_correctness": {
+        "denominator": 40,
+        "numerator": 14
+      },
+      "field_correctness": {
+        "denominator": 815,
+        "numerator": 340
+      },
+      "mode": "worker",
+      "provider": "fallback",
+      "review_rate": {
+        "denominator": 40,
+        "numerator": 36
+      },
+      "split": "heldout",
+      "unique_pdf_payloads": 39
+    }
+  ],
+  "gemini": {
+    "reason": "No Gemini API key configured; no live-provider extraction or generalization result claimed.",
+    "status": "UNRUN"
+  },
+  "limitations": [
+    "Synthetic, developer-authored corpus; no independently blinded human annotation or real-invoice benchmark.",
+    "Held-out inputs have now been scored; they must not be used for parser or prompt tuning while retaining held-out claims.",
+    "Gold results isolate financial matching from extraction; gold evidence is deliberately assumed rather than extracted.",
+    "Quote evidence checks are automatic; no manual bounding-box adjudication was performed.",
+    "Initial concurrent observations are retained separately; reference runs are sequential with OMP_THREAD_LIMIT=1.",
+    "Runtime business date is recorded; current source invoices have fixed 2026 dates.",
+    "No claim of live Gemini extraction or real-world generalization."
+  ],
+  "reference_databases_created_and_removed": 306
+}

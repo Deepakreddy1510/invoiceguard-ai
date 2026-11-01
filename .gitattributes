@@ -1,0 +1,3 @@
+# Keep frozen JSON hashes stable across platforms; preserve PDF bytes exactly.
+* text=auto eol=lf
+*.pdf binary

@@ -1,0 +1,12 @@
+# Keep the default credential detectors. Only exempt confirmed provenance hashes,
+# not report files or arbitrary tokens. See docs/publication-verification.md.
+[extend]
+useDefault = true
+
+[[rules]]
+id = "generic-api-key"
+
+[[rules.allowlists]]
+description = "Source SHA-256 entries in independent evaluation provenance"
+regexTarget = "line"
+regexes = ['''^\s*"backend/app/(workflow_api|auth|operations_api|review/api)\.py":\s*"[a-f0-9]{64}",?\s*$''']

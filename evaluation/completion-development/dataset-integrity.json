@@ -1,0 +1,16 @@
+[
+  {
+    "vendors": 18,
+    "purchase_orders": 36,
+    "development_pdfs": 80,
+    "heldout_pdfs": 40,
+    "baseline_pdfs": 8,
+    "hashes_verified": 128,
+    "scan_count": 46,
+    "layout_families": 12
+  },
+  {
+    "split": "development",
+    "oracles_checked": 80
+  }
+]

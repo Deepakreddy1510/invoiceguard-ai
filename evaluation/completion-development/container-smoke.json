@@ -1,0 +1,11 @@
+{
+  "container_image": "invoiceguard-complete:local",
+  "static_frontend": true,
+  "api_worker_postgres_s3": "PASSED",
+  "decision": "VALIDATED",
+  "source_pdf_from_object_storage": true,
+  "events": 10,
+  "object_count": 1,
+  "object_survived_storage_restart": true,
+  "hosted_auth_fail_closed": true
+}

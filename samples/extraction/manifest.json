@@ -1,0 +1,8 @@
+{
+  "description": "Three independent synthetic layouts, labeled before extraction evaluation; development parser already exists, so this is a small held-out fixture check, not an unbiased accuracy benchmark.",
+  "cases": [
+    {"file":"heldout-digital.pdf","expected":{"invoice_number":"HO-731","invoice_date":"2026-05-20","vendor_name":"Northstar Office Supplies (Synthetic)","currency":"USD","po_number":"PO-2026-001","subtotal":"60.00","tax":"6.00","total":"66.00"},"expected_outcome":"VALIDATED"},
+    {"file":"heldout-scan.pdf","expected":{"invoice_number":"HO-854","invoice_date":"2026-05-20","vendor_name":"Northstar Office Supplies (Synthetic)","currency":"USD","po_number":"PO-2026-001","subtotal":"60.00","tax":"6.00","total":"66.00"},"expected_outcome":"VALIDATED"},
+    {"file":"heldout-missing.pdf","expected":{"invoice_number":null,"invoice_date":"2026-05-20","vendor_name":"Northstar Office Supplies (Synthetic)","currency":"USD","po_number":"PO-2026-001","subtotal":"60.00","tax":"6.00","total":"66.00"},"expected_outcome":"NEEDS_REVIEW"}
+  ]
+}
