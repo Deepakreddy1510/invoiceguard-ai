@@ -43,12 +43,24 @@ jobs:
         working-directory: frontend
       - name: Start real application and run browser workflows
         run: |
+          cleanup() {
+            for pid in "${ui_pid:-}" "${api_pid:-}" "${worker_pid:-}"; do
+              if [ -n "$pid" ]; then
+                kill "$pid" 2>/dev/null || true
+              fi
+            done
+            wait "${ui_pid:-}" "${api_pid:-}" "${worker_pid:-}" 2>/dev/null || true
+          }
+          trap cleanup EXIT
           cd backend
           uv run python -m scripts.reset_test_database
           uv run python -m app.worker.main > /tmp/invoiceguard-worker.log 2>&1 &
+          worker_pid=$!
           uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/invoiceguard-api.log 2>&1 &
+          api_pid=$!
           cd ../frontend
           npm run dev -- --port 5173 --strictPort > /tmp/invoiceguard-ui.log 2>&1 &
+          ui_pid=$!
           for attempt in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:8000/api/v1/health/ready && curl -fsS http://127.0.0.1:5173/ > /dev/null; then break; fi
             sleep 1
