@@ -20,7 +20,7 @@ test("fresh scanned PDF auto-selects, follows persisted events and updates alrea
   await expect(
     overview.getByRole("heading", { name: "Recent processing activity" }),
   ).toBeVisible();
-  const number = "UI-EDITORIAL-" + Date.now();
+  const number = "UI-EDITORIAL-" + Date.now().toString(36).toUpperCase();
   const pdf = execFileSync(
     python,
     [
@@ -137,6 +137,7 @@ test("warm screens expose keyboard controls and have no detected WCAG A/AA viola
   for (const route of [
     "/",
     "/purchase-orders",
+    "/vendors",
     "/reviews",
     "/audit",
     "/process",

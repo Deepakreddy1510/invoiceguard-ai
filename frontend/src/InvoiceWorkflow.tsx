@@ -38,6 +38,14 @@ export default function InvoiceWorkflow({
   const watched = useRef(new Set<string>());
   const [offset, setOffset] = useState(0);
   const [filter, setFilter] = useState("");
+  const [search, setSearch] = useState("");
+  const [mode, setMode] = useState("AUTO");
+  const capabilities = useResource<{
+    can_select_extraction_mode: boolean;
+    gemini_configured: boolean;
+    vendor_count: number;
+    po_count: number;
+  }>("/me");
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState("");
   const [error, setError] = useState("");
@@ -52,7 +60,7 @@ export default function InvoiceWorkflow({
   const runPanel = useRef<HTMLElement>(null);
   const focusRun = useRef<string | null>(null);
   const history = useResource<{ runs: RunSummary[] }>(
-    `/runs?offset=${offset}&limit=20`,
+    `/runs?offset=${offset}&limit=20&search=${encodeURIComponent(search)}${filter ? "&outcome=" + filter : ""}`,
     1500,
   );
   const detail = useResource<RunDetail>(
@@ -149,6 +157,7 @@ export default function InvoiceWorkflow({
     try {
       const body = new FormData();
       body.append("file", file);
+      body.append("extraction_mode", mode);
       const result = await request<{ run_id: string; replayed: boolean }>(
         "/documents",
         {
@@ -232,6 +241,54 @@ export default function InvoiceWorkflow({
               scans
             </p>
           </div>
+        </div>
+        {capabilities.data &&
+          (capabilities.data.vendor_count === 0 ||
+            capabilities.data.po_count === 0) && (
+            <div className="notice">
+              Start by adding a vendor and creating a purchase order. Then
+              upload your first invoice. <a href="/vendors">Manage vendors</a> ·{" "}
+              <a href="/purchase-orders">Create purchase order</a>
+            </div>
+          )}
+        <div className="extraction-mode">
+          <label htmlFor="extraction-mode">Extraction mode</label>
+          <select
+            id="extraction-mode"
+            aria-label="Extraction mode"
+            disabled={busy}
+            value={mode}
+            onChange={(e) => {
+              setMode(e.target.value);
+              uploadKey.current = null;
+            }}
+          >
+            <option value="AUTO">Automatic — Recommended</option>
+            {capabilities.data?.can_select_extraction_mode && (
+              <>
+                <option
+                  value="GEMINI"
+                  disabled={!capabilities.data.gemini_configured}
+                >
+                  Gemini AI
+                  {!capabilities.data.gemini_configured
+                    ? " — not configured"
+                    : ""}
+                </option>
+                <option value="FALLBACK">Rule-based</option>
+              </>
+            )}
+          </select>
+          <p className="footnote">
+            {mode === "AUTO"
+              ? "Attempts configured Gemini, with a recorded conservative fallback when unavailable."
+              : mode === "GEMINI"
+                ? "Requires the real Gemini adapter. Failures are recorded; no silent fallback."
+                : "Uses real PDF/OCR, deterministic field extraction, source checks and the same financial controls."}
+            {capabilities.data?.can_select_extraction_mode &&
+              !capabilities.data.gemini_configured &&
+              " Gemini AI is unavailable until the server has a securely configured key."}
+          </p>
         </div>
         <form onSubmit={upload} className="upload-form">
           <input
@@ -342,10 +399,25 @@ export default function InvoiceWorkflow({
             Runs include retries and duplicate assessments, counted separately
             from unique invoices.
           </p>
+          <label className="search-field">
+            <span className="sr-only">Search invoice history</span>
+            <input
+              aria-label="Search invoice history"
+              placeholder="Invoice, vendor or PO"
+              value={search}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setOffset(0);
+              }}
+            />
+          </label>
           <FilterChips
             label="Filter run history"
             value={filter}
-            onChange={setFilter}
+            onChange={(value) => {
+              setFilter(value);
+              setOffset(0);
+            }}
             options={[
               { value: "", label: "All" },
               ...outcomes.map((v) => ({ value: v, label: humanize(v) })),
@@ -478,6 +550,11 @@ export default function InvoiceWorkflow({
           )}
         </section>
       </div>
+      <p className="footnote">
+        Invoice uploads are audited from ingestion and cannot be silently
+        deleted. Use source review and explicit rejection/release; settled
+        commitments cannot be released through deletion.
+      </p>
       {toast && (
         <div className="toast" role="status">
           <Icon name="check" />

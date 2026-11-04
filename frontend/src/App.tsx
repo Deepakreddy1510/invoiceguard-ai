@@ -9,6 +9,8 @@ import {
 } from "react-router-dom";
 import { useCallback, useState } from "react";
 import InvoiceWorkflow from "./InvoiceWorkflow";
+import Vendors from "./pages/Vendors";
+import { WorkspaceProvider, WorkspaceSelector } from "./workspaces";
 import Dashboard from "./pages/Dashboard";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import Reviews from "./pages/Reviews";
@@ -33,6 +35,7 @@ function Shell() {
     { to: "/", label: "Overview", icon: "grid" },
     { to: "/process", label: "Invoice processing", icon: "upload" },
     { to: "/reviews", label: "Exception review", icon: "review" },
+    { to: "/vendors", label: "Vendors", icon: "orders" },
     { to: "/purchase-orders", label: "Purchase orders", icon: "orders" },
     { to: "/audit", label: "Audit history", icon: "audit" },
   ] as const;
@@ -60,7 +63,7 @@ function Shell() {
             <Icon name={open ? "close" : "menu"} />
           </button>
         </div>
-        <p className="nav-caption">WORKSPACE</p>
+        <WorkspaceSelector />
         <nav id="workspace-navigation" aria-label="Main navigation">
           {nav.map(({ to, label, icon }) => (
             <NavLink
@@ -109,6 +112,7 @@ function Shell() {
             <Route path="/reviews" element={<Reviews />} />
             <Route path="/reviews/:id" element={<Reviews />} />
             <Route path="/purchase-orders" element={<PurchaseOrders />} />
+            <Route path="/vendors" element={<Vendors />} />
             <Route path="/audit" element={<Audit />} />
             <Route
               path="*"
@@ -138,7 +142,9 @@ function Shell() {
 export default function App() {
   return (
     <BrowserRouter>
-      <Shell />
+      <WorkspaceProvider>
+        <Shell />
+      </WorkspaceProvider>
     </BrowserRouter>
   );
 }

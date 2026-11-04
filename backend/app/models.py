@@ -27,6 +27,18 @@ class Workspace(Base):
     __tablename__ = "workspaces"
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     name: Mapped[str] = mapped_column(String(160))
+    kind: Mapped[str] = mapped_column(String(20), default="CUSTOM", server_default="CUSTOM")
+    owner_subject: Mapped[str | None] = mapped_column(String(255))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    __table_args__ = (
+        CheckConstraint("kind IN ('CUSTOM','DEMO','MY')", name="workspace_kind"),
+        Index(
+            "uq_my_workspace_owner",
+            "owner_subject",
+            unique=True,
+            postgresql_where=text("kind = 'MY'"),
+        ),
+    )
 
 
 class Vendor(Base):
@@ -39,6 +51,7 @@ class Vendor(Base):
     )
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"))
+    version: Mapped[int] = mapped_column(default=1, server_default="1")
     code: Mapped[str] = mapped_column(String(40))
     legal_name: Mapped[str] = mapped_column(String(200))
     tax_id: Mapped[str | None] = mapped_column(String(80))
@@ -63,6 +76,7 @@ class PurchaseOrder(Base):
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"))
     vendor_id: Mapped[UUID] = mapped_column()
+    version: Mapped[int] = mapped_column(default=1, server_default="1")
     number: Mapped[str] = mapped_column(String(60))
     currency: Mapped[str] = mapped_column(String(3))
     authorized_gross: Mapped[Decimal] = mapped_column(Numeric(20, 6))
@@ -116,11 +130,15 @@ class ProcessingRun(Base):
             "status IN ('QUEUED','RUNNING','RETRY_WAIT','SUCCEEDED','FAILED')", name="run_status"
         ),
         Index("ix_runs_claim", "status", "lease_until"),
+        CheckConstraint(
+            "extraction_mode IN ('AUTO','GEMINI','FALLBACK')", name="run_extraction_mode"
+        ),
     )
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     document_id: Mapped[UUID] = mapped_column(ForeignKey("invoice_documents.id"))
     parent_run_id: Mapped[UUID | None] = mapped_column(ForeignKey("processing_runs.id"))
     status: Mapped[str] = mapped_column(String(20), default="QUEUED")
+    extraction_mode: Mapped[str] = mapped_column(String(12), default="AUTO", server_default="AUTO")
     attempt: Mapped[int] = mapped_column(default=0)
     lease_token: Mapped[UUID | None]
     lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -139,6 +157,7 @@ class DocumentSubmission(Base):
     document_id: Mapped[UUID] = mapped_column(ForeignKey("invoice_documents.id"))
     run_id: Mapped[UUID] = mapped_column(ForeignKey("processing_runs.id"))
     idempotency_key: Mapped[str | None] = mapped_column(String(100))
+    requested_mode: Mapped[str] = mapped_column(String(12), default="AUTO", server_default="AUTO")
     original_filename: Mapped[str] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
@@ -302,3 +321,17 @@ class WorkerHeartbeat(Base):
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     last_seen: Mapped[datetime] = mapped_column(DateTime(timezone=True))
     status: Mapped[str] = mapped_column(String(30))
+
+
+class ProcurementImport(Base):
+    __tablename__ = "procurement_imports"
+    __table_args__ = (UniqueConstraint("workspace_id", "idempotency_key"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"))
+    actor: Mapped[str] = mapped_column(String(255))
+    kind: Mapped[str] = mapped_column(String(30))
+    sha256: Mapped[str] = mapped_column(String(64))
+    idempotency_key: Mapped[str] = mapped_column(String(100))
+    record_count: Mapped[int]
+    row_count: Mapped[int]
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

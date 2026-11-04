@@ -65,7 +65,13 @@ def access(
     if settings.auth_mode == "local":
         if settings.app_environment != "local":
             raise HTTPException(503, "Hosted authentication is not configured.")
-        return Access("local-demo-reviewer", settings.local_workspace_id, "ADMIN")
+        from app.workspace_service import local_ids
+
+        subject = "local-demo-reviewer"
+        workspace = x_workspace_id or settings.local_workspace_id
+        if x_workspace_id and workspace not in local_ids(session, subject):
+            raise HTTPException(403, "No access to this workspace.")
+        return Access(subject, workspace, "ADMIN")
     subject = verified_subject(authorization)
     query = select(Membership).where(Membership.subject == subject)
     if x_workspace_id:
@@ -87,3 +93,11 @@ def reviewer(user: Annotated[Access, Depends(access)]) -> Access:
 
 User = Annotated[Access, Depends(access)]
 Reviewer = Annotated[Access, Depends(reviewer)]
+
+
+def manual_modes_allowed(user):
+    settings = get_settings()
+    return user.role == "ADMIN" and (
+        (settings.auth_mode == "local" and settings.app_environment == "local")
+        or settings.allow_manual_extraction_modes
+    )

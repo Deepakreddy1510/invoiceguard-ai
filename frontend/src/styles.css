@@ -2665,3 +2665,116 @@ summary {
 .run-detail {
   scroll-margin-top: 24px;
 }
+
+/* Workspace/procurement extensions reuse the existing editorial tokens. */
+.workspace-selector {
+  margin: 28px 8px 24px;
+  min-width: 0;
+}
+.workspace-selector > label {
+  display: block;
+  margin-bottom: 8px;
+  color: var(--text-secondary);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+.workspace-selector select {
+  width: 100%;
+  min-width: 0;
+  font-size: 12px;
+  background: var(--bg-surface);
+}
+.workspace-selector > .text-button {
+  font-size: 10px;
+  margin-top: 8px;
+}
+.fresh-demo-confirm {
+  border-top: 1px solid var(--border);
+  padding-top: 12px;
+  font-size: 11px;
+}
+.fresh-demo-confirm button {
+  width: 100%;
+  margin: 4px 0;
+  font-size: 10px;
+}
+.detail-panel fieldset {
+  border: 0;
+  padding: 0;
+  min-width: 0;
+}
+.field-grid > label {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.action-buttons button {
+  font-size: 10px;
+  padding: 7px 10px;
+  min-height: 32px;
+}
+.extraction-mode {
+  display: grid;
+  grid-template-columns: auto minmax(160px, 260px) 1fr;
+  align-items: center;
+  gap: 12px;
+  margin: 16px 0 24px;
+}
+.extraction-mode > label {
+  font-size: 12px;
+  color: var(--text-secondary);
+}
+.extraction-mode p {
+  margin: 0;
+  font-size: 10px;
+}
+.mode-summary {
+  display: flex;
+  gap: 12px 24px;
+  flex-wrap: wrap;
+  margin-bottom: 20px;
+}
+.mode-summary dt {
+  font-size: 9px;
+  color: var(--text-secondary);
+}
+.mode-summary dd {
+  font-size: 11px;
+  margin: 4px 0 0;
+}
+.import-panel pre {
+  max-height: 360px;
+  overflow: auto;
+}
+.history > .search-field {
+  margin: 12px 0;
+}
+.history > .search-field input {
+  min-width: 0;
+}
+@media (max-width: 899px) {
+  .workspace-selector {
+    margin: 20px 0 12px;
+  }
+  .workspace-selector select {
+    max-width: 320px;
+  }
+  .sidebar:not(.is-open) .workspace-selector {
+    display: none;
+  }
+  .extraction-mode {
+    grid-template-columns: 1fr;
+  }
+}
+
+.footnote a {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}

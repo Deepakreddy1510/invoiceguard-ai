@@ -30,6 +30,12 @@ export default function Dashboard() {
   const [outcome, setOutcome] = useState("");
   const [search, setSearch] = useState("");
   const navigate = useNavigate();
+  const me = useResource<{
+    workspace_kind: string;
+    vendor_count: number;
+    po_count: number;
+    can_manage_procurement: boolean;
+  }>("/me");
   const base = useResource<Metrics>("/dashboard", 3000);
   const query = new URLSearchParams({
     ...(outcome ? { outcome } : {}),
@@ -84,6 +90,24 @@ export default function Dashboard() {
           filtered.reload();
         }}
       />
+      {me.data?.workspace_kind === "MY" &&
+        (me.data.vendor_count === 0 || me.data.po_count === 0) && (
+          <div className="notice">
+            <strong>Make this workspace your own.</strong>
+            <p>
+              Start by adding a vendor and creating a purchase order. Then
+              upload your first invoice.
+            </p>
+            <div className="toolbar">
+              <Link className="button primary" to="/vendors">
+                Add vendor
+              </Link>
+              <Link className="button" to="/purchase-orders">
+                Create purchase order
+              </Link>
+            </div>
+          </div>
+        )}
       <div className="metric-grid">
         {cards.map((card) => (
           <button

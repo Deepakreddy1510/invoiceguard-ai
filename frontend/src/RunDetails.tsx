@@ -466,6 +466,35 @@ export default function RunDetails({
         <CopyButton text={run.id} label="Copy run ID" />
         <Elapsed run={run} />
       </div>
+      <dl className="mode-summary">
+        <div>
+          <dt>Requested extraction</dt>
+          <dd>{run.requested_mode ?? "AUTO"}</dd>
+        </div>
+        {run.extraction?.provider && (
+          <div>
+            <dt>Actual provider</dt>
+            <dd>{humanize(run.extraction.provider)}</dd>
+          </div>
+        )}
+        {run.extraction?.model && (
+          <div>
+            <dt>Model used</dt>
+            <dd>{String(run.extraction.model)}</dd>
+          </div>
+        )}
+        {run.extraction?.attempted_provider && (
+          <div>
+            <dt>Attempted provider</dt>
+            <dd>
+              {String(run.extraction.attempted_provider)}
+              {run.extraction.attempted_model
+                ? " · " + String(run.extraction.attempted_model)
+                : ""}
+            </dd>
+          </div>
+        )}
+      </dl>
       <p className="sr-only" aria-live="polite" aria-atomic="true">
         {latest
           ? humanize(latest.stage) + ": " + humanize(latest.outcome)

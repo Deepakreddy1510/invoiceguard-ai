@@ -197,12 +197,17 @@ def submit_correction(session, task_id, user, payload: CorrectionInput):
     # Unchanged unsupported fields keep verified=False and cannot pass required checks.
     fields["issues"] = []
     extraction.update(
-        provider="HUMAN_REVIEW", reviewer=user.subject, review_comment=payload.comment
+        provider="HUMAN_REVIEW",
+        model=None,
+        prompt_version=None,
+        reviewer=user.subject,
+        review_comment=payload.comment,
     )
     run = ProcessingRun(
         document_id=task.document_id,
         parent_run_id=parent.id,
         status="QUEUED",
+        extraction_mode=parent.extraction_mode,
         pages=parent.pages,
         extraction=extraction,
     )

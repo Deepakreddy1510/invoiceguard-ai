@@ -16,9 +16,13 @@ from app.config import get_settings
 from app.db import get_session
 from app.models import AuditEvent, FinancialCommitment, PurchaseOrder, Vendor
 from app.operations_api import router as operations_router
+from app.procurement import po_history, vendor_view
+from app.procurement_api import router as procurement_router
+from app.procurement_imports import router as imports_router
 from app.review.api import router as review_router
 from app.upload_limit import UploadLimit
 from app.workflow_api import router
+from app.workspaces_api import router as workspaces_router
 
 
 @asynccontextmanager
@@ -36,12 +40,16 @@ class VendorOut(BaseModel):
     code: str
     legal_name: str
     status: str
+    tax_id: str | None = None
+    version: int = 1
+    po_count: int = 0
+    identity_locked: bool = False
 
 
 class ItemOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
-    line_number: int
     sku: str
+    line_number: int
     description: str
     quantity: Decimal
     unit_price: Decimal
@@ -63,6 +71,8 @@ class POOut(BaseModel):
     reserved_gross: Decimal
     settled_gross: Decimal
     available_gross: Decimal
+    version: int = 1
+    has_history: bool = False
 
 
 @app.get("/api/v1/health/live")
@@ -86,9 +96,12 @@ def ready(session: Annotated[Session, Depends(get_session)]):
 
 @app.get("/api/v1/vendors", response_model=list[VendorOut])
 def vendors(session: Annotated[Session, Depends(get_session)], user: User):
-    return session.scalars(
-        select(Vendor).where(Vendor.workspace_id == user.workspace_id).order_by(Vendor.code)
-    ).all()
+    return [
+        vendor_view(session, vendor)
+        for vendor in session.scalars(
+            select(Vendor).where(Vendor.workspace_id == user.workspace_id).order_by(Vendor.code)
+        ).all()
+    ]
 
 
 @app.get("/api/v1/purchase-orders", response_model=list[POOut])
@@ -110,6 +123,7 @@ def purchase_orders(session: Annotated[Session, Depends(get_session)], user: Use
         .group_by(FinancialCommitment.po_id, FinancialCommitment.status)
     ).all()
     for po in orders:
+        po.has_history = po_history(session, po)
         po.reserved_gross = sum(
             (
                 amount
@@ -131,6 +145,9 @@ app.include_router(router)
 
 app.include_router(review_router)
 app.include_router(operations_router)
+app.include_router(workspaces_router)
+app.include_router(procurement_router)
+app.include_router(imports_router)
 
 
 @app.get("/api/v1/config")

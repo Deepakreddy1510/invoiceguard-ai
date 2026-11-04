@@ -7,7 +7,8 @@ from fastapi import APIRouter, HTTPException, Query
 from sqlalchemy import func, select
 from sqlalchemy.orm import selectinload
 
-from app.auth import User
+from app.auth import User, manual_modes_allowed
+from app.config import get_settings
 from app.models import (
     AuditEvent,
     BusinessInvoice,
@@ -18,10 +19,13 @@ from app.models import (
     ProcessingRun,
     PurchaseOrder,
     RunEvent,
+    Vendor,
     WorkerHeartbeat,
     Workspace,
 )
+from app.procurement import po_history
 from app.workflow_api import DB, run_view
+from app.workspace_service import workspace_kind
 
 router = APIRouter(prefix="/api/v1")
 
@@ -32,7 +36,20 @@ def me(session: DB, user: User):
     return {
         "subject": user.subject,
         "role": user.role,
+        "can_manage_procurement": user.role in ["REVIEWER", "ADMIN"],
+        "can_select_extraction_mode": manual_modes_allowed(user),
+        "gemini_configured": bool(get_settings().gemini_api_key),
+        "supported_currencies": ["USD", "INR", "EUR", "GBP", "JPY", "KWD"],
         "workspace_id": str(user.workspace_id),
+        "workspace_kind": workspace_kind(workspace) if workspace else "CUSTOM",
+        "vendor_count": session.scalar(
+            select(func.count()).select_from(Vendor).where(Vendor.workspace_id == user.workspace_id)
+        ),
+        "po_count": session.scalar(
+            select(func.count())
+            .select_from(PurchaseOrder)
+            .where(PurchaseOrder.workspace_id == user.workspace_id)
+        ),
         "workspace_name": workspace.name if workspace else "Unseeded workspace",
     }
 
@@ -168,6 +185,12 @@ def po_detail(po_id: UUID, session: DB, user: User):
     return {
         "id": str(po.id),
         "number": po.number,
+        "version": po.version,
+        "has_history": po_history(session, po),
+        "vendor_id": str(po.vendor_id),
+        "billing_mode": po.billing_mode,
+        "issued_on": po.issued_on,
+        "valid_until": po.valid_until,
         "vendor": po.vendor.legal_name,
         "currency": po.currency,
         "status": po.status,
@@ -177,6 +200,7 @@ def po_detail(po_id: UUID, session: DB, user: User):
         "available": str(po.authorized_gross - reserved - settled),
         "items": [
             {
+                "line_number": i.line_number,
                 "sku": i.sku,
                 "description": i.description,
                 "quantity": str(i.quantity),

@@ -88,9 +88,12 @@ it("renders technical failure separately from a financial decision and queues a 
   await waitFor(() =>
     expect(screen.getByTestId("run-id")).toHaveTextContent("retry-run"),
   );
-  expect(fetcher).toHaveBeenCalledWith("/api/v1/runs/failed-run/retry", {
-    method: "POST",
-  });
+  expect(fetcher).toHaveBeenCalledWith(
+    "/api/v1/runs/failed-run/retry",
+    expect.objectContaining({
+      method: "POST",
+    }),
+  );
   expect(
     screen.queryByText("The recorded financial checks passed."),
   ).not.toBeInTheDocument();

@@ -8,10 +8,16 @@ from fastapi import HTTPException
 from sqlalchemy import select, text
 from sqlalchemy.dialects.postgresql import insert
 
-from app.audit import audit
+from app.audit import audit, financial_lock
 from app.config import DEMO_WORKSPACE_ID, get_settings
 from app.extraction.pdf import PDFError, pdf_process
-from app.models import DocumentSubmission, InvoiceDocument, ProcessingRun, RunEvent
+from app.models import (
+    BusinessInvoice,
+    DocumentSubmission,
+    InvoiceDocument,
+    ProcessingRun,
+    RunEvent,
+)
 from app.storage import persist_document, remove_document
 
 
@@ -22,7 +28,10 @@ def ingest(
     session,
     workspace_id=DEMO_WORKSPACE_ID,
     actor="local-demo-reviewer",
+    extraction_mode="AUTO",
 ) -> dict:
+    if extraction_mode not in ["AUTO", "GEMINI", "FALLBACK"]:
+        raise HTTPException(422, "Unsupported extraction mode.")
     settings = get_settings()
     storage = settings.storage_dir.resolve()
     storage.mkdir(parents=True, exist_ok=True, mode=0o700)
@@ -41,6 +50,7 @@ def ingest(
                 digest.update(chunk)
                 target.write(chunk)
             target.flush()
+            target.close()
             if size == 0 or temporary.read_bytes()[:5] != b"%PDF-":
                 raise HTTPException(422, "A real PDF signature is required.")
             try:
@@ -62,15 +72,20 @@ def ingest(
                 )
                 if previous:
                     document = session.get(InvoiceDocument, previous.document_id)
-                    if document.sha256 != sha:
+                    if document.sha256 != sha or previous.requested_mode != extraction_mode:
                         raise HTTPException(
-                            409, "Idempotency key already used for different PDF bytes."
+                            409,
+                            "Idempotency key already used for different PDF bytes or extraction mode.",
                         )
                     return {
                         "run_id": str(previous.run_id),
                         "document_id": str(document.id),
                         "replayed": True,
                     }
+            session.execute(
+                text("SELECT pg_advisory_xact_lock(hashtextextended(:key,0))"),
+                {"key": f"invoiceguard-document:{workspace_id}:{sha}"},
+            )
             os.replace(temporary, path)
             inserted = session.scalar(
                 insert(InvoiceDocument)
@@ -100,10 +115,53 @@ def ingest(
                     .order_by(ProcessingRun.created_at.desc())
                     .limit(1)
                 )
+                if run.extraction_mode != extraction_mode:
+                    if run.status not in ["SUCCEEDED", "FAILED"]:
+                        raise HTTPException(
+                            409,
+                            "Wait for this document's active run before changing extraction mode.",
+                        )
+                    financial_lock(session, workspace_id)
+                    parent = run
+                    run = ProcessingRun(
+                        document_id=document.id,
+                        parent_run_id=parent.id,
+                        extraction_mode=extraction_mode,
+                    )
+                    session.add(run)
+                    session.flush()
+                    from app.review.service import ensure_task, hold
+
+                    original = session.scalar(
+                        select(BusinessInvoice).where(
+                            BusinessInvoice.workspace_id == workspace_id,
+                            BusinessInvoice.source_document_id == document.id,
+                        )
+                    )
+                    task = ensure_task(session, run, original.id if original else None)
+                    task.status = "REVALIDATING"
+                    hold(
+                        session,
+                        original.id if original else None,
+                        workspace_id,
+                        actor,
+                        document.id,
+                        run.id,
+                    )
+                    session.add(
+                        RunEvent(
+                            run_id=run.id,
+                            attempt=0,
+                            stage="reextraction",
+                            outcome="QUEUED",
+                            detail="Explicit extraction-mode comparison queued; prior decisions and consuming capacity are preserved.",
+                        )
+                    )
+                    replayed = False
             else:
                 document = session.get(InvoiceDocument, doc_id)
                 persist_document(path, path.name)
-                run = ProcessingRun(document_id=doc_id)
+                run = ProcessingRun(document_id=doc_id, extraction_mode=extraction_mode)
                 session.add(run)
                 session.flush()
                 session.add(
@@ -122,6 +180,7 @@ def ingest(
                     run_id=run.id,
                     idempotency_key=key,
                     original_filename=Path(filename).name[:255],
+                    requested_mode=extraction_mode,
                 )
             )
             audit(
@@ -129,7 +188,11 @@ def ingest(
                 workspace_id,
                 actor,
                 "DOCUMENT_REPLAYED" if replayed else "DOCUMENT_ACCEPTED",
-                {"sha256": sha, "filename": Path(filename).name[:255]},
+                {
+                    "sha256": sha,
+                    "filename": Path(filename).name[:255],
+                    "requested_mode": extraction_mode,
+                },
                 document.id,
                 run.id,
             )

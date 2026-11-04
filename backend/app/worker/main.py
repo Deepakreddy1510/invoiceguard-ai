@@ -14,7 +14,7 @@ from app.audit import audit, financial_lock
 from app.config import get_settings
 from app.db import SessionLocal
 from app.extraction.pdf import pdf_process
-from app.extraction.pipeline import structure
+from app.extraction.pipeline import ExtractionModeFailure, structure
 from app.models import (
     BusinessInvoice,
     CommitmentAllocation,
@@ -81,6 +81,15 @@ def claim(factory=SessionLocal, run_id=None):
             run.error = "Worker interrupted repeatedly; explicit retry required."
             run.finished_at = now
             event(session, run, "worker", "FAILED", run.error)
+            task = session.scalar(
+                select(ReviewTask).where(
+                    ReviewTask.latest_run_id == run.id, ReviewTask.status == "REVALIDATING"
+                )
+            )
+            if task:
+                task.status = "OPEN"
+                task.version += 1
+                task.updated_at = now
             return None
         if run.status == "RUNNING":
             event(
@@ -109,8 +118,16 @@ def save_stage(factory, run_id, token, stage, outcome, detail, **changes):
             correction = session.scalar(
                 select(ReviewCorrection).where(ReviewCorrection.run_id == run_id)
             )
-            if correction:
-                task = session.get(ReviewTask, correction.task_id)
+            task = (
+                session.get(ReviewTask, correction.task_id)
+                if correction
+                else session.scalar(
+                    select(ReviewTask).where(
+                        ReviewTask.latest_run_id == run_id, ReviewTask.status == "REVALIDATING"
+                    )
+                )
+            )
+            if task:
                 task.status = "OPEN"
                 task.version += 1
                 task.updated_at = datetime.now(timezone.utc)
@@ -127,7 +144,15 @@ def finalize(session, run_id, token):
     if existing:
         return existing
     correction = session.scalar(select(ReviewCorrection).where(ReviewCorrection.run_id == run_id))
-    task = session.get(ReviewTask, correction.task_id) if correction else None
+    task = (
+        session.get(ReviewTask, correction.task_id)
+        if correction
+        else session.scalar(
+            select(ReviewTask).where(
+                ReviewTask.latest_run_id == run_id, ReviewTask.status == "REVALIDATING"
+            )
+        )
+    )
     original = (
         session.get(BusinessInvoice, task.invoice_id)
         if task and task.invoice_id
@@ -282,6 +307,7 @@ def process(job, factory=SessionLocal):
                 select(ReviewCorrection).where(ReviewCorrection.run_id == run_id)
             )
             revised = correction.extraction if correction else None
+            mode = session.get(ProcessingRun, run_id).extraction_mode
         if revised:
             save_stage(
                 factory,
@@ -356,7 +382,11 @@ def process(job, factory=SessionLocal):
                 "RUNNING",
                 "Structuring invoice facts and checking source evidence.",
             )
-            extraction = structure(payload["pages"], document_id)
+            extraction = (
+                structure(payload["pages"], document_id)
+                if mode == "AUTO"
+                else structure(payload["pages"], document_id, mode)
+            )
             save_stage(
                 factory,
                 run_id,
@@ -371,6 +401,20 @@ def process(job, factory=SessionLocal):
         stage = "validation"
         with factory.begin() as session:
             finalize(session, run_id, token)
+    except ExtractionModeFailure as exc:
+        save_stage(
+            factory,
+            run_id,
+            token,
+            stage,
+            "FAILED",
+            str(exc),
+            status="FAILED",
+            extraction=exc.metadata,
+            error=str(exc),
+            finished_at=datetime.now(timezone.utc),
+            lease_until=None,
+        )
     except LostLease:
         logger.warning("Run %s lost ownership; no stale writes allowed.", run_id)
     except Exception:

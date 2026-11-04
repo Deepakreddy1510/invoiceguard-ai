@@ -4,9 +4,12 @@ Invoice verification and exception management for the Zamp case study. React + T
 
 The integrated workflow runs end-to-end: upload → persisted queue → digital extraction/OCR → evidence-backed facts → vendor/PO matching → Decimal financial controls → immutable decision and atomic reservation → human correction and full revalidation. See [verification](docs/completion-verification.md), [five-minute demo](docs/demo-guide.md) and [hosting instructions](deploy/README.md).
 
+See [workspace management and Windows CMD upgrade instructions](docs/workspaces-procurement.md) for the sidebar workspace selector, vendor/PO management, transactional CSV imports and extraction modes. Existing demonstration data and commitments are preserved.
+
 ## Features and architecture
 
-- Dashboard, Process Invoice, Decision Details, Exception Review, Purchase Orders and Audit History screens, responsive navigation and authenticated original-PDF preview.
+- Isolated Demo and My workspaces; audited vendor/PO CRUD, safe cancellation/deactivation, transactional CSV preview/import and permission-controlled AUTO/GEMINI/FALLBACK extraction.
+- Dashboard, Process Invoice, Decision Details, Exception Review, Vendors, Purchase Orders and Audit History screens, responsive navigation and authenticated original-PDF preview.
 - Bounded PDF ingestion, byte-hash replay detection, request idempotency, durable runs, worker leases and safe retries. Stored PDF bytes are checked against their original hash before extraction.
 - Real Gemini REST adapter with structured schema, retries/timeouts, source evidence checks and conservative fallback. Gemini credentials are optional; live Gemini has **not** been verified here.
 - Generic label and table extraction, OCR with bounded processes and one Tesseract thread, field-level source quotes/pages and geometry. Unsupported or ambiguous facts require review.

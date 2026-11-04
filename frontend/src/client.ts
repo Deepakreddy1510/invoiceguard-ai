@@ -2,17 +2,49 @@ let accessToken: (() => Promise<string>) | null = null;
 export function setAccessToken(getter: (() => Promise<string>) | null) {
   accessToken = getter;
 }
+let activeWorkspace: string | null = null;
+let workspaceEpoch = 0;
+const pending = new Set<AbortController>();
+export function setActiveWorkspace(id: string | null) {
+  if (activeWorkspace === id) return;
+  activeWorkspace = id;
+  workspaceEpoch += 1;
+  for (const controller of pending) controller.abort();
+  pending.clear();
+}
 export async function apiFetch(
   path: string,
   init?: RequestInit,
 ): Promise<Response> {
-  if (!accessToken) return fetch(path, init);
-  const token = await accessToken();
-  const headers = new Headers(init?.headers);
-  headers.set("Authorization", "Bearer " + token);
-  return fetch(path, { ...init, headers });
+  const id = activeWorkspace,
+    epoch = workspaceEpoch;
+  const controller = new AbortController();
+  const abort = () => controller.abort();
+  if (init?.signal?.aborted) controller.abort();
+  init?.signal?.addEventListener("abort", abort, { once: true });
+  pending.add(controller);
+  try {
+    const headers = new Headers(init?.headers);
+    if (id) headers.set("X-Workspace-ID", id);
+    if (accessToken)
+      headers.set("Authorization", "Bearer " + (await accessToken()));
+    if (epoch !== workspaceEpoch || controller.signal.aborted)
+      throw new DOMException("Workspace changed.", "AbortError");
+    const response = await fetch(path, {
+      ...init,
+      headers,
+      signal: controller.signal,
+    });
+    if (epoch !== workspaceEpoch)
+      throw new DOMException("Workspace changed.", "AbortError");
+    return response;
+  } finally {
+    pending.delete(controller);
+    init?.signal?.removeEventListener("abort", abort);
+  }
 }
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
+  const epoch = workspaceEpoch;
   const response = await apiFetch("/api/v1" + path, init);
   if (!response.ok) {
     const body = await response
@@ -21,10 +53,21 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
     throw new Error(
       typeof body.detail === "string"
         ? body.detail
-        : "Request rejected. Check your fields and access.",
+        : (body.detail?.message ??
+            (Array.isArray(body.detail)
+              ? body.detail
+                  .map(
+                    (item: { loc: unknown[]; msg: string }) =>
+                      item.loc.slice(1).join(".") + ": " + item.msg,
+                  )
+                  .join("; ")
+              : "Request rejected. Check your fields and access.")),
     );
   }
-  return response.json();
+  const data = await response.json();
+  if (epoch !== workspaceEpoch)
+    throw new DOMException("Workspace changed.", "AbortError");
+  return data;
 }
 export function jsonPost(path: string, body: unknown) {
   return request<any>(path, {

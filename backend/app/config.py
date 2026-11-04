@@ -29,6 +29,7 @@ class Settings(BaseSettings):
     aws_default_region: str = "us-east-1"
     max_upload_bytes: int = 10 * 1024 * 1024
     gemini_api_key: SecretStr | None = None
+    allow_manual_extraction_modes: bool = False
     gemini_model: str = Field(default="gemini-2.5-flash", pattern=r"^[A-Za-z0-9.-]+$")
     frontend_dist: Path = Path("../frontend/dist")
 

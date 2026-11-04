@@ -1,14 +1,14 @@
 from pathlib import Path
-from typing import Annotated
+from typing import Annotated, Literal
 from uuid import UUID
 
-from fastapi import APIRouter, Depends, File, Header, HTTPException, Query, UploadFile
+from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
-from sqlalchemy import func, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
 from app.audit import audit, financial_lock
-from app.auth import Reviewer, User
+from app.auth import Reviewer, User, manual_modes_allowed
 from app.config import DEMO_WORKSPACE_ID, get_settings
 from app.db import get_session
 from app.ingestion import ingest
@@ -49,6 +49,10 @@ def run_view(session, run, decision=_UNSET):
         "parent_run_id": str(run.parent_run_id) if run.parent_run_id else None,
         "status": run.status,
         "attempt": run.attempt,
+        "requested_mode": run.extraction_mode,
+        "actual_provider": (run.extraction or {}).get("provider"),
+        "model": (run.extraction or {}).get("model"),
+        "fallback_reason": (run.extraction or {}).get("fallback_reason"),
         "created_at": run.created_at,
         "finished_at": run.finished_at,
         "error": run.error,
@@ -67,7 +71,12 @@ def upload(
     user: Reviewer,
     file: Annotated[UploadFile, File()],
     idempotency_key: Annotated[str | None, Header(max_length=100)] = None,
+    extraction_mode: Annotated[Literal["AUTO", "GEMINI", "FALLBACK"], Form()] = "AUTO",
 ):
+    if extraction_mode != "AUTO" and not manual_modes_allowed(user):
+        raise HTTPException(403, "Manual extraction modes require authorized administrator access.")
+    if extraction_mode == "GEMINI" and not get_settings().gemini_api_key:
+        raise HTTPException(422, "Gemini is not configured. Choose Automatic or Rule-based.")
     return ingest(
         file.file,
         file.filename or "invoice.pdf",
@@ -75,6 +84,7 @@ def upload(
         session,
         user.workspace_id,
         user.subject,
+        extraction_mode=extraction_mode,
     )
 
 
@@ -132,13 +142,32 @@ def history(
     user: User,
     offset: Annotated[int, Query(ge=0)] = 0,
     limit: Annotated[int, Query(ge=1, le=100)] = 30,
+    search: Annotated[str | None, Query(max_length=160)] = None,
+    outcome: Literal["VALIDATED", "NEEDS_REVIEW", "BLOCKED"] | None = None,
 ):
     workspace_id = user.workspace_id
-    runs = session.scalars(
+    query = (
         select(ProcessingRun)
         .join(InvoiceDocument)
+        .outerjoin(Decision)
         .where(InvoiceDocument.workspace_id == workspace_id)
-        .order_by(ProcessingRun.created_at.desc(), ProcessingRun.id.desc())
+    )
+    if search:
+        term = "%" + search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+        query = query.where(
+            or_(
+                *(
+                    ProcessingRun.extraction["fields"][field]["value"].astext.ilike(
+                        term, escape="\\"
+                    )
+                    for field in ["invoice_number", "vendor_name", "po_number"]
+                )
+            )
+        )
+    if outcome:
+        query = query.where(Decision.outcome == outcome)
+    runs = session.scalars(
+        query.order_by(ProcessingRun.created_at.desc(), ProcessingRun.id.desc())
         .offset(offset)
         .limit(limit)
     ).all()
@@ -206,6 +235,10 @@ def retry(run_id: UUID, session: DB, user: Reviewer):
     parent = session.scalar(
         select(ProcessingRun).where(ProcessingRun.id == run_id).with_for_update()
     )
+    if parent.extraction_mode != "AUTO" and not manual_modes_allowed(user):
+        raise HTTPException(
+            403, "Retrying a manually selected extraction mode requires administrator permission."
+        )
     if parent.status == "SUCCEEDED":
         return {"run_id": str(parent.id), "replayed": True}
     if parent.status != "FAILED":
@@ -218,7 +251,12 @@ def retry(run_id: UUID, session: DB, user: Reviewer):
     )
     if child:
         return {"run_id": str(child.id), "replayed": True}
-    run = ProcessingRun(document_id=parent.document_id, parent_run_id=parent.id, status="QUEUED")
+    run = ProcessingRun(
+        document_id=parent.document_id,
+        parent_run_id=parent.id,
+        status="QUEUED",
+        extraction_mode=parent.extraction_mode,
+    )
     session.add(run)
     session.flush()
     session.add(
@@ -252,6 +290,16 @@ def retry(run_id: UUID, session: DB, user: Reviewer):
         task.latest_run_id = run.id
         task.status = "REVALIDATING"
         task.version += 1
+    if not correction:
+        task = session.scalar(
+            select(ReviewTask).where(
+                ReviewTask.latest_run_id == parent.id, ReviewTask.status == "OPEN"
+            )
+        )
+        if task:
+            task.latest_run_id = run.id
+            task.status = "REVALIDATING"
+            task.version += 1
     audit(
         session,
         user.workspace_id,
@@ -263,3 +311,18 @@ def retry(run_id: UUID, session: DB, user: Reviewer):
     )
     session.commit()
     return {"run_id": str(run.id), "replayed": False}
+
+
+@router.delete("/documents/{document_id}")
+def retain_document(document_id: UUID, session: DB, user: Reviewer):
+    document = session.scalar(
+        select(InvoiceDocument).where(
+            InvoiceDocument.id == document_id, InvoiceDocument.workspace_id == user.workspace_id
+        )
+    )
+    if not document:
+        raise HTTPException(404, "Document not found.")
+    raise HTTPException(
+        409,
+        "Uploads are audited from ingestion and cannot be silently deleted. Use source review and explicit rejection/release; settled capacity cannot be released by deletion.",
+    )

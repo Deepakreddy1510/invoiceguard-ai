@@ -24,6 +24,10 @@ export type Rule = {
   expected: string | null;
 };
 export type RunSummary = {
+  requested_mode?: string;
+  actual_provider?: string | null;
+  model?: string | null;
+  fallback_reason?: string | null;
   id: string;
   document_id: string;
   parent_run_id: string | null;
@@ -37,6 +41,10 @@ export type RunSummary = {
   error: string | null;
 };
 export type Extraction = {
+  model?: string | null;
+  attempted_provider?: string;
+  attempted_model?: string;
+  requested_mode?: string;
   provider: string;
   fallback_reason: string | null;
   fields: Record<string, unknown> & { items?: LineItem[]; issues?: string[] };

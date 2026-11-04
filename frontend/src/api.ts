@@ -1,6 +1,8 @@
 import { apiFetch } from "./client";
 export type PurchaseOrder = {
   id: string;
+  version: number;
+  has_history: boolean;
   number: string;
   currency: string;
   authorized_gross: string;
@@ -10,8 +12,11 @@ export type PurchaseOrder = {
   status: string;
   billing_mode: string;
   valid_until: string;
+  issued_on: string;
   vendor: { legal_name: string; status: string };
   items: {
+    sku: string;
+    tax_rate: string;
     line_number: number;
     description: string;
     quantity: string;
