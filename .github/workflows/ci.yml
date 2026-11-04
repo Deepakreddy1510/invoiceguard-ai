@@ -22,6 +22,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: astral-sh/setup-uv@v6
+        with:
+          # Long-lived uv run processes can block post-job cache pruning.
+          enable-cache: false
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
@@ -42,13 +45,37 @@ jobs:
       - run: npx playwright install --with-deps chromium
         working-directory: frontend
       - name: Start real application and run browser workflows
+        shell: bash
         run: |
+          service_pids=()
+          cleanup() {
+            status=$?
+            trap - EXIT INT TERM
+            # Kill whole process groups, including OCR and other service children.
+            for pid in "${service_pids[@]}"; do
+              kill -TERM -- "-$pid" 2>/dev/null || true
+            done
+            sleep 2
+            for pid in "${service_pids[@]}"; do
+              kill -KILL -- "-$pid" 2>/dev/null || true
+              wait "$pid" 2>/dev/null || true
+            done
+            exit "$status"
+          }
+          trap cleanup EXIT
+          trap 'exit 130' INT
+          trap 'exit 143' TERM
+
           cd backend
           uv run python -m scripts.reset_test_database
-          uv run python -m app.worker.main > /tmp/invoiceguard-worker.log 2>&1 &
-          uv run uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/invoiceguard-api.log 2>&1 &
+          # Dependencies are already synced; avoid uv wrappers holding cache locks.
+          setsid .venv/bin/python -m app.worker.main > /tmp/invoiceguard-worker.log 2>&1 &
+          service_pids+=("$!")
+          setsid .venv/bin/uvicorn app.main:app --host 127.0.0.1 --port 8000 > /tmp/invoiceguard-api.log 2>&1 &
+          service_pids+=("$!")
           cd ../frontend
-          npm run dev -- --port 5173 --strictPort > /tmp/invoiceguard-ui.log 2>&1 &
+          setsid node node_modules/vite/bin/vite.js --port 5173 --strictPort > /tmp/invoiceguard-ui.log 2>&1 &
+          service_pids+=("$!")
           for attempt in $(seq 1 30); do
             if curl -fsS http://127.0.0.1:8000/api/v1/health/ready && curl -fsS http://127.0.0.1:5173/ > /dev/null; then break; fi
             sleep 1
