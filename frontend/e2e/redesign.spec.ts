@@ -20,7 +20,9 @@ test("fresh scanned PDF auto-selects, follows persisted events and updates alrea
   await expect(
     overview.getByRole("heading", { name: "Recent processing activity" }),
   ).toBeVisible();
-  const number = "UI-EDITORIAL-" + Date.now().toString(36).toUpperCase();
+  // The suite owns a fresh database; keep the exact OCR assertion deterministic.
+  // Random mixed letter/digit IDs introduce OCR errors unrelated to UI behavior.
+  const number = "UI-EDITORIAL-FRESH";
   const pdf = execFileSync(
     python,
     [

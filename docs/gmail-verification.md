@@ -90,3 +90,11 @@ Native Windows execution, production Auth0/S3 integration, Google production ver
 - `frontend/src/ui.tsx`
 
 - `frontend/playwright.config.ts` (GitHub annotation reporter; all tests/assertions retained)
+
+## CI browser follow-up
+
+The first published run failed in its browser step. Exact CI reproduction exposed a source-recognition difference in the existing six-page OCR scenario: generated identifier `UI-EDITORIAL-MW3IE5TY` was read as `UI-EDITORIAL-MWSIESTY`. The Gmail browser scenario passed. The OCR integration fixture now uses deterministic `UI-EDITORIAL-FRESH` within the suite's fresh database. Every exact identifier, OCR, financial, event and historical assertion remains enabled; no production parser or financial rule was changed. This documents an OCR accuracy limitation, not extraction-generalization success.
+
+- `frontend/e2e/redesign.spec.ts` (deterministic OCR fixture identifier; existing assertions retained)
+
+After the deterministic fixture change, the exact GitHub Actions browser shell passed all 12 cases locally with `CI=true`, real services and process-group cleanup. OCR character recognition remains a known limitation; verification of an OCR quote does not independently prove every rendered character was recognized correctly. No financial confidence rule or parser correction was introduced.
