@@ -108,7 +108,9 @@ sys.stdout.buffer.write(pdf.tobytes(garbage=4,deflate=True))`,
   await expect(
     page.getByRole("region", { name: "Financial decision" }),
   ).toContainText("The recorded financial checks passed.");
-  await expect(page.locator(".rules")).toContainText("PO_BALANCE");
+  await expect(page.locator('[data-stage="validation"] .rules')).toContainText(
+    "Available purchase order balance",
+  );
   await expect(
     overview.getByRole("link", { name: number, exact: true }),
   ).toBeVisible({ timeout: 12000 });

@@ -72,7 +72,7 @@ it("renders technical failure separately from a financial decision and queues a 
   render(<InvoiceWorkflow initialRunId="failed-run" />);
   const region = screen.getByRole("region", { name: "Processing run" });
   expect(
-    await within(region).findByText("Failed", {
+    await within(region).findByText("Processing failed", {
       selector: ".run-status .status",
     }),
   ).toBeInTheDocument();
@@ -108,7 +108,9 @@ it("keeps unobserved stages pending for a queued run and never invents outputs o
   );
   render(<InvoiceWorkflow initialRunId="queued-run" />);
   expect(await screen.findByTestId("run-id")).toHaveTextContent("queued-run");
-  expect(screen.getByText(/Waiting for the Python worker/)).toBeInTheDocument();
+  expect(
+    screen.getByText(/Waiting to process this invoice/),
+  ).toBeInTheDocument();
   expect(
     document.querySelectorAll('.stage[data-state="PENDING"]'),
   ).toHaveLength(6);

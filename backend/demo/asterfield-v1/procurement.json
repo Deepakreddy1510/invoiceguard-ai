@@ -1,0 +1,838 @@
+{
+  "version": "asterfield-v1",
+  "random_seed": 20261106,
+  "synthetic": true,
+  "company": "Asterfield Retail & Services",
+  "vendors": [
+    {
+      "code": "AF-SUP-001",
+      "legal_name": "Willowbridge Office Supplies",
+      "tax_id": "FICTIONAL-AF-001",
+      "status": "APPROVED"
+    },
+    {
+      "code": "AF-SUP-002",
+      "legal_name": "Cedarline Technology Services",
+      "tax_id": "FICTIONAL-AF-002",
+      "status": "APPROVED"
+    },
+    {
+      "code": "AF-SUP-003",
+      "legal_name": "Maplecrest Furniture Works",
+      "tax_id": "FICTIONAL-AF-003",
+      "status": "APPROVED"
+    },
+    {
+      "code": "AF-SUP-004",
+      "legal_name": "Larkspur Facilities Care",
+      "tax_id": "FICTIONAL-AF-004",
+      "status": "APPROVED"
+    },
+    {
+      "code": "AF-SUP-005",
+      "legal_name": "Brookhaven Packaging",
+      "tax_id": "FICTIONAL-AF-005",
+      "status": "APPROVED"
+    },
+    {
+      "code": "AF-SUP-006",
+      "legal_name": "Emberlane Print Studio",
+      "tax_id": "FICTIONAL-AF-006",
+      "status": "APPROVED"
+    },
+    {
+      "code": "AF-SUP-007",
+      "legal_name": "Harbourleaf Logistics",
+      "tax_id": "FICTIONAL-AF-007",
+      "status": "APPROVED"
+    },
+    {
+      "code": "AF-SUP-008",
+      "legal_name": "Oakmere Safety Supplies",
+      "tax_id": "FICTIONAL-AF-008",
+      "status": "APPROVED"
+    },
+    {
+      "code": "AF-SUP-009",
+      "legal_name": "Rivermark Catering",
+      "tax_id": "FICTIONAL-AF-009",
+      "status": "APPROVED"
+    },
+    {
+      "code": "AF-SUP-010",
+      "legal_name": "Fernwick Electrical Services",
+      "tax_id": "FICTIONAL-AF-010",
+      "status": "APPROVED"
+    },
+    {
+      "code": "AF-SUP-011",
+      "legal_name": "Alderpath Learning",
+      "tax_id": "FICTIONAL-AF-011",
+      "status": "APPROVED"
+    },
+    {
+      "code": "AF-SUP-012",
+      "legal_name": "Copperbrook Equipment",
+      "tax_id": "FICTIONAL-AF-012",
+      "status": "APPROVED"
+    },
+    {
+      "code": "AF-SUP-013",
+      "legal_name": "Meadowgate Textile Supply",
+      "tax_id": "FICTIONAL-AF-013",
+      "status": "APPROVED"
+    },
+    {
+      "code": "AF-SUP-014",
+      "legal_name": "Birchvale Analytics",
+      "tax_id": "FICTIONAL-AF-014",
+      "status": "APPROVED"
+    },
+    {
+      "code": "AF-SUP-015",
+      "legal_name": "Hearthstone Maintenance",
+      "tax_id": "FICTIONAL-AF-015",
+      "status": "SUSPENDED"
+    },
+    {
+      "code": "AF-SUP-016",
+      "legal_name": "Silverfern Design Studio",
+      "tax_id": "FICTIONAL-AF-016",
+      "status": "INACTIVE"
+    },
+    {
+      "code": "AF-SUP-017",
+      "legal_name": "Pinehaven Stationery",
+      "tax_id": "FICTIONAL-AF-017",
+      "status": "APPROVED"
+    },
+    {
+      "code": "AF-SUP-018",
+      "legal_name": "Pinehaven Stationery Services",
+      "tax_id": "FICTIONAL-AF-018",
+      "status": "APPROVED"
+    }
+  ],
+  "purchase_orders": [
+    {
+      "number": "AF-PO-2026-001",
+      "vendor_index": 0,
+      "currency": "INR",
+      "authorized_gross": "29500.00",
+      "billing_mode": "ITEMIZED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-001",
+          "description": "A4 office paper cartons",
+          "quantity": "100",
+          "unit_price": "250",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-002",
+      "vendor_index": 0,
+      "currency": "INR",
+      "authorized_gross": "35400.00",
+      "billing_mode": "ITEMIZED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-001",
+          "description": "A4 office paper cartons",
+          "quantity": "100",
+          "unit_price": "300",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-003",
+      "vendor_index": 1,
+      "currency": "INR",
+      "authorized_gross": "5310.00",
+      "billing_mode": "AMOUNT_BASED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-002",
+          "description": "Monthly IT support service",
+          "quantity": "12",
+          "unit_price": "375",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-004",
+      "vendor_index": 1,
+      "currency": "INR",
+      "authorized_gross": "6018.00",
+      "billing_mode": "AMOUNT_BASED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-002",
+          "description": "Monthly IT support service",
+          "quantity": "12",
+          "unit_price": "425",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-005",
+      "vendor_index": 2,
+      "currency": "INR",
+      "authorized_gross": "59000.00",
+      "billing_mode": "ITEMIZED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-003",
+          "description": "Ergonomic task chairs",
+          "quantity": "100",
+          "unit_price": "500",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-006",
+      "vendor_index": 2,
+      "currency": "INR",
+      "authorized_gross": "64900.00",
+      "billing_mode": "ITEMIZED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-003",
+          "description": "Ergonomic task chairs",
+          "quantity": "100",
+          "unit_price": "550",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-007",
+      "vendor_index": 3,
+      "currency": "INR",
+      "authorized_gross": "8850.00",
+      "billing_mode": "AMOUNT_BASED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-004",
+          "description": "Monthly office cleaning",
+          "quantity": "12",
+          "unit_price": "625",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-008",
+      "vendor_index": 3,
+      "currency": "INR",
+      "authorized_gross": "9558.00",
+      "billing_mode": "AMOUNT_BASED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-004",
+          "description": "Monthly office cleaning",
+          "quantity": "12",
+          "unit_price": "675",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-009",
+      "vendor_index": 4,
+      "currency": "INR",
+      "authorized_gross": "88500.00",
+      "billing_mode": "ITEMIZED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-005",
+          "description": "Recycled shipping cartons",
+          "quantity": "100",
+          "unit_price": "750",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-010",
+      "vendor_index": 4,
+      "currency": "INR",
+      "authorized_gross": "94400.00",
+      "billing_mode": "ITEMIZED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-005",
+          "description": "Recycled shipping cartons",
+          "quantity": "100",
+          "unit_price": "800",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-011",
+      "vendor_index": 5,
+      "currency": "INR",
+      "authorized_gross": "103250.00",
+      "billing_mode": "ITEMIZED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-006",
+          "description": "Retail display printing",
+          "quantity": "100",
+          "unit_price": "875",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-012",
+      "vendor_index": 5,
+      "currency": "INR",
+      "authorized_gross": "109150.00",
+      "billing_mode": "ITEMIZED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-006",
+          "description": "Retail display printing",
+          "quantity": "100",
+          "unit_price": "925",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-013",
+      "vendor_index": 6,
+      "currency": "INR",
+      "authorized_gross": "14160.00",
+      "billing_mode": "AMOUNT_BASED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-007",
+          "description": "Regional delivery service",
+          "quantity": "12",
+          "unit_price": "1000",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-014",
+      "vendor_index": 6,
+      "currency": "INR",
+      "authorized_gross": "14868.00",
+      "billing_mode": "AMOUNT_BASED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-007",
+          "description": "Regional delivery service",
+          "quantity": "12",
+          "unit_price": "1050",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-015",
+      "vendor_index": 7,
+      "currency": "INR",
+      "authorized_gross": "132750.00",
+      "billing_mode": "ITEMIZED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-008",
+          "description": "Warehouse safety kits",
+          "quantity": "100",
+          "unit_price": "1125",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-016",
+      "vendor_index": 7,
+      "currency": "INR",
+      "authorized_gross": "138650.00",
+      "billing_mode": "ITEMIZED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-008",
+          "description": "Warehouse safety kits",
+          "quantity": "100",
+          "unit_price": "1175",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-017",
+      "vendor_index": 8,
+      "currency": "INR",
+      "authorized_gross": "147500.00",
+      "billing_mode": "ITEMIZED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-009",
+          "description": "Staff event catering",
+          "quantity": "100",
+          "unit_price": "1250",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-018",
+      "vendor_index": 8,
+      "currency": "INR",
+      "authorized_gross": "153400.00",
+      "billing_mode": "ITEMIZED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-009",
+          "description": "Staff event catering",
+          "quantity": "100",
+          "unit_price": "1300",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-019",
+      "vendor_index": 9,
+      "currency": "INR",
+      "authorized_gross": "19470.00",
+      "billing_mode": "AMOUNT_BASED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-010",
+          "description": "Lighting maintenance",
+          "quantity": "12",
+          "unit_price": "1375",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-020",
+      "vendor_index": 9,
+      "currency": "INR",
+      "authorized_gross": "20178.00",
+      "billing_mode": "AMOUNT_BASED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-010",
+          "description": "Lighting maintenance",
+          "quantity": "12",
+          "unit_price": "1425",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-021",
+      "vendor_index": 10,
+      "currency": "INR",
+      "authorized_gross": "18000.00",
+      "billing_mode": "AMOUNT_BASED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-011",
+          "description": "Staff training sessions",
+          "quantity": "12",
+          "unit_price": "1500",
+          "tax_rate": "0"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-022",
+      "vendor_index": 10,
+      "currency": "INR",
+      "authorized_gross": "18600.00",
+      "billing_mode": "AMOUNT_BASED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-011",
+          "description": "Staff training sessions",
+          "quantity": "12",
+          "unit_price": "1550",
+          "tax_rate": "0"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-023",
+      "vendor_index": 11,
+      "currency": "USD",
+      "authorized_gross": "178750.00",
+      "billing_mode": "ITEMIZED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-012",
+          "description": "Handheld stock scanners",
+          "quantity": "100",
+          "unit_price": "1625",
+          "tax_rate": "0.10"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-024",
+      "vendor_index": 11,
+      "currency": "USD",
+      "authorized_gross": "184250.00",
+      "billing_mode": "ITEMIZED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-012",
+          "description": "Handheld stock scanners",
+          "quantity": "100",
+          "unit_price": "1675",
+          "tax_rate": "0.10"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-025",
+      "vendor_index": 12,
+      "currency": "EUR",
+      "authorized_gross": "192500.00",
+      "billing_mode": "ITEMIZED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-013",
+          "description": "Staff uniform sets",
+          "quantity": "100",
+          "unit_price": "1750",
+          "tax_rate": "0.10"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-026",
+      "vendor_index": 12,
+      "currency": "EUR",
+      "authorized_gross": "198000.00",
+      "billing_mode": "ITEMIZED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-013",
+          "description": "Staff uniform sets",
+          "quantity": "100",
+          "unit_price": "1800",
+          "tax_rate": "0.10"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-027",
+      "vendor_index": 13,
+      "currency": "GBP",
+      "authorized_gross": "24750.00",
+      "billing_mode": "AMOUNT_BASED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-014",
+          "description": "Monthly reporting service",
+          "quantity": "12",
+          "unit_price": "1875",
+          "tax_rate": "0.10"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-028",
+      "vendor_index": 13,
+      "currency": "GBP",
+      "authorized_gross": "25410.00",
+      "billing_mode": "AMOUNT_BASED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-014",
+          "description": "Monthly reporting service",
+          "quantity": "12",
+          "unit_price": "1925",
+          "tax_rate": "0.10"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-029",
+      "vendor_index": 14,
+      "currency": "INR",
+      "authorized_gross": "28320.00",
+      "billing_mode": "AMOUNT_BASED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-015",
+          "description": "Equipment maintenance",
+          "quantity": "12",
+          "unit_price": "2000",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-030",
+      "vendor_index": 14,
+      "currency": "INR",
+      "authorized_gross": "29028.00",
+      "billing_mode": "AMOUNT_BASED",
+      "status": "CLOSED",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-015",
+          "description": "Equipment maintenance",
+          "quantity": "12",
+          "unit_price": "2050",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-031",
+      "vendor_index": 15,
+      "currency": "INR",
+      "authorized_gross": "30090.00",
+      "billing_mode": "AMOUNT_BASED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-016",
+          "description": "Store artwork service",
+          "quantity": "12",
+          "unit_price": "2125",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-032",
+      "vendor_index": 15,
+      "currency": "INR",
+      "authorized_gross": "30798.00",
+      "billing_mode": "AMOUNT_BASED",
+      "status": "CLOSED",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-016",
+          "description": "Store artwork service",
+          "quantity": "12",
+          "unit_price": "2175",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-033",
+      "vendor_index": 16,
+      "currency": "INR",
+      "authorized_gross": "265500.00",
+      "billing_mode": "ITEMIZED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-017",
+          "description": "Notebook packs",
+          "quantity": "100",
+          "unit_price": "2250",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-034",
+      "vendor_index": 16,
+      "currency": "INR",
+      "authorized_gross": "271400.00",
+      "billing_mode": "ITEMIZED",
+      "status": "OPEN",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-017",
+          "description": "Notebook packs",
+          "quantity": "100",
+          "unit_price": "2300",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-035",
+      "vendor_index": 17,
+      "currency": "INR",
+      "authorized_gross": "33630.00",
+      "billing_mode": "AMOUNT_BASED",
+      "status": "CANCELLED",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-018",
+          "description": "Printed stationery service",
+          "quantity": "12",
+          "unit_price": "2375",
+          "tax_rate": "0.18"
+        }
+      ]
+    },
+    {
+      "number": "AF-PO-2026-036",
+      "vendor_index": 17,
+      "currency": "INR",
+      "authorized_gross": "34338.00",
+      "billing_mode": "AMOUNT_BASED",
+      "status": "CLOSED",
+      "issued_on": "2026-01-01",
+      "valid_until": "2027-12-31",
+      "items": [
+        {
+          "line_number": 1,
+          "sku": "AF-018",
+          "description": "Printed stationery service",
+          "quantity": "12",
+          "unit_price": "2425",
+          "tax_rate": "0.18"
+        }
+      ]
+    }
+  ]
+}

@@ -160,7 +160,9 @@ export function WorkspaceSelector() {
             {workspace.kind === "MY"
               ? "My Workspace"
               : workspace.kind === "DEMO"
-                ? `Demo Workspace${workspaces.slice(0, index).some((w) => w.kind === "DEMO") ? " · previous" : ""}`
+                ? workspace.name.startsWith("Asterfield")
+                  ? workspace.name
+                  : `Demo Workspace${workspaces.slice(0, index).some((w) => w.kind === "DEMO") ? " · previous" : ""}`
                 : workspace.name}
           </option>
         ))}

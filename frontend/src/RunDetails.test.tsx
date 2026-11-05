@@ -46,7 +46,15 @@ it("keeps succeeded processing distinct from a blocked financial outcome with ba
     extraction: null,
     decision: {
       outcome: "BLOCKED",
-      summary: { po_number: "PO-1", requested: "120.00", currency: "USD" },
+      summary: {
+        po_number: "PO-1",
+        requested: "120.00",
+        currency: "USD",
+        email_context: {
+          policy_version: "email-po-review-v1",
+          po_evidence: [{ value: "MAIL-PO-001" }],
+        },
+      },
       rules: [
         {
           rule_id: "PO_BALANCE",
@@ -68,7 +76,7 @@ it("keeps succeeded processing distinct from a blocked financial outcome with ba
     />,
   );
   expect(document.querySelector(".run-status .status")).toHaveTextContent(
-    "Succeeded",
+    "Completed",
   );
   expect(screen.getByRole("heading", { name: "Blocked" })).toBeVisible();
   expect(
@@ -78,4 +86,6 @@ it("keeps succeeded processing distinct from a blocked financial outcome with ba
     screen.getByRole("link", { name: "View purchase order" }),
   ).toHaveAttribute("href", "/purchase-orders?po=PO-1");
   expect(screen.queryByText(/confidence/i)).not.toBeInTheDocument();
+  expect(document.body).not.toHaveTextContent("[object Object]");
+  expect(screen.queryByText("Copy run ID")).not.toBeInTheDocument();
 });

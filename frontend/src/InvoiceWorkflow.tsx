@@ -275,16 +275,16 @@ export default function InvoiceWorkflow({
                     ? " — not configured"
                     : ""}
                 </option>
-                <option value="FALLBACK">Rule-based</option>
+                <option value="FALLBACK">Conservative extraction</option>
               </>
             )}
           </select>
           <p className="footnote">
             {mode === "AUTO"
-              ? "Attempts configured Gemini, with a recorded conservative fallback when unavailable."
+              ? "Uses AI-assisted extraction when available, with conservative document extraction when it cannot be used."
               : mode === "GEMINI"
-                ? "Requires the real Gemini adapter. Failures are recorded; no silent fallback."
-                : "Uses real PDF/OCR, deterministic field extraction, source checks and the same financial controls."}
+                ? "Uses Gemini-assisted extraction. If it cannot complete, processing stops and the failure is recorded."
+                : "Reads the document directly, using OCR for scanned pages, then verifies the extracted values and applies all financial controls."}
             {capabilities.data?.can_select_extraction_mode &&
               !capabilities.data.gemini_configured &&
               " Gemini AI is unavailable until the server has a securely configured key."}
@@ -535,7 +535,7 @@ export default function InvoiceWorkflow({
           ) : selected ? (
             <>
               <p className="eyebrow">RETRIEVING PERSISTED RUN</p>
-              <code>{selected}</code>
+              <span>The selected invoice is loading.</span>
               {!detail.error && (
                 <Skeleton label="Loading persisted run" rows={4} />
               )}

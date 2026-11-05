@@ -1,3 +1,5 @@
+import { RuleResults } from "../RunDetails";
+import { nextAction } from "../business";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { jsonPost, money, relativeTime, when } from "../client";
@@ -306,17 +308,14 @@ export default function Reviews() {
                   </details>
                   <h3>Why this invoice needs attention</h3>
                   {latestDecision ? (
-                    <ul className="exception-reasons">
-                      {latestDecision.rules
-                        .filter((rule) => rule.outcome !== "PASS")
-                        .map((rule) => (
-                          <li key={rule.rule_id}>
-                            <strong>{humanize(rule.rule_id)}</strong>
-                            <p>{rule.explanation}</p>
-                            <code>{rule.rule_id}</code>
-                          </li>
-                        ))}
-                    </ul>
+                    <>
+                      <p>
+                        <strong>Next action</strong>
+                        <br />
+                        {nextAction(latestDecision.outcome)}
+                      </p>
+                      <RuleResults rules={latestDecision.rules} />
+                    </>
                   ) : (
                     <p className="muted-text">
                       Revalidation is in progress. The next decision will appear
@@ -369,7 +368,9 @@ export default function Reviews() {
                                 </label>
                                 <input
                                   id={"correct-" + field}
-                                  aria-label={"Correct " + field}
+                                  aria-label={
+                                    "Correct " + humanize(field).toLowerCase()
+                                  }
                                   value={values[field] ?? ""}
                                   onChange={(e) =>
                                     setValues((v) => ({
@@ -403,7 +404,10 @@ export default function Reviews() {
                                   <label className="confirm-field">
                                     <input
                                       type="checkbox"
-                                      aria-label={"Confirm " + field}
+                                      aria-label={
+                                        "Confirm " +
+                                        humanize(field).toLowerCase()
+                                      }
                                       checked={confirmed.includes(field)}
                                       onChange={(e) =>
                                         setConfirmed((previous) =>

@@ -4,7 +4,7 @@ from datetime import datetime, timedelta, timezone
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
-from sqlalchemy import func, select
+from sqlalchemy import String, func, select
 from sqlalchemy.orm import selectinload
 
 from app.auth import User, manual_modes_allowed
@@ -229,6 +229,10 @@ def audit_history(
     user: User,
     run_id: UUID | None = None,
     document_id: UUID | None = None,
+    view: str = Query("all", pattern="^(all|business)$"),
+    search: str = Query("", max_length=160),
+    actor: str = Query("", max_length=200),
+    stage: str = Query("", max_length=100),
     offset: int = Query(0, ge=0),
     limit: int = Query(50, ge=1, le=200),
 ):
@@ -239,6 +243,33 @@ def audit_history(
         .join(InvoiceDocument)
         .where(InvoiceDocument.workspace_id == user.workspace_id)
     )
+    if view == "business":
+        # Filter persisted records before pagination; never delete the raw audit trail.
+        stage_query = stage_query.where(
+            ((RunEvent.stage == "decision") & (RunEvent.outcome == "SUCCEEDED"))
+            | (RunEvent.outcome == "FAILED")
+        )
+        query = query.where(AuditEvent.action.not_in(["WORKER_HEARTBEAT"]))
+    if actor:
+        query = query.where(AuditEvent.actor == actor)
+        if actor != "worker":
+            stage_query = stage_query.where(False)
+    if stage:
+        if stage == "REVIEWER_ACTION":
+            stage_query = stage_query.where(False)
+        else:
+            query = query.where(False)
+            stage_query = stage_query.where(func.upper(RunEvent.stage) == stage)
+    if search:
+        term = "%" + search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+        query = query.where(
+            AuditEvent.action.ilike(term, escape="\\")
+            | AuditEvent.actor.ilike(term, escape="\\")
+            | AuditEvent.detail.cast(String).ilike(term, escape="\\")
+        )
+        stage_query = stage_query.where(
+            RunEvent.detail.ilike(term, escape="\\") | RunEvent.stage.ilike(term, escape="\\")
+        )
     if run_id:
         query = query.where(AuditEvent.run_id == run_id)
         stage_query = stage_query.where(RunEvent.run_id == run_id)
@@ -246,10 +277,12 @@ def audit_history(
         query = query.where(AuditEvent.document_id == document_id)
         stage_query = stage_query.where(ProcessingRun.document_id == document_id)
     audits = session.scalars(
-        query.order_by(AuditEvent.created_at.desc()).limit(offset + limit)
+        query.order_by(AuditEvent.created_at.desc(), AuditEvent.id.desc()).limit(offset + limit)
     ).all()
     stages = session.scalars(
-        stage_query.order_by(RunEvent.created_at.desc()).limit(offset + limit)
+        stage_query.order_by(RunEvent.created_at.desc(), RunEvent.id.cast(String).desc()).limit(
+            offset + limit
+        )
     ).all()
     events = [
         {
@@ -275,4 +308,42 @@ def audit_history(
         for e in stages
     ]
     events.sort(key=lambda a: (a["created_at"], a["id"]), reverse=True)
-    return {"events": events[offset : offset + limit]}
+    page = events[offset : offset + limit]
+    if view == "business":
+        identifiers = {UUID(e["run_id"]) for e in page if e.get("run_id")}
+        records = (
+            session.execute(
+                select(ProcessingRun, Decision)
+                .outerjoin(Decision, Decision.run_id == ProcessingRun.id)
+                .join(InvoiceDocument)
+                .where(
+                    InvoiceDocument.workspace_id == user.workspace_id,
+                    ProcessingRun.id.in_(identifiers),
+                )
+            ).all()
+            if identifiers
+            else []
+        )
+        entities = {}
+        for run, decision in records:
+            fields = (run.extraction or {}).get("fields", {})
+            summary = decision.summary if decision else {}
+            issues = (
+                sorted(
+                    [r for r in decision.rules if r["outcome"] != "PASS"],
+                    key=lambda r: r["outcome"] != "BLOCK",
+                )
+                if decision
+                else []
+            )
+            entities[str(run.id)] = {
+                "invoice_number": fields.get("invoice_number", {}).get("value"),
+                "vendor": fields.get("vendor_name", {}).get("value"),
+                "amount": summary.get("requested"),
+                "currency": summary.get("currency"),
+                "outcome": decision.outcome if decision else None,
+                "reason": issues[0]["explanation"] if issues else None,
+            }
+        for item in page:
+            item["entity"] = entities.get(item.get("run_id"))
+    return {"events": page}

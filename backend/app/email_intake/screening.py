@@ -106,20 +106,33 @@ def normalize(raw):
 
 
 def references(text, source):
-    matches = []
-    pattern = r"\bPO[-/][A-Z0-9][A-Z0-9._/-]{0,58}|\b(?:purchase\s+order|PO)\s*[:#]\s*([A-Z0-9][A-Z0-9._/-]{0,58})"
-    for match in re.finditer(pattern, text, re.I):
-        value = (match.group(1) or match.group(0)).rstrip(".,;")
-        if len(value) <= 60:
-            matches.append(
-                {
-                    "kind": "po_number",
-                    "value": value,
-                    "source": source,
-                    "quote": match.group(0)[:200],
-                    "verified": True,
-                }
-            )
+    """Preserve complete identifiers; never reconcile case, prefixes or separators."""
+    text = text[:16000]
+    matches, seen = [], set()
+
+    def add(value, quote):
+        value = value.rstrip(".,;")
+        if not 1 <= len(value) <= 60 or not re.fullmatch(
+            r"[A-Za-z0-9](?:[A-Za-z0-9._/-]*[A-Za-z0-9])?", value
+        ):
+            return
+        if re.search(r"[._/-]{2}", value) or value in seen:
+            return
+        seen.add(value)
+        matches.append(
+            dict(kind="po_number", value=value, source=source, quote=quote[:200], verified=True)
+        )
+
+    for match in re.finditer(
+        r"\b(?:purchase\s+order|PO)(?:\s+number)?\s*[:#]\s*([A-Za-z0-9][A-Za-z0-9._/-]*)",
+        text,
+        re.I,
+    ):
+        add(match.group(1), match.group(0))
+    for match in re.finditer(r"(?<![A-Za-z0-9._/@-])[A-Za-z0-9][A-Za-z0-9._/-]*", text):
+        value = match.group(0)
+        if re.search(r"(?:^|[._/-])PO[._/-][A-Za-z0-9]", value, re.I):
+            add(value, value)
     return matches[:20]
 
 
@@ -263,6 +276,10 @@ def classify(message, attachment, pages, client=None):
                 source = sources[fact.source]
                 if fact.quote not in source or fact.value.casefold() not in fact.quote.casefold():
                     raise ValueError("unsupported candidate")
+                if fact.kind == "po_number" and fact.value not in {
+                    item["value"] for item in references(source, fact.source)
+                }:
+                    raise ValueError("incomplete PO identifier")
                 checked.append({**fact.model_dump(), "verified": True})
             if parsed.classification_quote not in sources[parsed.classification_source]:
                 raise ValueError("unsupported classification")

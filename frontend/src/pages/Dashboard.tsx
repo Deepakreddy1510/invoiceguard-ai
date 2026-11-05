@@ -1,3 +1,4 @@
+import { TechnicalDetails } from "../TechnicalDetails";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
 import { duration, money, relativeTime, when } from "../client";
@@ -108,6 +109,21 @@ export default function Dashboard() {
             </div>
           </div>
         )}
+      <div className="notice">
+        <strong>What needs attention?</strong>
+        <p>
+          Resolve invoices awaiting review, check blocked invoices with
+          suppliers, or process a new PDF.
+        </p>
+        <div className="toolbar">
+          <Link className="button" to="/reviews">
+            Review exceptions
+          </Link>
+          <Link className="button" to="/email-intake">
+            Check incoming invoices
+          </Link>
+        </div>
+      </div>
       <div className="metric-grid">
         {cards.map((card) => (
           <button
@@ -152,43 +168,46 @@ export default function Dashboard() {
           </p>
         </section>
       )}
-      {data && (
-        <div
-          className="operational-strip"
-          aria-label="Persisted operational metrics"
-        >
-          <span className="operation-chip">
-            <i className={data.worker.available ? "live-dot" : "idle-dot"} />
-            Worker {data.worker.available ? "active" : "not recently observed"}
-            {data.worker.last_seen && (
-              <time
-                dateTime={data.worker.last_seen}
-                title={when(data.worker.last_seen)}
-              >
-                {" "}
-                · {relativeTime(data.worker.last_seen)}
-              </time>
-            )}
-          </span>
-          <span className="operation-chip">
-            <b>{data.processing_runs}</b> total runs
-          </span>
-          <span className="operation-chip">
-            <b>{data.failed_runs}</b> technical failures
-          </span>
-          <span className="operation-chip">
-            <b>{data.duplicate_assessments}</b> duplicate assessments
-          </span>
-          {data.average_run_seconds != null && (
-            <span
-              className="operation-chip"
-              title={`${data.duration_sample_count} completed runs; includes queue time`}
-            >
-              Mean duration <b>{duration(data.average_run_seconds * 1000)}</b>
+      <TechnicalDetails label="Processing service health and operational metrics">
+        {data && (
+          <div
+            className="operational-strip"
+            aria-label="Persisted operational metrics"
+          >
+            <span className="operation-chip">
+              <i className={data.worker.available ? "live-dot" : "idle-dot"} />
+              Worker{" "}
+              {data.worker.available ? "active" : "not recently observed"}
+              {data.worker.last_seen && (
+                <time
+                  dateTime={data.worker.last_seen}
+                  title={when(data.worker.last_seen)}
+                >
+                  {" "}
+                  · {relativeTime(data.worker.last_seen)}
+                </time>
+              )}
             </span>
-          )}
-        </div>
-      )}
+            <span className="operation-chip">
+              <b>{data.processing_runs}</b> total runs
+            </span>
+            <span className="operation-chip">
+              <b>{data.failed_runs}</b> technical failures
+            </span>
+            <span className="operation-chip">
+              <b>{data.duplicate_assessments}</b> duplicate assessments
+            </span>
+            {data.average_run_seconds != null && (
+              <span
+                className="operation-chip"
+                title={`${data.duration_sample_count} completed runs; includes queue time`}
+              >
+                Mean duration <b>{duration(data.average_run_seconds * 1000)}</b>
+              </span>
+            )}
+          </div>
+        )}
+      </TechnicalDetails>
       <section className="panel activity-panel">
         <div className="panel-heading">
           <div>

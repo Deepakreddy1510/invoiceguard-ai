@@ -1105,3 +1105,18 @@ def test_mail_ai_opt_out_covers_pdf_extraction_even_with_global_key(mailbox, mon
     assert run["extraction"]["provider"] == "FALLBACK"
     with mailbox.factory() as session:
         assert session.get(EmailAttachment, identifier).classification["provider"] == "FALLBACK"
+
+
+def test_actionable_inbox_excludes_unrelated_messages_and_preserves_all_activity(mailbox):
+    add_message(mailbox, identifier="invoice")
+    add_message(mailbox, identifier="personal", files=[], subject="Weekend plans")
+    identifiers = sync(mailbox)
+    for identifier in identifiers:
+        execute(mailbox, identifier)
+    all_messages = mailbox.client.get("/api/v1/email?view=all").json()["messages"]
+    actionable = mailbox.client.get("/api/v1/email?view=actionable").json()["messages"]
+    assert len(all_messages) == 2
+    assert len(actionable) == 1 and actionable[0]["attachments"]
+    detail = mailbox.client.get("/api/v1/email/messages/" + actionable[0]["id"]).json()
+    assert detail["attachment_events"]
+    assert len(detail["events"]) >= len(detail["attachment_events"])

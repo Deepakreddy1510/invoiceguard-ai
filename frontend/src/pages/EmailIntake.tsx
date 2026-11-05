@@ -1,3 +1,7 @@
+import { TechnicalDetails } from "../TechnicalDetails";
+import { humanize } from "../ui";
+import { RuleResults } from "../RunDetails";
+import { nextAction, actorLabel } from "../business";
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { request, jsonPost, when } from "../client";
@@ -68,6 +72,7 @@ type Detail = Message & {
   body: string;
   workspace_id: string;
   gmail_id: string;
+  attachment_events?: Detail["events"];
   events: {
     id: string;
     stage: string;
@@ -141,10 +146,13 @@ function AttachmentDetail({
         <h3>{a.filename}</h3>
         <Status value={a.status} />
       </div>
-      <p>
-        {a.mime_type} · {a.byte_size.toLocaleString()} bytes · {a.attempts}{" "}
-        intake attempts
-      </p>
+      <TechnicalDetails>
+        {" "}
+        <p>
+          {a.mime_type} · {a.byte_size.toLocaleString()} bytes · {a.attempts}{" "}
+          intake attempts
+        </p>
+      </TechnicalDetails>
       {a.status !== "UNSUPPORTED" && (
         <>
           <button onClick={() => setPreview((v) => !v)}>
@@ -162,11 +170,13 @@ function AttachmentDetail({
           )}
         </>
       )}
-      {a.sha256 && (
-        <p className="footnote">
-          SHA-256 <code className="hash">{a.sha256}</code>
-        </p>
-      )}
+      <TechnicalDetails label="Document fingerprint">
+        {a.sha256 && (
+          <p className="footnote">
+            SHA-256 <code className="hash">{a.sha256}</code>
+          </p>
+        )}
+      </TechnicalDetails>
       <Notice error={error || a.error || run.error} />
       {a.classification ? (
         <>
@@ -177,15 +187,25 @@ function AttachmentDetail({
                 <Status value={a.classification.category} />
               </dd>
             </div>
-            <div>
-              <dt>Actual classifier</dt>
-              <dd>
-                {a.classification.provider}
-                {a.classification.model ? " · " + a.classification.model : ""}
-              </dd>
-            </div>
           </dl>
-          <p>{a.classification.explanation}</p>
+          <TechnicalDetails>
+            <dl className="mode-summary">
+              <div>
+                <dt>Actual classifier</dt>
+                <dd>
+                  {a.classification.provider}
+                  {a.classification.model ? " · " + a.classification.model : ""}
+                </dd>
+              </div>
+            </dl>
+          </TechnicalDetails>
+          <p>
+            {a.classification.category === "INVOICE"
+              ? "This attachment was identified as an invoice and will undergo separate financial checks."
+              : a.classification.category === "NOT_INVOICE"
+                ? "This attachment does not appear to be an invoice."
+                : "Confirm whether this attachment is an invoice before forwarding."}
+          </p>
           {a.classification.multiple_invoices && (
             <p className="footnote">
               Possible multiple invoices in this PDF: confirm document
@@ -193,7 +213,9 @@ function AttachmentDetail({
             </p>
           )}
           {a.classification.fallback_reason && (
-            <p className="footnote">{a.classification.fallback_reason}</p>
+            <TechnicalDetails>
+              <p className="footnote">{a.classification.fallback_reason}</p>
+            </TechnicalDetails>
           )}
           {a.classification.classification_evidence?.quote && (
             <blockquote>
@@ -213,11 +235,15 @@ function AttachmentDetail({
               <tbody>
                 {a.classification.evidence.map((f, i) => (
                   <tr key={i}>
-                    <td>{f.kind}</td>
+                    <td>{humanize(f.kind)}</td>
                     <td>{f.value}</td>
                     <td>
-                      {f.source}
-                      <blockquote>{f.quote}</blockquote>
+                      <details>
+                        <summary>
+                          View source evidence · {humanize(f.source)}
+                        </summary>
+                        <blockquote>{f.quote}</blockquote>
+                      </details>
                     </td>
                   </tr>
                 ))}
@@ -243,7 +269,7 @@ function AttachmentDetail({
       )}
       {a.email_rules?.map((r, i) => (
         <p className="footnote" key={i}>
-          {r.rule_id} · {r.outcome}: {r.explanation}
+          {r.explanation}
         </p>
       ))}
       {a.run_id && (
@@ -288,30 +314,36 @@ function AttachmentDetail({
           </dl>
           {run.data && (
             <>
-              <h4>Persisted invoice execution</h4>
-              <ol className="email-events">
-                {run.data.events.map((e) => (
-                  <li key={e.id}>
-                    <strong>
-                      {e.stage} · {e.outcome}
-                    </strong>
-                    <span>{e.detail}</span>
-                    <time>{when(e.created_at)}</time>
-                  </li>
-                ))}
-              </ol>
-              {run.data.decision && (
-                <div className="rules">
-                  <h4>Financial controls</h4>
-                  {run.data.decision.rules.map((r, i) => (
-                    <div key={i}>
+              <TechnicalDetails label="Persisted invoice execution">
+                <h4>Persisted invoice execution</h4>
+                <ol className="email-events">
+                  {run.data.events.map((e) => (
+                    <li key={e.id}>
                       <strong>
-                        {r.rule_id} · {r.outcome}
+                        {humanize(e.stage)} · {humanize(e.outcome)}
                       </strong>
-                      <p>{r.explanation}</p>
-                    </div>
+                      <span>{e.detail}</span>
+                      <time>{when(e.created_at)}</time>
+                    </li>
                   ))}
-                </div>
+                </ol>
+              </TechnicalDetails>
+              {run.data.decision && (
+                <section
+                  className={
+                    "decision-card decision-" +
+                    run.data.decision.outcome.toLowerCase()
+                  }
+                  aria-label="Invoice financial decision"
+                >
+                  <h3>{humanize(run.data.decision.outcome)}</h3>
+                  <RuleResults rules={run.data.decision.rules} />
+                  <p>
+                    <strong>Next action</strong>
+                    <br />
+                    {nextAction(run.data.decision.outcome)}
+                  </p>
+                </section>
               )}
             </>
           )}
@@ -319,7 +351,7 @@ function AttachmentDetail({
       )}
       {a.review && (
         <p className="footnote">
-          Intake review by {a.review.actor}: {a.review.action} —{" "}
+          Intake review by {actorLabel(a.review.actor)}: {a.review.action} —{" "}
           {a.review.reason}
         </p>
       )}
@@ -399,8 +431,9 @@ export default function EmailIntake() {
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [disconnect, setDisconnect] = useState(false);
+  const [view, setView] = useState("actionable");
   const list = useResource<Overview>(
-    `/email?search=${encodeURIComponent(search)}&status=${status}&offset=${offset}`,
+    `/email?view=${view}&search=${encodeURIComponent(search)}&status=${status}&offset=${offset}`,
     3000,
   );
   const selected = params.get("message");
@@ -443,9 +476,33 @@ export default function EmailIntake() {
     <>
       <PageTitle
         eyebrow="AUTOMATION / EMAIL INTAKE"
-        title="From inbox to evidence."
+        title="Invoices from your inbox"
         description="Gmail attachments enter the same verified invoice workflow. Intake classification is separate from financial approval."
       />
+      <div
+        className="filter-chips"
+        role="group"
+        aria-label="Email activity view"
+      >
+        <button
+          aria-pressed={view === "actionable"}
+          onClick={() => {
+            setView("actionable");
+            setOffset(0);
+          }}
+        >
+          Actionable invoices
+        </button>
+        <button
+          aria-pressed={view === "all"}
+          onClick={() => {
+            setView("all");
+            setOffset(0);
+          }}
+        >
+          All email activity
+        </button>
+      </div>
       <Notice
         error={error || list.error || detail.error}
         onRetry={() => {
@@ -475,15 +532,17 @@ export default function EmailIntake() {
           <>
             <p>
               {list.data?.available
-                ? "Google OAuth is configured on the server."
+                ? "Ready to connect a Gmail account for incoming invoices."
                 : list.data?.configuration_message}
             </p>
-            <p className="footnote">
-              Configured email classifier:{" "}
-              {list.data?.email_classifier ?? "FALLBACK"}. Gmail message content
-              is sent to Gemini only when the server explicitly enables email
-              AI.
-            </p>
+            <TechnicalDetails>
+              <p className="footnote">
+                Configured email classifier:{" "}
+                {list.data?.email_classifier ?? "FALLBACK"}. Gmail message
+                content is sent to Gemini only when the server explicitly
+                enables email AI.
+              </p>
+            </TechnicalDetails>
             {current ? (
               <>
                 <dl className="financial-summary">
@@ -589,9 +648,9 @@ export default function EmailIntake() {
             ["attachments_ingested", "Attachments ingested"],
             ["awaiting_review", "Awaiting intake review"],
             ["ignored", "Ignored attachments"],
-            ["failed_attempts", "Failed intake attempts"],
+            ["completed_decisions", "Completed financial decisions"],
             ["linked_invoices", "Unique linked invoices"],
-            ["unique_documents", "Unique Gmail documents"],
+            ["failed", "Attachments needing recovery"],
           ].map(([key, label]) => (
             <article className="panel metric-card" key={key}>
               <span>{label}</span>
@@ -604,8 +663,8 @@ export default function EmailIntake() {
         <div className="panel-heading">
           <h2>Incoming email</h2>
           <p>
-            Workspace-scoped source records; completed intake does not imply an
-            approved invoice.
+            Invoice candidates and attachments needing attention. Processing
+            completion is separate from financial approval.
           </p>
         </div>
         <div className="table-toolbar">
@@ -741,8 +800,8 @@ export default function EmailIntake() {
               <>
                 <h2>{detail.data.subject || "(No subject)"}</h2>
                 <p>
-                  {detail.data.sender} · {when(detail.data.received_at)} ·
-                  Workspace {detail.data.workspace_id}
+                  {detail.data.sender} · {when(detail.data.received_at)} · Email
+                  received: {when(detail.data.received_at)}
                 </p>
                 <details className="source-panel" open>
                   <summary>Safe email body preview</summary>
@@ -763,34 +822,41 @@ export default function EmailIntake() {
                   />
                 ))}
                 <section className="panel">
-                  <h3>Recent persisted mailbox and attachment events</h3>
+                  <h3>Selected email’s attachment activity</h3>
                   <ol className="email-events">
-                    {detail.data.events.map((e) => (
+                    {(detail.data.attachment_events ?? []).map((e) => (
                       <li key={e.id}>
                         <strong>
-                          {e.stage} · {e.outcome}
+                          {humanize(e.stage)} · {humanize(e.outcome)}
                         </strong>
                         <span>{e.detail}</span>
                         {e.evidence != null && (
-                          <details>
-                            <summary>Recorded evidence at this event</summary>
-                            <pre className="email-body">
-                              {JSON.stringify(e.evidence, null, 2)}
-                            </pre>
-                          </details>
+                          <TechnicalDetails>
+                            <details>
+                              <summary>Recorded evidence at this event</summary>
+                              <pre className="email-body">
+                                {JSON.stringify(e.evidence, null, 2)}
+                              </pre>
+                            </details>
+                          </TechnicalDetails>
                         )}
                         <time>{when(e.created_at)}</time>
                       </li>
                     ))}
                   </ol>
                 </section>
+                <TechnicalDetails label="Original mailbox event records">
+                  <pre className="email-body">
+                    {JSON.stringify(detail.data.events, null, 2)}
+                  </pre>
+                </TechnicalDetails>
               </>
             )
           )}
         </section>
       )}
       <p className="footnote">
-        Email PO claims are candidates under email-po-review-v1. They cannot
+        Purchase order references from email require verification. They cannot
         override verified PDF evidence, vendor status or PO capacity.{" "}
         <Link to="/process">Manual PDF upload remains available</Link>.
       </p>

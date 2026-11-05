@@ -1,5 +1,6 @@
 import { useEffect, useState, type ReactNode } from "react";
 import { apiFetch, request } from "./client";
+import { businessLabels } from "./business";
 import { Icon } from "./icons";
 export function useResource<T>(
   path: string | null,
@@ -50,10 +51,13 @@ export function useResource<T>(
   };
 }
 export function humanize(value: string) {
-  return value
-    .toLowerCase()
-    .replaceAll("_", " ")
-    .replace(/(^|\s)\S/g, (c) => c.toUpperCase());
+  return (
+    businessLabels[value] ??
+    value
+      .toLowerCase()
+      .replaceAll("_", " ")
+      .replace(/(^|\s)\S/g, (c) => c.toUpperCase())
+  );
 }
 export function Notice({
   error,

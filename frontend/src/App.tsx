@@ -11,7 +11,11 @@ import { useCallback, useState } from "react";
 import InvoiceWorkflow from "./InvoiceWorkflow";
 import EmailIntake from "./pages/EmailIntake";
 import Vendors from "./pages/Vendors";
-import { WorkspaceProvider, WorkspaceSelector } from "./workspaces";
+import {
+  WorkspaceProvider,
+  WorkspaceSelector,
+  useWorkspace,
+} from "./workspaces";
 import Dashboard from "./pages/Dashboard";
 import PurchaseOrders from "./pages/PurchaseOrders";
 import Reviews from "./pages/Reviews";
@@ -29,6 +33,7 @@ function WorkflowRoute() {
   return <InvoiceWorkflow initialRunId={id} onSelectRun={select} />;
 }
 function Shell() {
+  const { active } = useWorkspace();
   const { data } = useResource<{ workspace_name: string; role: string }>("/me");
   const location = useLocation();
   const [open, setOpen] = useState(false);
@@ -39,7 +44,7 @@ function Shell() {
     { to: "/email-intake", label: "Email Intake", icon: "audit" },
     { to: "/vendors", label: "Vendors", icon: "orders" },
     { to: "/purchase-orders", label: "Purchase orders", icon: "orders" },
-    { to: "/audit", label: "Audit history", icon: "audit" },
+    { to: "/audit", label: "Activity history", icon: "audit" },
   ] as const;
   return (
     <div className="app-shell">
@@ -135,7 +140,11 @@ function Shell() {
           </Routes>
           <footer>
             <span>InvoiceGuard AI</span>
-            <p>Verification, with a clear record. No payments are executed.</p>
+            <p>
+              {active?.kind === "DEMO"
+                ? "Sample company data. No payments are executed."
+                : "Verification, with a clear record. No payments are executed."}
+            </p>
           </footer>
         </main>
       </div>

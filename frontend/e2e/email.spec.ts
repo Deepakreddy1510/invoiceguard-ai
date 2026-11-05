@@ -40,18 +40,26 @@ test("provider-mocked Gmail handoff uses real PostgreSQL, PDF worker, decisions 
   const attachment = page.getByRole("region", {
     name: "Attachment contract-initial.pdf",
   });
-  await expect(attachment.getByText("Validated", { exact: true })).toBeVisible({
+  await expect(
+    attachment.getByRole("heading", { name: "Validated", exact: true }),
+  ).toBeVisible({
     timeout: 20000,
   });
+  for (const disclosure of await attachment
+    .locator("details.technical-details > summary")
+    .all())
+    await disclosure.click();
   await expect(attachment.getByText("FALLBACK", { exact: true })).toBeVisible();
-  await expect(attachment.locator(".rules")).toContainText("PO_BALANCE");
-  await expect(attachment.locator(".email-events")).toContainText("decision");
+  await expect(attachment.locator(".rules")).toContainText(
+    "Available purchase order balance",
+  );
+  await expect(attachment.locator(".email-events")).toContainText("Decision");
   await expect(
     page.getByText(/PROVIDER MOCK CONTRACT: no live Gmail message received/),
   ).toBeVisible();
   await page.reload();
   await expect(
-    attachment.getByText("Validated", { exact: true }),
+    attachment.getByRole("heading", { name: "Validated", exact: true }),
   ).toBeVisible();
   const blocked = intake("overbill");
   await page.getByRole("button", { name: "Close email detail" }).click();
@@ -70,7 +78,7 @@ test("provider-mocked Gmail handoff uses real PostgreSQL, PDF worker, decisions 
   await expect(
     page
       .getByRole("region", { name: "Attachment contract-overbill.pdf" })
-      .getByText("Blocked", { exact: true }),
+      .getByRole("heading", { name: "Blocked", exact: true }),
   ).toBeVisible({ timeout: 20000 });
   await page
     .getByRole("link", { name: "Purchase orders", exact: true })
@@ -80,7 +88,7 @@ test("provider-mocked Gmail handoff uses real PostgreSQL, PDF worker, decisions 
   await expect(row.getByRole("cell").nth(3)).toHaveText("USD 154.00");
   await page.goto("/email-intake?message=" + blocked.message_id);
   await expect(
-    page.getByRole("heading", { name: "From inbox to evidence." }),
+    page.getByRole("heading", { name: "Invoices from your inbox" }),
   ).toBeVisible();
   await expect(page.getByRole("status", { name: /Loading/ })).toHaveCount(0);
   expect(

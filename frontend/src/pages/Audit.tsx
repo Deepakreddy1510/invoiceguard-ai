@@ -1,6 +1,8 @@
+import { TechnicalDetails } from "../TechnicalDetails";
+import { actorLabel } from "../business";
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
-import { relativeTime, when } from "../client";
+import { money, relativeTime, when } from "../client";
 import {
   CopyButton,
   EmptyState,
@@ -20,6 +22,14 @@ type AuditEvent = {
   run_id: string | null;
   document_id?: string | null;
   detail: Record<string, unknown>;
+  entity?: {
+    invoice_number: string | null;
+    vendor: string | null;
+    amount: string | null;
+    currency: string | null;
+    outcome: string | null;
+    reason: string | null;
+  } | null;
 };
 export function eventLabel(action: string) {
   const [stage, outcome] = action.split(":");
@@ -47,35 +57,44 @@ export default function Audit() {
     ...Object.fromEntries(params),
     offset: String(offset),
     limit: "50",
+    view: "business",
+    search,
+    actor,
+    stage,
   });
   const resource = useResource<{ events: AuditEvent[] }>(
     "/audit-events?" + query,
     3000,
   );
   const events = resource.data?.events ?? [];
-  const shown = events.filter(
-    (e) =>
-      (!stage || eventStage(e.action) === stage) &&
-      (!actor || e.actor === actor) &&
-      (e.action + " " + e.actor + " " + eventLabel(e.action))
-        .toLowerCase()
-        .includes(search.toLowerCase()),
-  );
-  const stages = [...new Set(events.map((e) => eventStage(e.action)))];
-  const actors = [...new Set(events.map((e) => e.actor))];
+  const shown = events;
+  const stages = [
+    ...new Set([
+      stage,
+      "DECISION",
+      "REVIEWER_ACTION",
+      ...events.map((e) => eventStage(e.action)),
+    ]),
+  ].filter(Boolean);
+  const actors = [
+    ...new Set([
+      actor,
+      "worker",
+      "local-demo-reviewer",
+      ...events.map((e) => e.actor),
+    ]),
+  ].filter(Boolean);
   return (
     <>
       <PageTitle
-        eyebrow="CONTROL / AUDIT HISTORY"
-        title="A record you can follow."
-        description="Every processing event, decision and reviewer action, preserved in order."
+        eyebrow="WORKSPACE / ACTIVITY HISTORY"
+        title="Activity history"
+        description="Invoice decisions, processing failures and workspace actions. Original records remain available to administrators."
       />
       {params.get("run_id") && (
         <div className="scope-banner">
-          <span>
-            Showing run <code>{params.get("run_id")?.slice(0, 8)}</code>
-          </span>
-          <Link to="/audit">View all audit history</Link>
+          <span>Showing the selected invoice’s activity</span>
+          <Link to="/audit">View all activity history</Link>
         </div>
       )}
       <Notice error={resource.error} onRetry={resource.reload} />
@@ -83,10 +102,7 @@ export default function Audit() {
         <div className="panel-heading">
           <div>
             <h2>Workspace event history</h2>
-            <p>
-              Stage and actor filters apply to the current page of stored
-              events.
-            </p>
+            <p>Search and filters apply to stored events before pagination.</p>
           </div>
           <label className="search-field">
             <Icon name="search" />
@@ -95,7 +111,10 @@ export default function Audit() {
               aria-label="Filter audit events"
               placeholder="Search event or actor"
               value={search}
-              onChange={(e) => setSearch(e.target.value)}
+              onChange={(e) => {
+                setSearch(e.target.value);
+                setOffset(0);
+              }}
             />
           </label>
         </div>
@@ -103,7 +122,10 @@ export default function Audit() {
           <FilterChips
             label="Filter audit stage on this page"
             value={stage}
-            onChange={setStage}
+            onChange={(v) => {
+              setStage(v);
+              setOffset(0);
+            }}
             options={[
               { value: "", label: "All stages" },
               ...stages.map((value) => ({
@@ -118,10 +140,13 @@ export default function Audit() {
           <FilterChips
             label="Filter audit actor on this page"
             value={actor}
-            onChange={setActor}
+            onChange={(v) => {
+              setActor(v);
+              setOffset(0);
+            }}
             options={[
               { value: "", label: "All actors" },
-              ...actors.map((value) => ({ value, label: value })),
+              ...actors.map((value) => ({ value, label: actorLabel(value) })),
             ]}
           />
         </div>
@@ -156,9 +181,7 @@ export default function Audit() {
                 >
                   {newRun && event.run_id && (
                     <div className="thread-label">
-                      <span className="eyebrow">
-                        RUN {event.run_id.slice(0, 8)}
-                      </span>
+                      <span className="eyebrow">INVOICE PROCESSING RECORD</span>
                       <Link to={"/runs/" + event.run_id}>
                         Open run <Icon name="arrow" />
                       </Link>
@@ -187,8 +210,40 @@ export default function Audit() {
                         {relativeTime(event.created_at)}
                       </time>
                     </div>
+                    {event.entity && (
+                      <div className="activity-entity">
+                        <p>
+                          <strong>
+                            {event.entity.invoice_number ??
+                              "Invoice details awaiting verification"}
+                          </strong>
+                          {event.entity.vendor && <> · {event.entity.vendor}</>}
+                          {event.entity.amount && event.entity.currency && (
+                            <>
+                              {" "}
+                              ·{" "}
+                              {money(
+                                event.entity.amount,
+                                event.entity.currency,
+                              )}
+                            </>
+                          )}
+                          {event.entity.outcome && (
+                            <> · {humanize(event.entity.outcome)}</>
+                          )}
+                        </p>
+                        {event.entity.reason && (
+                          <p>
+                            {event.entity.reason.replace(
+                              /original document [0-9a-f-]{36}/gi,
+                              "original recorded invoice",
+                            )}
+                          </p>
+                        )}
+                      </div>
+                    )}
                     <div className="event-meta">
-                      <span>{event.actor}</span>
+                      <span>{actorLabel(event.actor)}</span>
                       <time dateTime={event.created_at}>
                         {when(event.created_at)}
                       </time>
@@ -199,19 +254,21 @@ export default function Audit() {
                     {typeof event.detail.message === "string" && (
                       <p className="audit-message">{event.detail.message}</p>
                     )}
-                    <details className="json-details">
-                      <summary>
-                        Event details <Icon name="chevron" />
-                      </summary>
-                      <div className="json-heading">
-                        <code>{event.action}</code>
-                        <CopyButton
-                          label="Copy event JSON"
-                          text={JSON.stringify(event.detail, null, 2)}
-                        />
-                      </div>
-                      <pre>{JSON.stringify(event.detail, null, 2)}</pre>
-                    </details>
+                    <TechnicalDetails label="Original audit record">
+                      <details className="json-details">
+                        <summary>
+                          Event details <Icon name="chevron" />
+                        </summary>
+                        <div className="json-heading">
+                          <code>{event.action}</code>
+                          <CopyButton
+                            label="Copy event JSON"
+                            text={JSON.stringify(event.detail, null, 2)}
+                          />
+                        </div>
+                        <pre>{JSON.stringify(event.detail, null, 2)}</pre>
+                      </details>
+                    </TechnicalDetails>
                   </div>
                 </article>
               );
@@ -234,6 +291,36 @@ export default function Audit() {
           </button>
         </div>
       </section>
+      <TechnicalDetails label="Complete original audit history">
+        <RawHistory query={params.toString()} />
+      </TechnicalDetails>
+    </>
+  );
+}
+
+function RawHistory({ query }: { query: string }) {
+  const [offset, setOffset] = useState(0);
+  const raw = useResource<{ events: AuditEvent[] }>(
+    "/audit-events?" + query + "&offset=" + offset + "&limit=50",
+  );
+  return (
+    <>
+      <Notice error={raw.error} />
+      <pre className="email-body">
+        {JSON.stringify(raw.data?.events ?? [], null, 2)}
+      </pre>
+      <button
+        disabled={!offset}
+        onClick={() => setOffset(Math.max(0, offset - 50))}
+      >
+        Newer raw records
+      </button>
+      <button
+        disabled={(raw.data?.events.length ?? 0) < 50}
+        onClick={() => setOffset(offset + 50)}
+      >
+        Older raw records
+      </button>
     </>
   );
 }

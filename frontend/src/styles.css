@@ -2841,3 +2841,66 @@ summary {
   text-decoration: underline;
   text-underline-offset: 0.18em;
 }
+
+/* Business-first disclosure hierarchy; the original records remain available. */
+.check-group {
+  margin: 0.75rem 0;
+  border: 1px solid var(--border, #ded7cb);
+  border-radius: 12px;
+  background: #fffdf8;
+}
+.check-group > summary {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  cursor: pointer;
+  padding: 1rem;
+}
+.check-group > summary span {
+  font-size: 0.8rem;
+  color: #665e54;
+}
+.check-group ul {
+  margin: 0;
+  padding: 0 1rem 1rem;
+  list-style: none;
+}
+.technical-details {
+  margin: 1rem 0;
+  border-top: 1px solid #ded7cb;
+  padding: 0.75rem 0;
+  color: #665e54;
+  font-size: 0.85rem;
+}
+.technical-details > summary {
+  cursor: pointer;
+}
+.technical-details pre {
+  max-height: 28rem;
+  overflow: auto;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+.evidence-table details > summary {
+  cursor: pointer;
+  color: #8f412c;
+}
+.decision-card {
+  margin-top: 1rem;
+}
+.check-group summary:focus-visible,
+details summary:focus-visible {
+  outline: 3px solid #a45237;
+  outline-offset: 3px;
+}
+@media (max-width: 640px) {
+  .check-group > summary {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 0.4rem;
+  }
+  .financial-summary {
+    grid-template-columns: 1fr;
+  }
+}

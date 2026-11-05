@@ -47,14 +47,14 @@ test("reviewer corrects a fresh missing identifier and sees persisted revalidati
     total: "66",
   });
   await expect(
-    page.getByRole("heading", { name: "Needs Review", exact: true }),
+    page.getByRole("heading", { name: "Needs review", exact: true }),
   ).toBeVisible({ timeout: 30000 });
   const original = await page.getByTestId("run-id").textContent();
   await page
     .getByRole("link", { name: "Open in Exception review", exact: true })
     .click();
   await page
-    .getByRole("textbox", { name: "Correct invoice_number", exact: true })
+    .getByRole("textbox", { name: "Correct invoice number", exact: true })
     .fill("UI-REVIEW-001");
   await page
     .getByRole("textbox", { name: "Reviewer comment", exact: true })
@@ -73,20 +73,22 @@ test("reviewer corrects a fresh missing identifier and sees persisted revalidati
   ).toBeVisible({ timeout: 30000 });
   const revised = await page.getByTestId("run-id").textContent();
   expect(revised).not.toBe(original);
-  await expect(page.locator(".timeline")).toContainText(
+  await expect(page.locator(".operational-events")).toContainText(
     "Human correction loaded",
   );
   await page.reload();
   await expect(
     page.getByRole("heading", { name: "Validated", exact: true }),
   ).toBeVisible();
-  await page.getByRole("link", { name: "Audit history", exact: true }).click();
+  await page
+    .getByRole("link", { name: "Activity history", exact: true })
+    .click();
   await expect(
     page.getByText("Correction Saved", { exact: true }).first(),
   ).toBeVisible();
   await page.goto("/runs/" + original);
   await expect(
-    page.getByRole("heading", { name: "Needs Review", exact: true }),
+    page.getByRole("heading", { name: "Needs review", exact: true }),
   ).toBeVisible();
 });
 test("partial invoices enforce cumulative balance and all operational pages load", async ({

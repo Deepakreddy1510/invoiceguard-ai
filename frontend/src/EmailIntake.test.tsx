@@ -101,8 +101,8 @@ it("queues actual sync requests with the active workspace and renders distinct p
   expect(
     await screen.findByText("provider-contract@example.invalid"),
   ).toBeVisible();
-  expect(screen.getByText("Succeeded")).toBeVisible();
-  expect(screen.getByText("Needs Review")).toBeVisible();
+  expect(screen.getByText("Completed")).toBeVisible();
+  expect(screen.getByText("Needs review")).toBeVisible();
   fireEvent.click(screen.getByRole("button", { name: "Check for new emails" }));
   await waitFor(() =>
     expect(fetcher).toHaveBeenCalledWith(

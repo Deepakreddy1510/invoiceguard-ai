@@ -506,6 +506,7 @@ def overview(
     user: User,
     search: Annotated[str, Query(max_length=160)] = "",
     status: Annotated[str, Query(max_length=30)] = "",
+    view: Literal["all", "actionable"] = "all",
     offset: Annotated[int, Query(ge=0)] = 0,
 ):
     connections = session.scalars(
@@ -514,6 +515,21 @@ def overview(
         .order_by(GmailConnection.connected_at.desc())
     ).all()
     query = select(EmailMessage).where(EmailMessage.workspace_id == user.workspace_id)
+    if view == "actionable":
+        query = query.where(
+            EmailMessage.id.in_(
+                select(EmailAttachment.message_id).where(
+                    EmailAttachment.workspace_id == user.workspace_id,
+                    EmailAttachment.status.not_in(["IGNORED"]),
+                    or_(
+                        EmailAttachment.classification["category"].astext == "INVOICE",
+                        EmailAttachment.status.in_(
+                            ["REVIEW", "FAILED", "UNSUPPORTED", "QUEUED", "SCREENING", "INGESTED"]
+                        ),
+                    ),
+                )
+            )
+        )
     if search:
         term = "%" + search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
         query = query.where(
@@ -587,6 +603,30 @@ def overview(
         .where(a.workspace_id == user.workspace_id)
     )
 
+    latest_runs = (
+        select(
+            ProcessingRun.id.label("id"),
+            ProcessingRun.document_id,
+            func.row_number()
+            .over(
+                partition_by=ProcessingRun.document_id,
+                order_by=[ProcessingRun.created_at.desc(), ProcessingRun.id.desc()],
+            )
+            .label("rank"),
+        )
+        .where(
+            ProcessingRun.document_id.in_(
+                select(a.document_id).where(a.workspace_id == user.workspace_id)
+            )
+        )
+        .subquery()
+    )
+    metrics["completed_decisions"] = session.scalar(
+        select(func.count())
+        .select_from(latest_runs)
+        .join(Decision, Decision.run_id == latest_runs.c.id)
+        .where(latest_runs.c.rank == 1)
+    )
     return {
         "available": google.configured(),
         "email_classifier": "GEMINI"
@@ -671,6 +711,11 @@ def message_detail(identifier: UUID, session: DB, user: User):
         "invoice_attachment_count": sum(
             (a.classification or {}).get("category") == "INVOICE" for a in attachments
         ),
+        "attachment_events": [
+            {key: getattr(e, key) for key in ["id", "stage", "outcome", "detail", "created_at"]}
+            for e in reversed(events)
+            if e.attachment_id in {a.id for a in attachments}
+        ],
         "attachments": [],
         "events": [
             {

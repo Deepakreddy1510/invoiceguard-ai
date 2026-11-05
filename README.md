@@ -8,11 +8,13 @@ See [workspace management and Windows CMD upgrade instructions](docs/workspaces-
 
 See [Gmail intake setup, Google scope limitations, and Windows/live smoke instructions](docs/gmail-intake.md) for optional automatic email attachment processing. Live Gmail and live Gemini remain unverified until configured and observed.
 
+See [business UX, realistic sample data and safe Windows upgrade](docs/product-refinement.md) and the [Asterfield five-minute guide](docs/asterfield-demo-guide.md) for the final product pass. The new demo installs into its own verified workspace; original data is preserved.
+
 ## Features and architecture
 
 - Workspace-specific Gmail OAuth, encrypted tokens, durable inbox polling, source-backed Gemini/fallback intake, human intake review and versioned email PO provenance.
 - Isolated Demo and My workspaces; audited vendor/PO CRUD, safe cancellation/deactivation, transactional CSV preview/import and permission-controlled AUTO/GEMINI/FALLBACK extraction.
-- Dashboard, Process Invoice, Decision Details, Exception Review, Vendors, Purchase Orders and Audit History screens, responsive navigation and authenticated original-PDF preview.
+- Dashboard, Process Invoice, Decision Details, Exception Review, Vendors, Purchase Orders and Activity History screens, responsive navigation and authenticated original-PDF preview.
 - Bounded PDF ingestion, byte-hash replay detection, request idempotency, durable runs, worker leases and safe retries. Stored PDF bytes are checked against their original hash before extraction.
 - Real Gemini REST adapter with structured schema, retries/timeouts, source evidence checks and conservative fallback. Gemini credentials are optional; live Gemini has **not** been verified here.
 - Generic label and table extraction, OCR with bounded processes and one Tesseract thread, field-level source quotes/pages and geometry. Unsupported or ambiguous facts require review.

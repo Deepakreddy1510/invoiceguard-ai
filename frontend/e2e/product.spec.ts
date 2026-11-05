@@ -67,7 +67,7 @@ async function upload(
   await expect(
     page.getByRole("heading", { name: outcome, exact: true }),
   ).toBeVisible({ timeout: 20000 });
-  await expect(page.locator(".timeline")).toContainText("Record decision");
+  await expect(page.locator(".timeline")).toContainText("Decision recorded");
   return receipt.run_id as string;
 }
 test("private workspace procurement, actual PDFs, commitments and retained history", async ({
@@ -145,7 +145,9 @@ test("private workspace procurement, actual PDFs, commitments and retained histo
     "66",
     "Validated",
   );
-  await expect(page.locator(".rules")).toContainText("PO_BALANCE");
+  await expect(page.locator(".rules")).toContainText(
+    "Available purchase order balance",
+  );
   await expect(page.locator(".evidence-table")).toContainText("Page 1");
   await page
     .getByRole("link", { name: "Purchase orders", exact: true })
@@ -162,7 +164,9 @@ test("private workspace procurement, actual PDFs, commitments and retained histo
     "176",
     "Blocked",
   );
-  await expect(page.locator(".rules")).toContainText("PO_BALANCE");
+  await expect(page.locator(".rules")).toContainText(
+    "Available purchase order balance",
+  );
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   await expect(
     page.getByRole("link", { name: "BROWSER-VALID", exact: true }),
@@ -170,7 +174,9 @@ test("private workspace procurement, actual PDFs, commitments and retained histo
   await expect(
     page.getByRole("link", { name: "BROWSER-OVER", exact: true }),
   ).toBeVisible();
-  await page.getByRole("link", { name: "Audit history", exact: true }).click();
+  await page
+    .getByRole("link", { name: "Activity history", exact: true })
+    .click();
   await expect(
     page.locator(`a[href="/runs/${blocked}"]`).first(),
   ).toBeVisible();

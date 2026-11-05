@@ -1,0 +1,223 @@
+{
+  "version": "asterfield-v1",
+  "seed": 20261106,
+  "synthetic": true,
+  "documents": [
+    {
+      "file": "01-office-supplies.pdf",
+      "po": 1,
+      "number": "WB-261101",
+      "q": "10",
+      "expected": "VALIDATED",
+      "layout": "letterhead",
+      "medium": "digital",
+      "sha256": "cbacb1b67ced3735fe7e9906f2d2de31d61c7a33bd304dec9fb912c2b6cfae53"
+    },
+    {
+      "file": "02-it-support-october.pdf",
+      "po": 3,
+      "number": "CL-261001",
+      "q": "2",
+      "expected": "VALIDATED",
+      "layout": "split-panels",
+      "medium": "digital",
+      "sha256": "5983e084cda2d2d79e4e1928cd2c720806e838eb95081ec25d47be26bd1c3391"
+    },
+    {
+      "file": "03-it-support-november.pdf",
+      "po": 3,
+      "number": "CL-261102",
+      "q": "3",
+      "expected": "VALIDATED",
+      "layout": "statement-panels",
+      "medium": "digital",
+      "sha256": "cd50a6ec0c5dafe70e990a36e0b77d0de495c3826867960a7a1e7766ce31a023"
+    },
+    {
+      "file": "04-it-support-over-budget.pdf",
+      "po": 3,
+      "number": "CL-261103",
+      "q": "8",
+      "expected": "BLOCKED",
+      "layout": "letterhead",
+      "medium": "digital",
+      "sha256": "b5099558045e8deb9c38c91caa135bcc3a7d77e6c553a3e2a45fddcadf55a6df"
+    },
+    {
+      "file": "05-chairs-digital.pdf",
+      "po": 5,
+      "number": "MC-261105",
+      "q": "4",
+      "expected": "VALIDATED",
+      "layout": "split-panels",
+      "medium": "digital",
+      "sha256": "9afe861ac0810e2df13e8ab94b75a0013906d0774c1bce73120b64b533e8c08b"
+    },
+    {
+      "file": "06-cleaning-scan.pdf",
+      "po": 7,
+      "number": "LF-261106",
+      "q": "2",
+      "expected": "VALIDATED",
+      "scan": true,
+      "layout": "statement-panels",
+      "medium": "scanned",
+      "sha256": "1e2536c9d823c3d1e62a4910263f8a54bc20d38f3fa9fa656a5db715ed1674a4"
+    },
+    {
+      "file": "07-packaging-photo.pdf",
+      "po": 9,
+      "number": "BP-261107",
+      "q": "8",
+      "expected": "VALIDATED",
+      "photo": true,
+      "layout": "letterhead",
+      "medium": "photographed",
+      "sha256": "fad714b7dd6ed8992df2e787e3dac2116ca2616b0743d88f7aa6b7250a6d4175"
+    },
+    {
+      "file": "08-printing.pdf",
+      "po": 11,
+      "number": "EP-261108",
+      "q": "5",
+      "expected": "VALIDATED",
+      "inclusive": true,
+      "layout": "split-panels",
+      "medium": "digital",
+      "sha256": "70365a28628079c8214d1623bf59d1243a2973bda57c52e7397571c05f4fd358"
+    },
+    {
+      "file": "09-delivery-service.pdf",
+      "po": 13,
+      "number": "HL-261109",
+      "q": "2",
+      "expected": "VALIDATED",
+      "layout": "statement-panels",
+      "medium": "digital",
+      "sha256": "05668b1f5256c3c2d4b7066cc9ac385675da63636aa9bf4bea7003b243a1bf7c"
+    },
+    {
+      "file": "10-safety-kits.pdf",
+      "po": 15,
+      "number": "OS-261110",
+      "q": "6",
+      "expected": "VALIDATED",
+      "layout": "letterhead",
+      "medium": "digital",
+      "sha256": "01cc787f891a1e83b5e48c136781bab90f6adb9078fe4b6369f73fb8256cfdf5"
+    },
+    {
+      "file": "11-catering-missing-reference.pdf",
+      "po": 17,
+      "number": "RC-261111",
+      "q": "3",
+      "expected": "NEEDS_REVIEW",
+      "missing": true,
+      "layout": "split-panels",
+      "medium": "digital",
+      "sha256": "af2527ede033ff9a6482e03170b49b6e093f5267a558254e6fe304c67df913cd"
+    },
+    {
+      "file": "12-electrical.pdf",
+      "po": 19,
+      "number": "FE-261112",
+      "q": "1",
+      "expected": "VALIDATED",
+      "layout": "statement-panels",
+      "medium": "digital",
+      "sha256": "2d73c6d4c4740b60dbb850d399a9e02e32fd046fb72cf7b2cea27991d766154f"
+    },
+    {
+      "file": "13-training-tax-exempt.pdf",
+      "po": 21,
+      "number": "AL-261113",
+      "q": "2",
+      "expected": "VALIDATED",
+      "layout": "letterhead",
+      "medium": "digital",
+      "sha256": "c8ba2e82041ecd36eaefa1fbe6c315b3ab2b14926d8a1d0562d8ddbe2190a1b5"
+    },
+    {
+      "file": "14-scanners-usd.pdf",
+      "po": 23,
+      "number": "CE-261114",
+      "q": "5",
+      "expected": "VALIDATED",
+      "layout": "split-panels",
+      "medium": "digital",
+      "sha256": "c3906aebe58a5c57b097fdfafa69ed8b0348cd8c601c0818dc2fc13a87e81cf1"
+    },
+    {
+      "file": "15-uniforms-eur.pdf",
+      "po": 25,
+      "number": "MT-261115",
+      "q": "5",
+      "expected": "VALIDATED",
+      "layout": "statement-panels",
+      "medium": "digital",
+      "sha256": "faafc56d895344cbafb44f933fcb861e94cada23d5990e875276e3b703a84399"
+    },
+    {
+      "file": "16-analytics-gbp.pdf",
+      "po": 27,
+      "number": "BA-261116",
+      "q": "2",
+      "expected": "VALIDATED",
+      "layout": "letterhead",
+      "medium": "digital",
+      "sha256": "305cd041bb8218ee4655908542bfd66d2a2843188fc1db38b65af51c2682ce65"
+    },
+    {
+      "file": "17-suspended-supplier.pdf",
+      "po": 29,
+      "number": "HM-261117",
+      "q": "1",
+      "expected": "BLOCKED",
+      "layout": "split-panels",
+      "medium": "digital",
+      "sha256": "ba3c3989a9787bef017a0cd01f3680082118894d1a765aebb48321ce7998fa96"
+    },
+    {
+      "file": "18-inactive-supplier.pdf",
+      "po": 31,
+      "number": "SD-261118",
+      "q": "1",
+      "expected": "BLOCKED",
+      "layout": "statement-panels",
+      "medium": "digital",
+      "sha256": "bd4d35e04b14258f223de083c2a8f663dc6aeb016828f8d794fb55b564e34fd3"
+    },
+    {
+      "file": "19-closed-order.pdf",
+      "po": 36,
+      "number": "PS-261119",
+      "q": "1",
+      "expected": "BLOCKED",
+      "layout": "letterhead",
+      "medium": "digital",
+      "sha256": "bb3ca985ba5ac67cf5b070f16e73ecfad40e1166576029e525b535ffd29d6a7d"
+    },
+    {
+      "file": "20-office-supplies-copy.pdf",
+      "po": 1,
+      "number": "WB-261101",
+      "q": "10",
+      "expected": "BLOCKED",
+      "copy": true,
+      "layout": "split-panels",
+      "medium": "digital",
+      "sha256": "5a03a4a778dcae6be92ee85a2c7e14c59143222f86971b4207208220bf44850d"
+    },
+    {
+      "file": "21-supplier-order-mismatch.pdf",
+      "po": 2,
+      "number": "CL-261121",
+      "q": "1",
+      "expected": "BLOCKED",
+      "vendor_index": 1,
+      "layout": "statement-panels",
+      "medium": "digital",
+      "sha256": "711f8d36c16be7bd19235430e857d3c7bd525b695b6042f7b1e5deee0a0481d4"
+    }
+  ]
+}

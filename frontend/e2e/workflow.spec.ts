@@ -29,7 +29,8 @@ async function outcome(page: Page, name: string) {
       name: name
         .split("_")
         .map((word) => word[0] + word.slice(1).toLowerCase())
-        .join(" "),
+        .join(" ")
+        .replace("Needs Review", "Needs review"),
       exact: true,
     }),
   ).toBeVisible({
@@ -45,11 +46,13 @@ test.describe
     await outcome(page, "VALIDATED");
     const run = await page.getByTestId("run-id").textContent();
     await expect(page.locator(".timeline")).toContainText(
-      "Extract invoice fields",
+      "Invoice details extracted",
     );
-    await expect(page.locator(".timeline")).toContainText("Record decision");
+    await expect(page.locator(".timeline")).toContainText("Decision recorded");
     await expect(
-      page.getByText("Payment has not been executed.", { exact: false }),
+      page
+        .getByRole("region", { name: "Financial decision" })
+        .getByText(/does not execute payments/),
     ).toBeVisible();
     await page.reload();
     await outcome(page, "VALIDATED");
@@ -80,7 +83,7 @@ test.describe
     await upload(page, "missing.pdf");
     await outcome(page, "NEEDS_REVIEW");
     await expect(page.locator(".rules")).toContainText(
-      "REQUIRED_invoice_number",
+      "Invoice number required",
     );
   });
   test("scanned PDF executes real OCR", async ({ page }) => {
@@ -89,8 +92,12 @@ test.describe
     await expect(page.locator(".timeline")).toContainText(
       "OCR executed on pages 1",
     );
+    await page.locator(".evidence-table details > summary").first().click();
     await expect(
-      page.locator(".evidence-table").getByText("Page 1 · OCR").first(),
+      page
+        .locator(".evidence-table")
+        .getByText("Page 1 · Read using OCR")
+        .first(),
     ).toBeVisible();
   });
   test("corrupt file shows a real upload failure", async ({ page }) => {

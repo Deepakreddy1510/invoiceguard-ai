@@ -1,0 +1,438 @@
+{
+  "version": "asterfield-v1",
+  "workspace_id": "f92460f9-8b33-5cfc-934f-a25fb43d4d5e",
+  "vendors": 18,
+  "purchase_orders": 36,
+  "documents": 21,
+  "outcomes": {
+    "VALIDATED": 14,
+    "BLOCKED": 6,
+    "NEEDS_REVIEW": 1
+  },
+  "results": [
+    {
+      "file": "01-office-supplies.pdf",
+      "expected": "VALIDATED",
+      "actual": "VALIDATED",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [],
+      "run_id": "0569bf37-3f1a-438c-a48a-5dee4ef85565",
+      "po": "AF-PO-2026-001"
+    },
+    {
+      "file": "02-it-support-october.pdf",
+      "expected": "VALIDATED",
+      "actual": "VALIDATED",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [],
+      "run_id": "6bae9db2-88f5-4edb-b2c8-a095363a2a11",
+      "po": "AF-PO-2026-003"
+    },
+    {
+      "file": "03-it-support-november.pdf",
+      "expected": "VALIDATED",
+      "actual": "VALIDATED",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [],
+      "run_id": "94cd6ddb-7faa-4958-98f1-01f24b84aca7",
+      "po": "AF-PO-2026-003"
+    },
+    {
+      "file": "04-it-support-over-budget.pdf",
+      "expected": "BLOCKED",
+      "actual": "BLOCKED",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [],
+      "run_id": "20ee0cb1-e2af-437a-8f13-9c5116892a2c",
+      "po": "AF-PO-2026-003"
+    },
+    {
+      "file": "05-chairs-digital.pdf",
+      "expected": "VALIDATED",
+      "actual": "VALIDATED",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [],
+      "run_id": "9af9b4b6-c778-4734-a57e-d1c9c44d52c7",
+      "po": "AF-PO-2026-005"
+    },
+    {
+      "file": "06-cleaning-scan.pdf",
+      "expected": "VALIDATED",
+      "actual": "VALIDATED",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [
+        1
+      ],
+      "run_id": "ef1a5ec0-f1dc-4d5b-9fa5-f325d080230b",
+      "po": "AF-PO-2026-007"
+    },
+    {
+      "file": "07-packaging-photo.pdf",
+      "expected": "VALIDATED",
+      "actual": "VALIDATED",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [
+        1
+      ],
+      "run_id": "3f5af9fa-f4f2-4b82-8465-528038466a1e",
+      "po": "AF-PO-2026-009"
+    },
+    {
+      "file": "08-printing.pdf",
+      "expected": "VALIDATED",
+      "actual": "VALIDATED",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [],
+      "run_id": "1586c1f7-4788-466a-933a-6c646f2c2ef4",
+      "po": "AF-PO-2026-011"
+    },
+    {
+      "file": "09-delivery-service.pdf",
+      "expected": "VALIDATED",
+      "actual": "VALIDATED",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [],
+      "run_id": "b022ae59-cb74-4184-be46-b5dff33c19d1",
+      "po": "AF-PO-2026-013"
+    },
+    {
+      "file": "10-safety-kits.pdf",
+      "expected": "VALIDATED",
+      "actual": "VALIDATED",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [],
+      "run_id": "ad557ce2-c085-4919-965b-aeb89a292810",
+      "po": "AF-PO-2026-015"
+    },
+    {
+      "file": "11-catering-missing-reference.pdf",
+      "expected": "NEEDS_REVIEW",
+      "actual": "NEEDS_REVIEW",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [],
+      "run_id": "79782ef5-4cd9-4420-8b82-ef62be5194d6",
+      "po": "AF-PO-2026-017"
+    },
+    {
+      "file": "12-electrical.pdf",
+      "expected": "VALIDATED",
+      "actual": "VALIDATED",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [],
+      "run_id": "eb4fc178-a1d9-471d-8017-8e3253a6bb86",
+      "po": "AF-PO-2026-019"
+    },
+    {
+      "file": "13-training-tax-exempt.pdf",
+      "expected": "VALIDATED",
+      "actual": "VALIDATED",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [],
+      "run_id": "d36ce816-cd6d-4fa3-8925-10065cebf446",
+      "po": "AF-PO-2026-021"
+    },
+    {
+      "file": "14-scanners-usd.pdf",
+      "expected": "VALIDATED",
+      "actual": "VALIDATED",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [],
+      "run_id": "5f25b745-b8e5-4d39-9525-99c9d111767d",
+      "po": "AF-PO-2026-023"
+    },
+    {
+      "file": "15-uniforms-eur.pdf",
+      "expected": "VALIDATED",
+      "actual": "VALIDATED",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [],
+      "run_id": "905a38fa-ce9c-4449-b4ad-f54d05ed82cd",
+      "po": "AF-PO-2026-025"
+    },
+    {
+      "file": "16-analytics-gbp.pdf",
+      "expected": "VALIDATED",
+      "actual": "VALIDATED",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [],
+      "run_id": "a25fc613-581a-4bc7-b4bb-723fe7e32cc8",
+      "po": "AF-PO-2026-027"
+    },
+    {
+      "file": "17-suspended-supplier.pdf",
+      "expected": "BLOCKED",
+      "actual": "BLOCKED",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [],
+      "run_id": "9b8d4146-9053-4963-ac82-c7842a8eca47",
+      "po": "AF-PO-2026-029"
+    },
+    {
+      "file": "18-inactive-supplier.pdf",
+      "expected": "BLOCKED",
+      "actual": "BLOCKED",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [],
+      "run_id": "ea787790-5bce-4947-a7b7-8b0f6a3d0ed6",
+      "po": "AF-PO-2026-031"
+    },
+    {
+      "file": "19-closed-order.pdf",
+      "expected": "BLOCKED",
+      "actual": "BLOCKED",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [],
+      "run_id": "98c73e03-d78e-45e9-bbb8-9ff4e5ef167d",
+      "po": "AF-PO-2026-036"
+    },
+    {
+      "file": "20-office-supplies-copy.pdf",
+      "expected": "BLOCKED",
+      "actual": "BLOCKED",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [],
+      "run_id": "6288fcbc-8a2a-48fc-8be5-77e9d3c9fbc2",
+      "po": "AF-PO-2026-001"
+    },
+    {
+      "file": "21-supplier-order-mismatch.pdf",
+      "expected": "BLOCKED",
+      "actual": "BLOCKED",
+      "actual_provider": "FALLBACK",
+      "ocr_pages": [],
+      "run_id": "664f0615-75ec-4738-96c4-a726ce5f6c50",
+      "po": "AF-PO-2026-002"
+    }
+  ],
+  "balances": [
+    {
+      "po": "AF-PO-2026-001",
+      "authorised": "29500.00",
+      "reserved": "2950.000000",
+      "remaining": "26550.000000"
+    },
+    {
+      "po": "AF-PO-2026-002",
+      "authorised": "35400.00",
+      "reserved": "0",
+      "remaining": "35400.00"
+    },
+    {
+      "po": "AF-PO-2026-003",
+      "authorised": "5310.00",
+      "reserved": "2212.500000",
+      "remaining": "3097.500000"
+    },
+    {
+      "po": "AF-PO-2026-004",
+      "authorised": "6018.00",
+      "reserved": "0",
+      "remaining": "6018.00"
+    },
+    {
+      "po": "AF-PO-2026-005",
+      "authorised": "59000.00",
+      "reserved": "2360.000000",
+      "remaining": "56640.000000"
+    },
+    {
+      "po": "AF-PO-2026-006",
+      "authorised": "64900.00",
+      "reserved": "0",
+      "remaining": "64900.00"
+    },
+    {
+      "po": "AF-PO-2026-007",
+      "authorised": "8850.00",
+      "reserved": "1475.000000",
+      "remaining": "7375.000000"
+    },
+    {
+      "po": "AF-PO-2026-008",
+      "authorised": "9558.00",
+      "reserved": "0",
+      "remaining": "9558.00"
+    },
+    {
+      "po": "AF-PO-2026-009",
+      "authorised": "88500.00",
+      "reserved": "7080.000000",
+      "remaining": "81420.000000"
+    },
+    {
+      "po": "AF-PO-2026-010",
+      "authorised": "94400.00",
+      "reserved": "0",
+      "remaining": "94400.00"
+    },
+    {
+      "po": "AF-PO-2026-011",
+      "authorised": "103250.00",
+      "reserved": "5162.500000",
+      "remaining": "98087.500000"
+    },
+    {
+      "po": "AF-PO-2026-012",
+      "authorised": "109150.00",
+      "reserved": "0",
+      "remaining": "109150.00"
+    },
+    {
+      "po": "AF-PO-2026-013",
+      "authorised": "14160.00",
+      "reserved": "2360.000000",
+      "remaining": "11800.000000"
+    },
+    {
+      "po": "AF-PO-2026-014",
+      "authorised": "14868.00",
+      "reserved": "0",
+      "remaining": "14868.00"
+    },
+    {
+      "po": "AF-PO-2026-015",
+      "authorised": "132750.00",
+      "reserved": "7965.000000",
+      "remaining": "124785.000000"
+    },
+    {
+      "po": "AF-PO-2026-016",
+      "authorised": "138650.00",
+      "reserved": "0",
+      "remaining": "138650.00"
+    },
+    {
+      "po": "AF-PO-2026-017",
+      "authorised": "147500.00",
+      "reserved": "0",
+      "remaining": "147500.00"
+    },
+    {
+      "po": "AF-PO-2026-018",
+      "authorised": "153400.00",
+      "reserved": "0",
+      "remaining": "153400.00"
+    },
+    {
+      "po": "AF-PO-2026-019",
+      "authorised": "19470.00",
+      "reserved": "1622.500000",
+      "remaining": "17847.500000"
+    },
+    {
+      "po": "AF-PO-2026-020",
+      "authorised": "20178.00",
+      "reserved": "0",
+      "remaining": "20178.00"
+    },
+    {
+      "po": "AF-PO-2026-021",
+      "authorised": "18000.00",
+      "reserved": "3000.000000",
+      "remaining": "15000.000000"
+    },
+    {
+      "po": "AF-PO-2026-022",
+      "authorised": "18600.00",
+      "reserved": "0",
+      "remaining": "18600.00"
+    },
+    {
+      "po": "AF-PO-2026-023",
+      "authorised": "178750.00",
+      "reserved": "8937.500000",
+      "remaining": "169812.500000"
+    },
+    {
+      "po": "AF-PO-2026-024",
+      "authorised": "184250.00",
+      "reserved": "0",
+      "remaining": "184250.00"
+    },
+    {
+      "po": "AF-PO-2026-025",
+      "authorised": "192500.00",
+      "reserved": "9625.000000",
+      "remaining": "182875.000000"
+    },
+    {
+      "po": "AF-PO-2026-026",
+      "authorised": "198000.00",
+      "reserved": "0",
+      "remaining": "198000.00"
+    },
+    {
+      "po": "AF-PO-2026-027",
+      "authorised": "24750.00",
+      "reserved": "4125.000000",
+      "remaining": "20625.000000"
+    },
+    {
+      "po": "AF-PO-2026-028",
+      "authorised": "25410.00",
+      "reserved": "0",
+      "remaining": "25410.00"
+    },
+    {
+      "po": "AF-PO-2026-029",
+      "authorised": "28320.00",
+      "reserved": "0",
+      "remaining": "28320.00"
+    },
+    {
+      "po": "AF-PO-2026-030",
+      "authorised": "29028.00",
+      "reserved": "0",
+      "remaining": "29028.00"
+    },
+    {
+      "po": "AF-PO-2026-031",
+      "authorised": "30090.00",
+      "reserved": "0",
+      "remaining": "30090.00"
+    },
+    {
+      "po": "AF-PO-2026-032",
+      "authorised": "30798.00",
+      "reserved": "0",
+      "remaining": "30798.00"
+    },
+    {
+      "po": "AF-PO-2026-033",
+      "authorised": "265500.00",
+      "reserved": "0",
+      "remaining": "265500.00"
+    },
+    {
+      "po": "AF-PO-2026-034",
+      "authorised": "271400.00",
+      "reserved": "0",
+      "remaining": "271400.00"
+    },
+    {
+      "po": "AF-PO-2026-035",
+      "authorised": "33630.00",
+      "reserved": "0",
+      "remaining": "33630.00"
+    },
+    {
+      "po": "AF-PO-2026-036",
+      "authorised": "34338.00",
+      "reserved": "0",
+      "remaining": "34338.00"
+    }
+  ],
+  "live_gemini_tested": false,
+  "verification_context": {
+    "database": "owned disposable PostgreSQL database; dropped after verification",
+    "provider": "FALLBACK; no live Gemini or Gmail calls",
+    "repeat_installation": "same run IDs, same balances and results",
+    "base_commit": "a5668f047acfc39a700024abdb03763e1164f129",
+    "source_sha256": {
+      "backend/scripts/install_asterfield_demo.py": "9e34f14c5f8a6b8e249b67e10e174a174bf349774052d6bdf8530c6cf1e2e369",
+      "backend/app/validation/engine.py": "f61250c319ad33e4457d6f4ffbcdaf35b5dbc9160a48b5728751408c05337072",
+      "backend/app/email_intake/screening.py": "f50948267ed5e29123fb9bc0bd9213382c06ae2ecb5e1d3110fb695fe9321c19",
+      "backend/demo/asterfield-v1/manifest.json": "a9fe879b953b30e8907c9aa701d42c0383ce98f22f7f05e9f601aaed51918697"
+    }
+  }
+}
