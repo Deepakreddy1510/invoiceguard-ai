@@ -1,5 +1,24 @@
 import type { Rule } from "./models";
 export const businessLabels: Record<string, string> = {
+  DOCUMENT_ACCEPTED: "Invoice received",
+  DOCUMENT_REPLAYED: "Previously uploaded invoice opened",
+  DECISION_RECORDED: "Invoice decision recorded",
+  CORRECTION_SAVED: "Invoice details corrected",
+  PURCHASE_ORDER_CREATED: "Purchase order created",
+  PURCHASE_ORDER_UPDATED: "Purchase order updated",
+  PURCHASE_ORDER_CANCELLED: "Purchase order cancelled",
+  VENDOR_UPDATED: "Supplier details updated",
+  VENDOR_CREATED: "Supplier added",
+  WORKSPACE_RENAMED: "Workspace renamed",
+  WORKSPACE_ARCHIVED: "Workspace archived",
+  WORKSPACE_RESTORED: "Workspace restored",
+  RESERVATION_CREATED: "Order amount reserved",
+  RESERVATION_REPLACED: "Reserved amount updated",
+  RESERVATION_RELEASED: "Reserved amount released",
+
+  EMAIL_SYNC_REQUESTED: "Email check requested",
+  EMAIL_HANDOFF: "Invoice received from email",
+  EMAIL_DISCONNECT: "Gmail disconnected",
   invoice_number: "Invoice number",
   invoice_date: "Invoice date",
   vendor_name: "Supplier",
@@ -10,7 +29,7 @@ export const businessLabels: Record<string, string> = {
   TAX_EXCLUSIVE: "Tax added to net price",
   TAX_INCLUSIVE: "Tax included in price",
   PDF_TEXT: "Digital document",
-  OCR: "Read using OCR",
+  OCR: "Scanned document was read",
 
   VALIDATED: "Validated",
   NEEDS_REVIEW: "Needs review",
@@ -26,7 +45,7 @@ export const businessLabels: Record<string, string> = {
   NOT_INVOICE: "Not an invoice",
   UNCERTAIN: "Invoice type unclear",
   SCREENING: "Checking attachment",
-  FALLBACK: "Conservative document extraction",
+  FALLBACK: "Standard extraction",
   AUTO: "Automatic extraction",
   GEMINI: "AI-assisted extraction",
   VENDOR_APPROVED: "Supplier approval",
@@ -45,24 +64,25 @@ export const businessLabels: Record<string, string> = {
   REQUIRED_PO_NUMBER: "Purchase order reference required",
 };
 export function checkGroup(id: string) {
-  if (/DUPLICATE|COLLISION|EMAIL/.test(id)) return "Duplicates & authorisation";
+  if (/DUPLICATE|COLLISION|EMAIL/.test(id))
+    return "Duplicate and authorization checks";
   if (
     /^REQUIRED_|EVIDENCE|EXTRACTION|DOCUMENT_TYPE|INVOICE_NUMBER|FIELDS/.test(
       id,
     )
   )
-    return "Invoice completeness";
-  if (/^VENDOR_(?!PO)/.test(id)) return "Supplier verification";
+    return "Invoice details";
+  if (/^VENDOR_(?!PO)/.test(id)) return "Supplier";
   if (/^PO_|VENDOR_PO|MATCH|PRICE|QUANTITY|CURRENCY/.test(id))
-    return "Purchase order matching";
-  return "Amounts & tax";
+    return "Purchase order";
+  return "Amounts and taxes";
 }
 export const checkGroups = [
-  "Supplier verification",
-  "Invoice completeness",
-  "Purchase order matching",
-  "Amounts & tax",
-  "Duplicates & authorisation",
+  "Supplier",
+  "Invoice details",
+  "Purchase order",
+  "Amounts and taxes",
+  "Duplicate and authorization checks",
 ];
 export function primaryIssues(rules: Rule[]) {
   return [...rules]
@@ -92,6 +112,31 @@ export function actorLabel(actor: string) {
 }
 
 export function checkExplanation(rule: Rule) {
+  const copy: Record<string, [string, string]> = {
+    VENDOR_APPROVED: [
+      "This supplier is approved for invoicing.",
+      "This supplier is not approved for new invoices. Check its saved approval status.",
+    ],
+    VENDOR_IDENTITY: [
+      "The supplier was identified from the invoice.",
+      "The supplier could not be identified unambiguously. Check its name, supplier code and tax identifier.",
+    ],
+    VENDOR_CONSISTENCY: [
+      "Supplier identifiers agree with the saved record.",
+      "The supplied identifiers do not all agree with the saved supplier record.",
+    ],
+    PO_EXISTS: [
+      "The referenced purchase order exists in this workspace.",
+      "The referenced purchase order could not be found. Confirm the reference with the supplier.",
+    ],
+  };
+  if (copy[rule.rule_id])
+    return copy[rule.rule_id][rule.outcome === "PASS" ? 0 : 1];
+  if (rule.rule_id.startsWith("DECIMAL_"))
+    return rule.outcome === "PASS"
+      ? "This amount uses a supported numeric format."
+      : "Confirm a valid nonnegative amount in the source invoice.";
+
   if (rule.rule_id.startsWith("REQUIRED_"))
     return rule.outcome === "PASS"
       ? "The required value was verified against the source document."

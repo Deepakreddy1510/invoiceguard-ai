@@ -27,6 +27,7 @@ from app.models import (
     ReviewTask,
     RunEvent,
     WorkerHeartbeat,
+    Workspace,
 )
 from app.review.service import ensure_task, hold
 from app.validation.engine import evaluate
@@ -61,8 +62,36 @@ def event(session, run, stage, outcome, detail):
 def claim(factory=SessionLocal, run_id=None):
     now = datetime.now(timezone.utc)
     with factory.begin() as session:
+        # Lock the workspace before the queue row so archive and claim cannot race.
+        candidate = session.scalar(
+            select(Workspace)
+            .join(InvoiceDocument, InvoiceDocument.workspace_id == Workspace.id)
+            .join(ProcessingRun, ProcessingRun.document_id == InvoiceDocument.id)
+            .where(
+                Workspace.archived_at.is_(None),
+                ProcessingRun.id == run_id if run_id else True,
+                or_(
+                    ProcessingRun.status.in_(["QUEUED", "RETRY_WAIT"]),
+                    (ProcessingRun.status == "RUNNING") & (ProcessingRun.lease_until < now),
+                ),
+            )
+            .order_by(ProcessingRun.created_at)
+            .limit(1)
+        )
+        if candidate is None:
+            return None
+        workspace = session.scalar(
+            select(Workspace)
+            .where(Workspace.id == candidate.id)
+            .with_for_update(read=True)
+            .execution_options(populate_existing=True)
+        )
+        if workspace.archived_at:
+            return None
         run = session.scalar(
             select(ProcessingRun)
+            .join(InvoiceDocument)
+            .where(InvoiceDocument.workspace_id == workspace.id)
             .where(ProcessingRun.id == run_id if run_id else True)
             .where(
                 or_(

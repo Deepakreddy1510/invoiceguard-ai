@@ -56,7 +56,7 @@ it("does not present dependent amounts as passed when required information is mi
     />,
   );
   expect(screen.getByText("Awaiting required information")).toBeVisible();
-  expect(screen.queryByText("Recorded checks passed")).not.toBeInTheDocument();
+  expect(screen.queryByText("Checks passed")).not.toBeInTheDocument();
 });
 it("does not disclose technical records without an administrator workspace", () => {
   render(

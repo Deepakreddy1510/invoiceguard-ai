@@ -31,6 +31,8 @@ class Workspace(Base):
     kind: Mapped[str] = mapped_column(String(20), default="CUSTOM", server_default="CUSTOM")
     owner_subject: Mapped[str | None] = mapped_column(String(255))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    version: Mapped[int] = mapped_column(default=1, server_default="1")
     __table_args__ = (
         CheckConstraint("kind IN ('CUSTOM','DEMO','MY')", name="workspace_kind"),
         Index(

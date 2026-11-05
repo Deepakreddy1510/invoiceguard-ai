@@ -76,7 +76,7 @@ with DatabasePool(admin) as pool, tempfile.TemporaryDirectory() as temp:
             ["node", "node_modules/playwright/cli.js", "test"],
             cwd=ROOT / "frontend",
             env=env,
-            timeout=120,
+            timeout=300,
         )
         if result.returncode:
             for _, log in processes:

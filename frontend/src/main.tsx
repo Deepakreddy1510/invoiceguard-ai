@@ -2,6 +2,7 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import { Authentication } from "./auth";
 import "./styles.css";
+import "./premium.css";
 const root = createRoot(document.getElementById("root")!);
 async function start() {
   try {

@@ -1,7 +1,14 @@
 import type { RunDetail } from "./models";
 import { fact } from "./models";
 import type { PurchaseOrder } from "./api";
-import { useResource, Notice, humanize, EmptyState, Skeleton } from "./ui";
+import {
+  useResource,
+  Notice,
+  humanize,
+  EmptyState,
+  Skeleton,
+  Status,
+} from "./ui";
 import { money } from "./client";
 export function POComparison({ run }: { run: RunDetail }) {
   const number = run.decision?.summary.po_number;
@@ -9,6 +16,7 @@ export function POComparison({ run }: { run: RunDetail }) {
     typeof number === "string"
       ? "/purchase-orders?search=" + encodeURIComponent(number)
       : null,
+    5000,
   );
   if (typeof number !== "string")
     return (
@@ -20,20 +28,29 @@ export function POComparison({ run }: { run: RunDetail }) {
   const matches = orders.data?.filter((p) => p.number === number) ?? [];
   const po = matches.length === 1 ? matches[0] : undefined;
   const summary = run.decision?.summary;
-  const rows: [string, string | undefined, string | undefined][] = po
+  const rows: [string, string | undefined, string | undefined, string][] = po
     ? [
         [
           "Supplier",
           fact(run, "vendor_name")?.value ?? undefined,
           po.vendor.legal_name,
+          "VENDOR_PO",
         ],
-        ["Currency", fact(run, "currency")?.value ?? undefined, po.currency],
+        [
+          "Currency",
+          fact(run, "currency")?.value ?? undefined,
+          po.currency,
+          "CURRENCY",
+        ],
         [
           "Invoice / authorised amount",
           typeof summary?.requested === "string"
-            ? money(summary.requested, po.currency)
+            ? typeof summary.currency === "string"
+              ? money(summary.requested, summary.currency)
+              : summary.requested
             : undefined,
           money(po.authorized_gross, po.currency),
+          "PO_BALANCE",
         ],
       ]
     : [];
@@ -59,14 +76,34 @@ export function POComparison({ run }: { run: RunDetail }) {
                   <th>Detail</th>
                   <th>Invoice</th>
                   <th>Purchase order</th>
+                  <th>Result at decision</th>
                 </tr>
               </thead>
               <tbody>
-                {rows.map(([label, actual, expected]) => (
+                {rows.map(([label, actual, expected, ruleId]) => (
                   <tr key={label}>
                     <th>{label}</th>
                     <td>{actual ?? "Not found in document"}</td>
                     <td>{expected}</td>
+                    <td>
+                      {run.decision?.rules.find((r) => r.rule_id === ruleId) ? (
+                        <Status
+                          value={
+                            run.decision.rules.find(
+                              (r) => r.rule_id === ruleId,
+                            )!.outcome === "PASS"
+                              ? "PASSED"
+                              : run.decision.rules.find(
+                                    (r) => r.rule_id === ruleId,
+                                  )!.outcome === "BLOCK"
+                                ? "BLOCKED"
+                                : "NEEDS_REVIEW"
+                          }
+                        />
+                      ) : (
+                        "Not available"
+                      )}
+                    </td>
                   </tr>
                 ))}
               </tbody>

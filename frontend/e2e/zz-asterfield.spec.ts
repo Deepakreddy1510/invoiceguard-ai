@@ -1,10 +1,11 @@
+import AxeBuilder from "@axe-core/playwright";
 import { test, expect } from "@playwright/test";
 import { execFileSync } from "node:child_process";
 import path from "node:path";
 test("verified sample company is selectable, preserves legacy procurement and replays an actual PDF", async ({
   page,
   request,
-}) => {
+}, info) => {
   test.setTimeout(90000);
   const backend = path.resolve(process.cwd(), "../backend");
   const python = path.join(
@@ -31,6 +32,23 @@ test("verified sample company is selectable, preserves legacy procurement and re
     .getByLabel("Workspace", { exact: true })
     .selectOption(result.workspace_id);
   await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+  await expect(page.getByRole("img", { name: /Validated:/ })).toBeVisible();
+  for (const width of [1440, 390]) {
+    await page.setViewportSize({ width, height: 1000 });
+    await expect(page.getByRole("status", { name: /Loading/ })).toHaveCount(0);
+    expect(
+      (
+        await new AxeBuilder({ page })
+          .withTags(["wcag2a", "wcag2aa", "wcag21aa"])
+          .analyze()
+      ).violations,
+    ).toEqual([]);
+    await page.screenshot({
+      path: info.outputPath(`asterfield-overview-${width}.png`),
+      fullPage: true,
+    });
+  }
+  await page.setViewportSize({ width: 1280, height: 1000 });
   await page.getByRole("link", { name: "Vendors", exact: true }).click();
   await expect(
     page.getByText("Willowbridge Office Supplies", { exact: true }),

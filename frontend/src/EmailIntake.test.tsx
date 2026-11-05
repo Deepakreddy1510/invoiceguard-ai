@@ -112,7 +112,7 @@ it("queues actual sync requests with the active workspace and renders distinct p
   );
   expect(
     await screen.findByText(
-      "Synchronization queued for the background worker.",
+      "Checking for new invoices. Results will appear as messages are processed.",
     ),
   ).toBeVisible();
   const call = fetcher.mock.calls.find(([url]) =>

@@ -174,6 +174,7 @@ test("private workspace procurement, actual PDFs, commitments and retained histo
   await expect(
     page.getByRole("link", { name: "BROWSER-OVER", exact: true }),
   ).toBeVisible();
+  await page.getByRole("link", { name: "Settings", exact: true }).click();
   await page
     .getByRole("link", { name: "Activity history", exact: true })
     .click();
@@ -215,16 +216,16 @@ test("private workspace procurement, actual PDFs, commitments and retained histo
     ),
   });
   await page
-    .getByRole("button", { name: "Validate preview", exact: true })
+    .getByRole("button", { name: "Preview import", exact: true })
     .click();
   await expect(
     page.getByText("1 rows · 1 records · Ready to import", { exact: true }),
   ).toBeVisible();
   await page
-    .getByRole("button", { name: "Commit import", exact: true })
+    .getByRole("button", { name: "Import records", exact: true })
     .click();
   await expect(
-    page.getByText("1 records imported transactionally.", { exact: true }),
+    page.getByText("1 records imported.", { exact: true }),
   ).toBeVisible();
   await expect(page.getByText("BROWSER-CSV", { exact: true })).toBeVisible();
 });

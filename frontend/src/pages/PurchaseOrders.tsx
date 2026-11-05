@@ -1,3 +1,4 @@
+import { Help } from "../Experience";
 import { Link, useSearchParams } from "react-router-dom";
 import { type PurchaseOrder } from "../api";
 import POEditor, { type EditablePO } from "../POEditor";
@@ -104,8 +105,8 @@ export default function PurchaseOrders() {
     <>
       <PageTitle
         eyebrow="PROCUREMENT / FINANCIAL CAPACITY"
-        title="Authorized. Reserved. Available."
-        description="The purchase-order capacity behind each invoice, in its original currency."
+        title="Every order. Within budget."
+        description="See what you have authorised, what invoices have reserved and how much is still available."
         action={
           me.data?.can_manage_procurement && (
             <button className="primary" onClick={() => setEditing(null)}>
@@ -133,6 +134,20 @@ export default function PurchaseOrders() {
           {notice}
         </p>
       )}
+      <Help title="How do order balances and billing work?">
+        <p>
+          Authorised is the order’s spending limit. Reserved is the amount held
+          by validated invoices or reviews. Available is what remains for new
+          invoices. Partial billing lets a supplier invoice part of an order at
+          a time.
+        </p>
+        <p>
+          Itemized orders check individual quantities, prices and tax rates.
+          Amount-based orders control an overall service budget. Cancelling
+          stops new validation without releasing existing reservations. Orders
+          with financial history remain in your records and cannot be deleted.
+        </p>
+      </Help>
       {editing !== false && (
         <POEditor
           key={(editing && editing.id) || "new"}
@@ -161,8 +176,8 @@ export default function PurchaseOrders() {
           </div>
           <span className="tag" role="status">
             {list.data
-              ? `${orders.length} records · API connected`
-              : "Connecting to API…"}
+              ? `${orders.length} purchase orders`
+              : "Loading purchase orders…"}
           </span>
         </div>
         <div className="table-toolbar">
@@ -278,8 +293,8 @@ export default function PurchaseOrders() {
         )}
       </section>
       <p className="footnote">
-        Authorization is not a payment. Figures are persisted procurement and
-        commitment balances.
+        Authorization is not a payment. Figures come from saved purchase orders
+        and commitment balances.
       </p>
       {params.get("po") && !selected && list.data && (
         <Notice
@@ -381,7 +396,7 @@ export default function PurchaseOrders() {
                   <div className="notice">
                     <p>
                       {action === "cancel"
-                        ? "Cancel this PO while retaining all commitments and decisions?"
+                        ? "Stop new invoices against this order? Amounts already reserved and all previous decisions will remain."
                         : "Delete this unused PO? An audit record will remain."}
                     </p>
                     {action === "cancel" && (

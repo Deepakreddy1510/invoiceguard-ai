@@ -105,6 +105,6 @@ export function AccountControl() {
       <button onClick={session.logout}>Sign out</button>
     </div>
   ) : (
-    <span className="environment-tag">Synthetic data</span>
+    <span className="account-label">Finance workspace</span>
   );
 }

@@ -3,7 +3,7 @@ test("React loads seeded procurement through Vite, FastAPI and PostgreSQL", asyn
   page,
 }) => {
   await page.goto("/purchase-orders");
-  await expect(page.getByText("4 records · API connected")).toBeVisible();
+  await expect(page.getByText("4 purchase orders")).toBeVisible();
   await expect(page.getByText("PO-2026-001")).toBeVisible();
   await expect(
     page

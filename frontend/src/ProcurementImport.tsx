@@ -1,3 +1,6 @@
+import { TechnicalDetails } from "./TechnicalDetails";
+import { humanize } from "./ui";
+import { Help } from "./Experience";
 import { useState } from "react";
 import { apiFetch } from "./client";
 import { Notice } from "./ui";
@@ -77,7 +80,7 @@ export default function ProcurementImport({
       }
       if (commit) {
         setMessage(
-          `${data.record_count} records imported transactionally${data.replayed ? " (existing receipt)" : ""}.`,
+          `${data.record_count} records imported${data.replayed ? " (already saved)" : ""}.`,
         );
         setPreview(null);
         setFile(null);
@@ -95,9 +98,18 @@ export default function ProcurementImport({
         Import {kind === "vendors" ? "vendors" : "purchase orders"} from CSV
       </summary>
       <p>
-        UTF-8 CSV · up to 256 KiB / 500 rows. Preview is read-only; commit
-        revalidates every record in one transaction.
+        Upload up to 500 rows in a UTF-8 CSV file (256 KiB maximum). Preview
+        your rows before importing. No records are added until every row passes
+        its checks.
       </p>
+      <Help title="How should I prepare my file?">
+        <p>
+          Start with the template. Keep the header row unchanged and use one
+          supplier per row, or the template’s line-item rows for each order.
+          Enter tax rates as fractions: 0.18 means 18%. Errors identify the row
+          to correct; no partial import is saved.
+        </p>
+      </Help>
       <button type="button" onClick={template}>
         Download CSV template
       </button>
@@ -122,7 +134,7 @@ export default function ProcurementImport({
         disabled={!file || busy}
         onClick={() => void submit(false)}
       >
-        Validate preview
+        Preview import
       </button>
       <Notice error={error} />
       {message && (
@@ -141,17 +153,54 @@ export default function ProcurementImport({
               Row {row.row}: {row.message}
             </p>
           ))}
-          <details className="json-details">
-            <summary>Parsed records and calculations</summary>
+          <div className="table-scroll">
+            <table>
+              <thead>
+                <tr>
+                  <th>CSV row</th>
+                  <th>Record details</th>
+                </tr>
+              </thead>
+              <tbody>
+                {preview.records.map((record) => (
+                  <tr key={record.row}>
+                    <td>{record.row}</td>
+                    <td>
+                      <dl className="import-preview-fields">
+                        {Object.entries(record.data).map(([key, value]) => (
+                          <div key={key}>
+                            <dt>{humanize(key)}</dt>
+                            <dd>
+                              {value === null
+                                ? "—"
+                                : typeof value === "object"
+                                  ? Array.isArray(value)
+                                    ? `${value.length} line items`
+                                    : "Additional details"
+                                  : typeof value === "string" &&
+                                      /^[A-Z_]+$/.test(value)
+                                    ? humanize(value)
+                                    : String(value)}
+                            </dd>
+                          </div>
+                        ))}
+                      </dl>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+          <TechnicalDetails label="Import source and calculations">
             <pre>{JSON.stringify(preview.records, null, 2)}</pre>
-          </details>
+          </TechnicalDetails>
           <button
             className="primary"
             type="button"
             disabled={!preview.valid || busy}
             onClick={() => void submit(true)}
           >
-            Commit import
+            Import records
           </button>
         </div>
       )}

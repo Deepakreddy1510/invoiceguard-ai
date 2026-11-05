@@ -392,7 +392,7 @@ export default function POEditor({
           <p className="footnote">
             Tax rates use fractional decimals (0.10 = 10%). Calculations round
             each line net and tax using currency-specific half-up rules. The
-            backend revalidates every value.
+            every value is checked again before saving.
           </p>
           <div className="toolbar">
             <button

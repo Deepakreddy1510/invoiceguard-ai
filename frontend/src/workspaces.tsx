@@ -5,7 +5,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { request, setActiveWorkspace } from "./client";
 import { Notice, Skeleton } from "./ui";
 export type Workspace = {
@@ -14,7 +14,15 @@ export type Workspace = {
   kind: "DEMO" | "MY" | "CUSTOM";
   role: string;
   created_at: string;
+  archived_at?: string | null;
+  version: number;
 };
+export function workspaceLabel(workspace: Pick<Workspace, "name" | "kind">) {
+  const name = workspace.name.replace(/ · Sample company$/, "");
+  return workspace.kind === "DEMO" && /synthetic|demonstration/i.test(name)
+    ? "Demo Workspace"
+    : name;
+}
 type Catalog = {
   workspaces: Workspace[];
   default_workspace_id: string;
@@ -67,6 +75,14 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         if (selected && id !== selected) navigate("/", { replace: true });
         setActiveWorkspace(id);
         setSelected(id);
+        try {
+          sessionStorage.setItem(
+            "invoiceguard.workspace." + result.subject,
+            id,
+          );
+        } catch {
+          /* Browser storage is optional. */
+        }
         setCatalog(result);
       })
       .catch((e) => {
@@ -157,16 +173,37 @@ export function WorkspaceSelector() {
       >
         {workspaces.map((workspace, index) => (
           <option key={workspace.id} value={workspace.id}>
-            {workspace.kind === "MY"
-              ? "My Workspace"
-              : workspace.kind === "DEMO"
-                ? workspace.name.startsWith("Asterfield")
-                  ? workspace.name
-                  : `Demo Workspace${workspaces.slice(0, index).some((w) => w.kind === "DEMO") ? " · previous" : ""}`
-                : workspace.name}
+            {workspaceLabel(workspace)}
+            {workspace.kind === "DEMO" &&
+            !workspace.name.startsWith("Asterfield") &&
+            workspaces.slice(0, index).some((w) => w.kind === "DEMO")
+              ? " · previous"
+              : ""}
           </option>
         ))}
       </select>
+      <details className="workspace-actions">
+        <summary>Workspace settings</summary>
+        <div
+          onClick={(e) => {
+            if ((e.target as HTMLElement).closest("a"))
+              e.currentTarget.closest("details")?.removeAttribute("open");
+          }}
+        >
+          <Link to="/settings">All workspaces</Link>
+          {active?.role === "ADMIN" && (
+            <>
+              <Link to={"/settings?workspace=" + active.id + "&action=rename"}>
+                Rename this workspace
+              </Link>
+              <Link to={"/settings?workspace=" + active.id + "&action=archive"}>
+                Archive this workspace
+              </Link>
+              <Link to="/settings">Restore an archived workspace</Link>
+            </>
+          )}
+        </div>
+      </details>
       {active?.role === "ADMIN" && (
         <button
           type="button"
@@ -180,8 +217,8 @@ export function WorkspaceSelector() {
         <div className="fresh-demo-confirm">
           <p>
             Create a new isolated demo with 18 vendors and 36 POs? Existing
-            workspaces, decisions and commitments stay intact. Real example runs
-            will be queued for the worker.
+            workspaces, decisions and commitments stay intact. Sample invoices
+            will be queued for processing.
           </p>
           <button type="button" disabled={busy} onClick={fresh}>
             {busy ? "Creating…" : "Confirm new demo"}

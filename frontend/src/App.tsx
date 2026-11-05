@@ -1,3 +1,5 @@
+import WorkspaceSettings from "./pages/WorkspaceSettings";
+import { TechnicalScope } from "./TechnicalDetails";
 import {
   BrowserRouter,
   NavLink,
@@ -15,6 +17,7 @@ import {
   WorkspaceProvider,
   WorkspaceSelector,
   useWorkspace,
+  workspaceLabel,
 } from "./workspaces";
 import Dashboard from "./pages/Dashboard";
 import PurchaseOrders from "./pages/PurchaseOrders";
@@ -44,7 +47,7 @@ function Shell() {
     { to: "/email-intake", label: "Email Intake", icon: "audit" },
     { to: "/vendors", label: "Vendors", icon: "orders" },
     { to: "/purchase-orders", label: "Purchase orders", icon: "orders" },
-    { to: "/audit", label: "Activity history", icon: "audit" },
+    { to: "/settings", label: "Settings", icon: "grid" },
   ] as const;
   return (
     <div className="app-shell">
@@ -94,57 +97,59 @@ function Shell() {
           <span className="sidebar-note-mark">
             <Icon name="check" />
           </span>
-          <strong>Evidence before approval.</strong>
-          <p>
-            Deterministic controls.
-            <br />
-            Human judgment where it matters.
-          </p>
-          <span>Synthetic data · No payments</span>
+          <strong>Smarter invoice processing.</strong>
+          <p>From incoming invoices to clear, reliable decisions.</p>
         </div>
       </aside>
       <div className="main-shell">
         <header className="topbar">
           <div>
-            <span className="topbar-label">YOUR WORKSPACE</span>
-            <strong>{data?.workspace_name ?? "InvoiceGuard workspace"}</strong>
+            <strong>
+              {active
+                ? workspaceLabel(active)
+                : (data?.workspace_name ?? "InvoiceGuard")}
+            </strong>
+            {active?.kind === "DEMO" && (
+              <span className="demo-disclosure">
+                Demo workspace · Sample company data
+              </span>
+            )}
           </div>
           <AccountControl />
         </header>
         <main id="main-content" className="content" tabIndex={-1}>
-          <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/process" element={<WorkflowRoute />} />
-            <Route path="/runs/:id" element={<WorkflowRoute />} />
-            <Route path="/reviews" element={<Reviews />} />
-            <Route path="/reviews/:id" element={<Reviews />} />
-            <Route path="/purchase-orders" element={<PurchaseOrders />} />
-            <Route path="/email-intake" element={<EmailIntake />} />
-            <Route path="/vendors" element={<Vendors />} />
-            <Route path="/audit" element={<Audit />} />
-            <Route
-              path="*"
-              element={
-                <EmptyState
-                  title="This page couldn’t be found"
-                  action={
-                    <NavLink className="button" to="/">
-                      Return to overview
-                    </NavLink>
-                  }
-                >
-                  Your invoice records are still available in the workspace.
-                </EmptyState>
-              }
-            />
-          </Routes>
+          <TechnicalScope>
+            <Routes>
+              <Route path="/" element={<Dashboard />} />
+              <Route path="/process" element={<WorkflowRoute />} />
+              <Route path="/runs/:id" element={<WorkflowRoute />} />
+              <Route path="/reviews" element={<Reviews />} />
+              <Route path="/reviews/:id" element={<Reviews />} />
+              <Route path="/purchase-orders" element={<PurchaseOrders />} />
+              <Route path="/email-intake" element={<EmailIntake />} />
+              <Route path="/vendors" element={<Vendors />} />
+              <Route path="/audit" element={<Audit />} />
+              <Route path="/settings" element={<WorkspaceSettings />} />
+              <Route
+                path="*"
+                element={
+                  <EmptyState
+                    title="This page couldn’t be found"
+                    action={
+                      <NavLink className="button" to="/">
+                        Return to overview
+                      </NavLink>
+                    }
+                  >
+                    Your invoice records are still available in the workspace.
+                  </EmptyState>
+                }
+              />
+            </Routes>
+          </TechnicalScope>
           <footer>
-            <span>InvoiceGuard AI</span>
-            <p>
-              {active?.kind === "DEMO"
-                ? "Sample company data. No payments are executed."
-                : "Verification, with a clear record. No payments are executed."}
-            </p>
+            <span>InvoiceGuard AI · Accounts Payable</span>
+            <span>Support your team’s next decision.</span>
           </footer>
         </main>
       </div>

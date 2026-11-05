@@ -44,9 +44,6 @@ export function eventLabel(action: string) {
           : humanize(outcome).toLowerCase();
   return humanize(stage) + " " + suffix;
 }
-function eventStage(action: string) {
-  return action.includes(":") ? action.split(":")[0] : "REVIEWER_ACTION";
-}
 export default function Audit() {
   const [params] = useSearchParams();
   const [offset, setOffset] = useState(0);
@@ -68,14 +65,6 @@ export default function Audit() {
   );
   const events = resource.data?.events ?? [];
   const shown = events;
-  const stages = [
-    ...new Set([
-      stage,
-      "DECISION",
-      "REVIEWER_ACTION",
-      ...events.map((e) => eventStage(e.action)),
-    ]),
-  ].filter(Boolean);
   const actors = [
     ...new Set([
       actor,
@@ -120,25 +109,24 @@ export default function Audit() {
         </div>
         <div className="audit-filters">
           <FilterChips
-            label="Filter audit stage on this page"
+            label="Filter activity type"
             value={stage}
             onChange={(v) => {
               setStage(v);
               setOffset(0);
             }}
             options={[
-              { value: "", label: "All stages" },
-              ...stages.map((value) => ({
-                value,
-                label:
-                  value === "REVIEWER_ACTION"
-                    ? "Audit actions"
-                    : humanize(value),
-              })),
+              { value: "", label: "All activity" },
+              { value: "INVOICE", label: "Invoices" },
+              { value: "DECISION", label: "Decisions" },
+              { value: "REVIEW", label: "Reviews" },
+              { value: "PROCUREMENT", label: "Procurement" },
+              { value: "WORKSPACE", label: "Workspace changes" },
+              { value: "FAILURE", label: "Processing issues" },
             ]}
           />
           <FilterChips
-            label="Filter audit actor on this page"
+            label="Filter activity author"
             value={actor}
             onChange={(v) => {
               setActor(v);

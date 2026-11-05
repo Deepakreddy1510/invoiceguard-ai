@@ -80,11 +80,12 @@ test("reviewer corrects a fresh missing identifier and sees persisted revalidati
   await expect(
     page.getByRole("heading", { name: "Validated", exact: true }),
   ).toBeVisible();
+  await page.getByRole("link", { name: "Settings", exact: true }).click();
   await page
     .getByRole("link", { name: "Activity history", exact: true })
     .click();
   await expect(
-    page.getByText("Correction Saved", { exact: true }).first(),
+    page.getByText("Invoice details corrected", { exact: true }).first(),
   ).toBeVisible();
   await page.goto("/runs/" + original);
   await expect(
@@ -128,19 +129,19 @@ test("partial invoices enforce cumulative balance and all operational pages load
   await page.reload();
   await expect(
     page.getByRole("heading", {
-      name: "Authorized. Reserved. Available.",
+      name: "Every order. Within budget.",
       exact: true,
     }),
   ).toBeVisible();
   await page.getByRole("link", { name: "Overview", exact: true }).click();
   await expect(
     page.getByRole("heading", {
-      name: "Every invoice, accounted for.",
+      name: "Your invoices. Under control.",
       exact: true,
     }),
   ).toBeVisible();
   await expect(
-    page.getByText("Unique invoices", { exact: true }),
+    page.getByRole("button", { name: /^Unique invoices/ }),
   ).toBeVisible();
   await page
     .getByRole("link", { name: "Exception review", exact: true })

@@ -6,7 +6,7 @@ from typing import Annotated
 from uuid import UUID
 
 import jwt
-from fastapi import Depends, Header, HTTPException
+from fastapi import Depends, Header, HTTPException, Request
 from sqlalchemy import select
 from sqlalchemy.orm import Session
 
@@ -57,6 +57,7 @@ def verified_subject(authorization: str | None) -> str:
 
 
 def access(
+    request: Request,
     session: Annotated[Session, Depends(get_session)],
     authorization: Annotated[str | None, Header()] = None,
     x_workspace_id: Annotated[UUID | None, Header()] = None,
@@ -71,7 +72,9 @@ def access(
         workspace = x_workspace_id or settings.local_workspace_id
         if x_workspace_id and workspace not in local_ids(session, subject):
             raise HTTPException(403, "No access to this workspace.")
-        return Access(subject, workspace, "ADMIN")
+        result = Access(subject, workspace, "ADMIN")
+        guard_mutation(session, result, request)
+        return result
     subject = verified_subject(authorization)
     query = select(Membership).where(Membership.subject == subject)
     if x_workspace_id:
@@ -82,7 +85,18 @@ def access(
             403, "No access to this workspace. Ask the demo administrator for an invitation."
         )
     membership = memberships[0]
-    return Access(subject, membership.workspace_id, membership.role)
+    result = Access(subject, membership.workspace_id, membership.role)
+    guard_mutation(session, result, request)
+    return result
+
+
+def guard_mutation(session, user, request):
+    if request.method not in ("GET", "HEAD", "OPTIONS") and not request.url.path.startswith(
+        "/api/v1/workspaces"
+    ):
+        from app.audit import financial_lock
+
+        financial_lock(session, user.workspace_id)
 
 
 def reviewer(user: Annotated[Access, Depends(access)]) -> Access:

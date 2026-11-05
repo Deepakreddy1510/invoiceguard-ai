@@ -172,7 +172,7 @@ export default function InvoiceWorkflow({
       setMessage(
         result.replayed
           ? "Already uploaded — showing the existing processing record."
-          : "PDF accepted. Following the persisted processing run.",
+          : "Invoice received. Follow its progress and decision below.",
       );
       if (manual.current === selectionAtStart) {
         focusRun.current = result.run_id;
@@ -228,7 +228,7 @@ export default function InvoiceWorkflow({
     <section className="workflow" aria-labelledby="processing-title">
       <PageTitle
         eyebrow="VERIFICATION / INVOICE PROCESSING"
-        title="From invoice to informed decision."
+        title="From invoice to a clear decision."
         description="Upload a document. Follow the evidence. Understand every financial decision."
       />
       <section className="panel upload-panel">
@@ -270,24 +270,24 @@ export default function InvoiceWorkflow({
                   value="GEMINI"
                   disabled={!capabilities.data.gemini_configured}
                 >
-                  Gemini AI
+                  AI-assisted
                   {!capabilities.data.gemini_configured
                     ? " — not configured"
                     : ""}
                 </option>
-                <option value="FALLBACK">Conservative extraction</option>
+                <option value="FALLBACK">Standard extraction</option>
               </>
             )}
           </select>
           <p className="footnote">
             {mode === "AUTO"
-              ? "Uses AI-assisted extraction when available, with conservative document extraction when it cannot be used."
+              ? "Uses AI when available, with standard extraction as a backup."
               : mode === "GEMINI"
                 ? "Uses Gemini-assisted extraction. If it cannot complete, processing stops and the failure is recorded."
-                : "Reads the document directly, using OCR for scanned pages, then verifies the extracted values and applies all financial controls."}
+                : "Uses built-in document reading, including scanned PDFs. The same supplier, order and financial checks always apply."}
             {capabilities.data?.can_select_extraction_mode &&
               !capabilities.data.gemini_configured &&
-              " Gemini AI is unavailable until the server has a securely configured key."}
+              " AI-assisted reading is not available in this workspace yet. Standard extraction is available."}
           </p>
         </div>
         <form onSubmit={upload} className="upload-form">
@@ -428,7 +428,11 @@ export default function InvoiceWorkflow({
             <Skeleton label="Loading processing history" rows={4} />
           ) : !shown.length && !history.error ? (
             <EmptyState
-              title={runs.length ? "No matching runs" : "No invoices yet"}
+              title={
+                runs.length
+                  ? "No matching processing records"
+                  : "No invoices yet"
+              }
             >
               {runs.length
                 ? "Choose another outcome filter."
@@ -543,7 +547,7 @@ export default function InvoiceWorkflow({
           ) : history.loading ? (
             <Skeleton label="Loading latest run" rows={4} />
           ) : (
-            <EmptyState title="Your next decision starts here">
+            <EmptyState title="Ready when you are">
               Upload an invoice to follow its recorded stages, source evidence
               and financial checks.
             </EmptyState>

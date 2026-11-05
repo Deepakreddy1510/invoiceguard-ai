@@ -1,5 +1,7 @@
 # InvoiceGuard AI
 
+See the [premium customer experience and safe Windows upgrade](docs/premium-experience.md) and [executed verification report](docs/premium-verification.md) for the current interface, workspace rename/archive/restore and preserved financial workflows.
+
 Invoice verification and exception management for the Zamp case study. React + TypeScript, FastAPI, PostgreSQL, a separate Python worker, PyMuPDF/Tesseract OCR and optional Gemini structured extraction. **Validation reserves PO capacity; it never pays an invoice.** All procurement and demonstration documents are synthetic.
 
 The integrated workflow runs end-to-end: upload → persisted queue → digital extraction/OCR → evidence-backed facts → vendor/PO matching → Decimal financial controls → immutable decision and atomic reservation → human correction and full revalidation. See [verification](docs/completion-verification.md), [five-minute demo](docs/demo-guide.md) and [hosting instructions](deploy/README.md).

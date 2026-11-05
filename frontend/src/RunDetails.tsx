@@ -24,11 +24,11 @@ import { Icon } from "./icons";
 const stageNames: Record<string, string> = {
   ingestion: "Invoice received",
   text_extraction: "Document read",
-  ocr: "Optical character recognition",
-  field_extraction: "Invoice details extracted",
+  ocr: "Scanned document reading",
+  field_extraction: "Details identified",
   validation: "Financial checks",
   decision: "Decision recorded",
-  supplier_po: "Supplier & purchase order checked",
+  supplier_po: "Supplier and PO checked",
   review_disposition: "Reviewer disposition",
 };
 const pipeline = [
@@ -257,7 +257,7 @@ export function RuleResults({ rules }: { rules: Rule[] }) {
         const dependent =
           incomplete &&
           !issues.length &&
-          ["Amounts & tax", "Purchase order matching"].includes(group);
+          ["Amounts and taxes", "Purchase order"].includes(group);
         return (
           <details className="check-group" key={group} open={issues.length > 0}>
             <summary>
@@ -267,7 +267,7 @@ export function RuleResults({ rules }: { rules: Rule[] }) {
                   ? `${issues.length} issue${issues.length === 1 ? "" : "s"}`
                   : dependent
                     ? "Awaiting required information"
-                    : "Recorded checks passed"}
+                    : "Checks passed"}
               </span>
             </summary>
             <ul>
@@ -388,7 +388,7 @@ function Stage({ name, run }: { name: string; run: RunDetail }) {
         </summary>
         <div className="stage-body">
           {!last ? (
-            <p className="muted-text">Awaiting a recorded event.</p>
+            <p className="muted-text">Waiting for this step to start.</p>
           ) : (
             <>
               <p className="stage-message">
@@ -400,7 +400,11 @@ function Stage({ name, run }: { name: string; run: RunDetail }) {
                       ? "Invoice details are available below."
                       : name === "text_extraction" && state === "SUCCEEDED"
                         ? "The document was read successfully."
-                        : last.detail}
+                        : name === "ingestion" && state === "SUCCEEDED"
+                          ? "Your invoice was received and saved for processing."
+                          : name === "decision" && state === "SUCCEEDED"
+                            ? "The financial decision was recorded. No payment was executed."
+                            : last.detail}
               </p>
               <div className="event-meta">
                 <time dateTime={last.created_at}>{when(last.created_at)}</time>
@@ -413,7 +417,7 @@ function Stage({ name, run }: { name: string; run: RunDetail }) {
                 <span className="tag" key={page.page}>
                   Page {page.page} ·{" "}
                   {page.method === "OCR"
-                    ? "Read using OCR"
+                    ? "Scanned document was read"
                     : "Digital document"}
                 </span>
               ))}
@@ -522,6 +526,26 @@ export default function RunDetails({
       <span className="sr-only" aria-hidden="true" data-testid="run-id">
         {run.id}
       </span>
+      <div className="invoice-identity-strip">
+        {fact(run, "invoice_date")?.value && (
+          <span>
+            <small>Invoice date</small>
+            <strong>{fact(run, "invoice_date")!.value}</strong>
+          </span>
+        )}
+        {fact(run, "po_number")?.value && (
+          <span>
+            <small>Purchase order</small>
+            <strong>{fact(run, "po_number")!.value}</strong>
+          </span>
+        )}
+        {run.extraction?.provider && (
+          <span>
+            <small>Document reading</small>
+            <strong>{humanize(run.extraction.provider)}</strong>
+          </span>
+        )}
+      </div>
       {run.decision ? (
         <section
           className={
@@ -555,9 +579,12 @@ export default function RunDetails({
           </p>
           {reasons.length > 0 && (
             <ul>
-              {reasons.map((rule) => (
-                <li key={rule.rule_id}>{checkExplanation(rule)}</li>
-              ))}
+              {reasons
+                .filter((rule) => rule.explanation.trim())
+                .slice(0, 3)
+                .map((rule) => (
+                  <li key={rule.rule_id}>{checkExplanation(rule)}</li>
+                ))}
             </ul>
           )}
           <div className="decision-links">
@@ -687,8 +714,8 @@ export default function RunDetails({
         </div>
       )}
       <div className="section-heading">
-        <h3>Execution timeline</h3>
-        <span>Persisted events only</span>
+        <h3>Processing timeline</h3>
+        <span>Updates as your invoice is processed</span>
       </div>
       <ol className="timeline" aria-label="Actual execution stages">
         {stages.map((stage) => (

@@ -45,9 +45,7 @@ test.describe
     await upload(page, "valid.pdf");
     await outcome(page, "VALIDATED");
     const run = await page.getByTestId("run-id").textContent();
-    await expect(page.locator(".timeline")).toContainText(
-      "Invoice details extracted",
-    );
+    await expect(page.locator(".timeline")).toContainText("Details identified");
     await expect(page.locator(".timeline")).toContainText("Decision recorded");
     await expect(
       page
@@ -96,7 +94,7 @@ test.describe
     await expect(
       page
         .locator(".evidence-table")
-        .getByText("Page 1 · Read using OCR")
+        .getByText("Page 1 · Scanned document was read")
         .first(),
     ).toBeVisible();
   });

@@ -1,3 +1,4 @@
+import { Help } from "../Experience";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { request } from "../client";
@@ -104,8 +105,8 @@ export default function Vendors() {
     <>
       <PageTitle
         eyebrow="PROCUREMENT / VENDORS"
-        title="Know who you’re paying."
-        description="Manage vendor identity and approval status inside the selected workspace."
+        title="Your suppliers, together."
+        description="Keep supplier details accurate, control who can bill you and find their purchase orders in one place."
         action={
           manager && (
             <button
@@ -130,6 +131,14 @@ export default function Vendors() {
           {message}
         </p>
       )}
+      <Help title="What do supplier statuses mean?">
+        <p>
+          Approved suppliers can submit invoices for validation. Suspending a
+          supplier temporarily blocks new validation; marking one inactive
+          prevents new invoices while keeping its existing orders and history.
+          Status changes do not release amounts already reserved.
+        </p>
+      </Help>
       {editing !== false && (
         <section className="panel detail-panel">
           <div className="section-heading">
@@ -138,9 +147,10 @@ export default function Vendors() {
           </div>
           {editing && editing.identity_locked && (
             <div className="notice">
-              Vendor identity is locked by dependent procurement or invoices.
-              You can change status; create a distinct vendor for a new
-              identity.
+              This supplier already has orders or invoices. Its identifying
+              details are protected to preserve history. You can still update
+              its status. Add a separate supplier when its legal identity
+              changes.
             </div>
           )}
           <form onSubmit={save}>

@@ -245,17 +245,42 @@ def audit_history(
     )
     if view == "business":
         # Filter persisted records before pagination; never delete the raw audit trail.
-        stage_query = stage_query.where(
-            ((RunEvent.stage == "decision") & (RunEvent.outcome == "SUCCEEDED"))
-            | (RunEvent.outcome == "FAILED")
+        stage_query = stage_query.where(RunEvent.outcome == "FAILED")
+        query = query.where(
+            AuditEvent.action.not_in(
+                [
+                    "WORKER_HEARTBEAT",
+                    "EMAIL_SYNC",
+                    "EMAIL_CHECKPOINT_RECOVERY",
+                    "EMAIL_ATTACHMENT_FETCH",
+                    "EMAIL_DISCOVERY",
+                    "EMAIL_CLASSIFICATION",
+                ]
+            )
         )
-        query = query.where(AuditEvent.action.not_in(["WORKER_HEARTBEAT"]))
     if actor:
         query = query.where(AuditEvent.actor == actor)
         if actor != "worker":
             stage_query = stage_query.where(False)
     if stage:
-        if stage == "REVIEWER_ACTION":
+        categories = {
+            "INVOICE": AuditEvent.action.in_(
+                ["DOCUMENT_ACCEPTED", "DOCUMENT_REPLAYED", "EMAIL_HANDOFF"]
+            ),
+            "DECISION": AuditEvent.action == "DECISION_RECORDED",
+            "REVIEW": AuditEvent.action.startswith("REVIEW_", autoescape=True)
+            | AuditEvent.action.startswith("CORRECTION_", autoescape=True)
+            | AuditEvent.action.in_(["INVOICE_REJECTED", "RESERVATION_RELEASED"]),
+            "PROCUREMENT": AuditEvent.action.startswith("VENDOR_", autoescape=True)
+            | AuditEvent.action.startswith("PURCHASE_ORDER_", autoescape=True),
+            "WORKSPACE": AuditEvent.action.startswith("WORKSPACE_", autoescape=True),
+            "FAILURE": AuditEvent.detail["outcome"].astext == "FAILED",
+        }
+        if view == "business" and stage in categories:
+            query = query.where(categories[stage])
+            if stage != "FAILURE":
+                stage_query = stage_query.where(False)
+        elif stage == "REVIEWER_ACTION":
             stage_query = stage_query.where(False)
         else:
             query = query.where(False)

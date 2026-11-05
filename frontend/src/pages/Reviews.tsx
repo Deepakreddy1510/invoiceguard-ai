@@ -1,5 +1,6 @@
 import { RuleResults } from "../RunDetails";
-import { nextAction } from "../business";
+import { Help } from "../Experience";
+import { nextAction, actorLabel } from "../business";
 import { useEffect, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { jsonPost, money, relativeTime, when } from "../client";
@@ -273,16 +274,14 @@ export default function Reviews() {
                 <>
                   <div className="panel-heading">
                     <div>
-                      <p className="eyebrow">
-                        SOURCE REVIEW · VERSION {task.version}
-                      </p>
+                      <p className="eyebrow">INVOICE REVIEW</p>
                       <h2>
                         {task.run.invoice_number ?? "Invoice number missing"}
                       </h2>
                       {task.run.vendor_name && <p>{task.run.vendor_name}</p>}
                       <small>
                         {task.assignee
-                          ? "Assigned to " + task.assignee
+                          ? "Assigned to " + actorLabel(task.assignee)
                           : "Unassigned"}
                       </small>
                     </div>
@@ -306,6 +305,15 @@ export default function Reviews() {
                     <summary>Original document</summary>
                     <PdfPreview documentId={task.document_id} />
                   </details>
+                  <Help title="How to resolve this invoice">
+                    <p>
+                      Compare the flagged details with the original invoice.
+                      Correct only what the source supports, explain your
+                      changes and confirm that you checked the document. Saving
+                      runs the full financial checks again; it does not bypass a
+                      block or execute payment.
+                    </p>
+                  </Help>
                   <h3>Why this invoice needs attention</h3>
                   {latestDecision ? (
                     <>
@@ -366,19 +374,43 @@ export default function Reviews() {
                                 <label htmlFor={"correct-" + field}>
                                   {humanize(field)}
                                 </label>
-                                <input
-                                  id={"correct-" + field}
-                                  aria-label={
-                                    "Correct " + humanize(field).toLowerCase()
-                                  }
-                                  value={values[field] ?? ""}
-                                  onChange={(e) =>
-                                    setValues((v) => ({
-                                      ...v,
-                                      [field]: e.target.value,
-                                    }))
-                                  }
-                                />
+                                {field === "pricing_mode" ? (
+                                  <select
+                                    id={"correct-" + field}
+                                    aria-label={
+                                      "Correct " + humanize(field).toLowerCase()
+                                    }
+                                    value={values[field] ?? ""}
+                                    onChange={(e) =>
+                                      setValues((v) => ({
+                                        ...v,
+                                        [field]: e.target.value,
+                                      }))
+                                    }
+                                  >
+                                    <option value="">Needs verification</option>
+                                    <option value="TAX_EXCLUSIVE">
+                                      Tax added to net price
+                                    </option>
+                                    <option value="TAX_INCLUSIVE">
+                                      Tax included in price
+                                    </option>
+                                  </select>
+                                ) : (
+                                  <input
+                                    id={"correct-" + field}
+                                    aria-label={
+                                      "Correct " + humanize(field).toLowerCase()
+                                    }
+                                    value={values[field] ?? ""}
+                                    onChange={(e) =>
+                                      setValues((v) => ({
+                                        ...v,
+                                        [field]: e.target.value,
+                                      }))
+                                    }
+                                  />
+                                )}
                                 <small
                                   className={
                                     source?.verified
@@ -554,7 +586,7 @@ export default function Reviews() {
                   </ol>
                   {task.corrections.map((c) => (
                     <article className="correction-record" key={c.id}>
-                      <strong>{c.actor}</strong>
+                      <strong>{actorLabel(c.actor)}</strong>
                       <time dateTime={c.created_at}>{when(c.created_at)}</time>
                       <p>{c.comment}</p>
                       <Link to={"/runs/" + c.run_id}>

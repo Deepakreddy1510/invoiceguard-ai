@@ -26,6 +26,7 @@ from app.models import (
     GmailConnection,
     Membership,
     ProcessingRun,
+    Workspace,
 )
 
 
@@ -218,6 +219,10 @@ def sync_connection(factory, identifier):
             c = session.get(GmailConnection, identifier)
             if (
                 not c
+                or (
+                    session.get(Workspace, c.workspace_id).archived_at is not None
+                    and c.status != "REVOKE_PENDING"
+                )
                 or c.status not in ("ACTIVE", "REVOKE_PENDING")
                 or c.next_sync_at > google.now()
             ):
@@ -395,7 +400,10 @@ def intake_attachment(factory, identifier):
             with exclusive(factory, c.id) as mailbox_locked:
                 if not mailbox_locked:
                     return False
-                if c.status != "ACTIVE":
+                if (
+                    c.status != "ACTIVE"
+                    or session.get(Workspace, c.workspace_id).archived_at is not None
+                ):
                     return False
                 if not connection_authorized(session, c):
                     fail_connection(
@@ -565,6 +573,9 @@ def mail_once(factory=SessionLocal):
                 EmailAttachment.status.in_(["QUEUED", "SCREENING"]),
                 EmailAttachment.next_attempt_at <= google.now(),
                 GmailConnection.status == "ACTIVE",
+                GmailConnection.workspace_id.in_(
+                    select(Workspace.id).where(Workspace.archived_at.is_(None))
+                ),
             )
             .order_by(EmailAttachment.next_attempt_at)
             .limit(1)
@@ -573,6 +584,10 @@ def mail_once(factory=SessionLocal):
             select(GmailConnection.id)
             .where(
                 GmailConnection.status.in_(["ACTIVE", "REVOKE_PENDING"]),
+                (GmailConnection.status == "REVOKE_PENDING")
+                | GmailConnection.workspace_id.in_(
+                    select(Workspace.id).where(Workspace.archived_at.is_(None))
+                ),
                 GmailConnection.next_sync_at <= google.now(),
             )
             .order_by(GmailConnection.next_sync_at)

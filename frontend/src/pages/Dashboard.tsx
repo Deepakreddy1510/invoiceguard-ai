@@ -1,3 +1,4 @@
+import { Help } from "../Experience";
 import { TechnicalDetails } from "../TechnicalDetails";
 import { Link, useNavigate } from "react-router-dom";
 import { useState } from "react";
@@ -14,6 +15,7 @@ import {
   Status,
   useResource,
 } from "../ui";
+import { OverviewInsights, BusinessActivity } from "../OverviewInsights";
 import { Icon } from "../icons";
 type Metrics = {
   total_invoices: number;
@@ -75,15 +77,28 @@ export default function Dashboard() {
     <>
       <PageTitle
         eyebrow="ACCOUNTS PAYABLE / OVERVIEW"
-        title="Every invoice, accounted for."
-        description="A clear view of your decisions, exceptions and the evidence behind them."
+        title="Your invoices. Under control."
+        description="Track incoming invoices, review exceptions and keep your purchase orders on budget."
         action={
           <Link className="button primary" to="/process">
             <Icon name="upload" />
-            Process invoice
+            Process an invoice
           </Link>
         }
       />
+      <Help title="How InvoiceGuard works">
+        <p>
+          Upload a supplier PDF or connect Gmail. InvoiceGuard identifies the
+          invoice details, checks the supplier and purchase order, and verifies
+          amounts and duplicates. Open any result to see why it was validated,
+          blocked or sent for review.
+        </p>
+        <p>
+          A validated invoice reserves the order amount. It does not execute a
+          payment. If you are starting fresh, add a supplier and purchase order
+          before processing your first invoice.
+        </p>
+      </Help>
       <Notice
         error={base.error || filtered.error}
         onRetry={() => {
@@ -109,21 +124,6 @@ export default function Dashboard() {
             </div>
           </div>
         )}
-      <div className="notice">
-        <strong>What needs attention?</strong>
-        <p>
-          Resolve invoices awaiting review, check blocked invoices with
-          suppliers, or process a new PDF.
-        </p>
-        <div className="toolbar">
-          <Link className="button" to="/reviews">
-            Review exceptions
-          </Link>
-          <Link className="button" to="/email-intake">
-            Check incoming invoices
-          </Link>
-        </div>
-      </div>
       <div className="metric-grid">
         {cards.map((card) => (
           <button
@@ -141,33 +141,10 @@ export default function Dashboard() {
           </button>
         ))}
       </div>
-      {data && (
-        <section
-          className="distribution"
-          aria-label="Unique invoice outcome distribution"
-        >
-          <div className="distribution-bar">
-            {outcomes.map((value) => (
-              <span
-                key={value}
-                className={"distribution-" + value.toLowerCase()}
-                style={{
-                  width:
-                    (data.total_invoices
-                      ? (data.outcomes[value] / data.total_invoices) * 100
-                      : 0) + "%",
-                }}
-                title={`${humanize(value)}: ${data.outcomes[value]}`}
-              />
-            ))}
-          </div>
-          <p>
-            {data.total_invoices
-              ? `${data.total_invoices} unique invoices · current recorded outcomes`
-              : "No recorded financial outcomes yet"}
-          </p>
-        </section>
-      )}
+      <OverviewInsights
+        outcomes={data?.outcomes}
+        total={data?.total_invoices}
+      />
       <TechnicalDetails label="Processing service health and operational metrics">
         {data && (
           <div
@@ -213,7 +190,10 @@ export default function Dashboard() {
           <div>
             <p className="eyebrow">THE WORK, AS IT HAPPENS</p>
             <h2>Recent processing activity</h2>
-            <p>Run history includes retries and duplicate assessments.</p>
+            <p>
+              Open an invoice to see its decision, supporting details and next
+              action.
+            </p>
           </div>
           <Link to="/process">
             View processing history <Icon name="arrow" />
@@ -347,6 +327,7 @@ export default function Dashboard() {
           </div>
         )}
       </section>
+      <BusinessActivity />
     </>
   );
 }
