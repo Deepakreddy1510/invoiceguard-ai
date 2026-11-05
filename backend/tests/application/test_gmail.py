@@ -1050,3 +1050,40 @@ def test_gmail_quota_403_is_retryable_without_revoking_authorization(reason):
             and error.value.retry_after == 120
         )
         assert "private provider text" not in str(error.value)
+
+
+def test_email_mode_comparison_carries_current_source_context(mailbox):
+    pdf = invoice_pdf(number="MAIL-MODE-CONTEXT")
+    receipt = mailbox.client.post(
+        "/api/v1/documents",
+        data={"extraction_mode": "FALLBACK"},
+        files={"file": ("manual.pdf", pdf, "application/pdf")},
+    )
+    assert receipt.status_code == 202
+    original_id = UUID(receipt.json()["run_id"])
+    run_once(mailbox.factory, run_id=original_id)
+    assert mailbox.client.get("/api/v1/runs/" + str(original_id)).json()["outcome"] == "VALIDATED"
+    add_message(
+        mailbox, subject="Invoice for PO-2026-002", files=[("same.pdf", "application/pdf", pdf)]
+    )
+    identifier = sync(mailbox)[0]
+    assert execute(mailbox, identifier) is None
+    response = mailbox.client.post(
+        f"/api/v1/email/attachments/{identifier}/review",
+        json={
+            "action": "FORWARD",
+            "reason": "Confirm invoice intake while keeping the conflicting email claim subject to financial review.",
+        },
+    )
+    assert response.status_code == 200
+    compared = execute(mailbox, identifier)
+    assert compared["requested_mode"] == "AUTO" and compared["parent_run_id"] == str(original_id)
+    assert compared["intake_context"]["attachment_id"] == str(identifier)
+    assert compared["outcome"] == "NEEDS_REVIEW"
+    with mailbox.factory() as session:
+        active = session.scalars(
+            select(FinancialCommitment).where(
+                FinancialCommitment.status.in_(["RESERVED", "HELD", "SETTLED"])
+            )
+        ).all()
+        assert len(active) == 1 and str(active[0].amount) == "550.000000"

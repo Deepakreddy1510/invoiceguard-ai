@@ -126,7 +126,7 @@ def ingest(
                     financial_lock(session, workspace_id)
                     parent = run
                     run = ProcessingRun(
-                        intake_context=parent.intake_context,
+                        intake_context=intake_context or parent.intake_context,
                         document_id=document.id,
                         parent_run_id=parent.id,
                         extraction_mode=extraction_mode,
