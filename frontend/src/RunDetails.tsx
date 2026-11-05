@@ -495,6 +495,28 @@ export default function RunDetails({
           </div>
         )}
       </dl>
+      {run.intake_context && (
+        <details className="source-panel">
+          <summary>
+            Email matching provenance · {run.intake_context.policy_version}
+          </summary>
+          <p>Email candidates remain separate from PDF-extracted fields.</p>
+          {run.intake_context.po_evidence.map((e, i) => (
+            <blockquote key={i}>
+              {e.source}: {e.quote} · Candidate {e.value}
+            </blockquote>
+          ))}
+          {run.intake_context.selected_po_number && (
+            <p>
+              Reviewer-selected procurement candidate:{" "}
+              {run.intake_context.selected_po_number}
+            </p>
+          )}
+          <a href={"/email-intake?message=" + run.intake_context.message_id}>
+            Open source email and intake history
+          </a>
+        </details>
+      )}
       <p className="sr-only" aria-live="polite" aria-atomic="true">
         {latest
           ? humanize(latest.stage) + ": " + humanize(latest.outcome)

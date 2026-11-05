@@ -3,7 +3,6 @@
 import csv
 import json
 import os
-import resource
 import subprocess
 import sys
 import tempfile
@@ -11,6 +10,12 @@ from io import StringIO
 from pathlib import Path
 
 import pymupdf
+
+try:
+    import resource
+except ImportError:  # Native Windows has no Unix resource module.
+    resource = None
+
 
 MAX_PAGES = 20
 MAX_PIXELS = 18_000_000
@@ -122,8 +127,9 @@ def pdf_process(path: Path, extract: bool) -> dict:
 
 
 if __name__ == "__main__":
-    resource.setrlimit(resource.RLIMIT_AS, (1_500_000_000, 1_500_000_000))
-    resource.setrlimit(resource.RLIMIT_CPU, (45, 45))
+    if resource is not None:
+        resource.setrlimit(resource.RLIMIT_AS, (1_500_000_000, 1_500_000_000))
+        resource.setrlimit(resource.RLIMIT_CPU, (45, 45))
     try:
         print(json.dumps(read_pdf(sys.argv[2], sys.argv[1] == "extract")))
     except Exception:

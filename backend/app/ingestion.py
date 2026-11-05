@@ -29,6 +29,8 @@ def ingest(
     workspace_id=DEMO_WORKSPACE_ID,
     actor="local-demo-reviewer",
     extraction_mode="AUTO",
+    email_attachment_id=None,
+    intake_context=None,
 ) -> dict:
     if extraction_mode not in ["AUTO", "GEMINI", "FALLBACK"]:
         raise HTTPException(422, "Unsupported extraction mode.")
@@ -124,6 +126,7 @@ def ingest(
                     financial_lock(session, workspace_id)
                     parent = run
                     run = ProcessingRun(
+                        intake_context=parent.intake_context,
                         document_id=document.id,
                         parent_run_id=parent.id,
                         extraction_mode=extraction_mode,
@@ -161,7 +164,11 @@ def ingest(
             else:
                 document = session.get(InvoiceDocument, doc_id)
                 persist_document(path, path.name)
-                run = ProcessingRun(document_id=doc_id, extraction_mode=extraction_mode)
+                run = ProcessingRun(
+                    document_id=doc_id,
+                    extraction_mode=extraction_mode,
+                    intake_context=intake_context,
+                )
                 session.add(run)
                 session.flush()
                 session.add(
@@ -201,6 +208,18 @@ def ingest(
                 "document_id": str(document.id),
                 "replayed": replayed,
             }
+            if email_attachment_id:
+                from app.models import EmailAttachment
+
+                attachment = session.get(EmailAttachment, email_attachment_id)
+                if not attachment or attachment.workspace_id != workspace_id:
+                    raise HTTPException(404, "Email intake record not found in this workspace.")
+                attachment.document_id = document.id
+                attachment.run_id = run.id
+                attachment.sha256 = sha
+                attachment.replayed = replayed
+                attachment.status = "INGESTED"
+                attachment.error = None
             committing = True
             session.commit()
             return response

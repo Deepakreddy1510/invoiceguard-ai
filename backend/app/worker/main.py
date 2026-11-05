@@ -176,6 +176,21 @@ def finalize(session, run_id, token):
     outcome, rules, summary, invoice, po, allocations = evaluate(
         session, run, run.extraction, replacing
     )
+    if run.intake_context:
+        from app.email_intake.policy import POLICY_VERSION, assess
+
+        email_rules = assess(run.intake_context, run.extraction)
+        rules.extend(email_rules)
+        summary["email_context"] = run.intake_context
+        if outcome == "VALIDATED" and any(r["outcome"] == "REVIEW" for r in email_rules):
+            outcome = "NEEDS_REVIEW"
+        event(
+            session,
+            run,
+            "email_matching",
+            "SUCCEEDED",
+            POLICY_VERSION + ": email evidence assessed separately from PDF evidence.",
+        )
     invoice = invoice or original
     revision = InvoiceRevision(
         invoice_id=invoice.id if invoice else None, run_id=run.id, extraction=run.extraction
@@ -190,6 +205,11 @@ def finalize(session, run_id, token):
         outcome=outcome,
         rules=rules,
         summary=summary,
+        **(
+            {"policy_version": "gross-zero-overrun-v1+email-po-review-v1"}
+            if run.intake_context
+            else {}
+        ),
     )
     decision.id = uuid4()
     if outcome == "VALIDATED":
@@ -469,6 +489,10 @@ if __name__ == "__main__":
         try:
             heartbeat("AVAILABLE")
             worked = run_once()
+            from app.email_intake.service import mail_once
+
+            mail_worked = mail_once()
+            worked = worked or mail_worked
             heartbeat("AVAILABLE")
         except Exception:
             logger.error(

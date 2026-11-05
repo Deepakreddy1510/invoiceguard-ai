@@ -67,6 +67,10 @@ def child_environment(url, storage, provider):
         LOCAL_WORKSPACE_ID="00000000-0000-0000-0000-000000000001",
         APP_ENVIRONMENT="local",
         OMP_THREAD_LIMIT="1",
+        GMAIL_CLIENT_ID="",
+        GMAIL_CLIENT_SECRET="",
+        GMAIL_ENCRYPTION_KEY="",
+        GMAIL_USE_GEMINI="false",
     )
     if provider == "fallback":
         env["GEMINI_API_KEY"] = ""

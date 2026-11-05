@@ -50,6 +50,7 @@ def run_view(session, run, decision=_UNSET):
         "status": run.status,
         "attempt": run.attempt,
         "requested_mode": run.extraction_mode,
+        "intake_context": run.intake_context,
         "actual_provider": (run.extraction or {}).get("provider"),
         "model": (run.extraction or {}).get("model"),
         "fallback_reason": (run.extraction or {}).get("fallback_reason"),
@@ -252,6 +253,7 @@ def retry(run_id: UUID, session: DB, user: Reviewer):
     if child:
         return {"run_id": str(child.id), "replayed": True}
     run = ProcessingRun(
+        intake_context=parent.intake_context,
         document_id=parent.document_id,
         parent_run_id=parent.id,
         status="QUEUED",

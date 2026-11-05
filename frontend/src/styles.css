@@ -2778,3 +2778,66 @@ summary {
   text-decoration: underline;
   text-underline-offset: 0.18em;
 }
+
+.email-connection,
+.email-attachment {
+  margin-bottom: 24px;
+}
+.email-metrics {
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+}
+.email-metrics strong {
+  display: block;
+  font-size: 28px;
+  margin-top: 12px;
+}
+.email-body {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  max-height: 320px;
+  overflow: auto;
+  font: 12px/1.8 var(--font-body);
+}
+.email-events {
+  padding-left: 22px;
+}
+.email-events li {
+  padding: 10px 0;
+  border-bottom: 1px solid var(--border);
+}
+.email-events span,
+.email-events time {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: var(--text-secondary);
+}
+.email-review {
+  margin-top: 20px;
+  border: 1px solid var(--border);
+  padding: 18px;
+}
+.email-review label {
+  display: block;
+  margin: 12px 0;
+}
+.email-review textarea,
+.email-review select {
+  display: block;
+  width: 100%;
+  margin-top: 8px;
+}
+.hash {
+  overflow-wrap: anywhere;
+}
+.email-detail {
+  margin-top: 28px;
+}
+.email-detail a {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}
+.source-panel > a {
+  text-decoration: underline;
+  text-underline-offset: 0.18em;
+}

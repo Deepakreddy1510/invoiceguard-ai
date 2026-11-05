@@ -13,6 +13,8 @@ dependencies = [
     "python-multipart>=0.0.20,<1",
     "httpx>=0.28,<1",
     "pyjwt[crypto]>=2.10,<3",
+    "cryptography>=46,<51",
+    "tzdata>=2025.2; sys_platform == 'win32'",
     "boto3>=1.38,<2",
 ]
 

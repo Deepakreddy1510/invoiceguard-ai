@@ -11,6 +11,7 @@ from sqlalchemy import (
     Index,
     Numeric,
     String,
+    Text,
     UniqueConstraint,
     func,
     text,
@@ -144,6 +145,7 @@ class ProcessingRun(Base):
     lease_until: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     pages: Mapped[list | None] = mapped_column(JSONB)
     extraction: Mapped[dict | None] = mapped_column(JSONB)
+    intake_context: Mapped[dict | None] = mapped_column(JSONB)
     error: Mapped[str | None] = mapped_column(String(300))
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     finished_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
@@ -334,4 +336,105 @@ class ProcurementImport(Base):
     idempotency_key: Mapped[str] = mapped_column(String(100))
     record_count: Mapped[int]
     row_count: Mapped[int]
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class GmailConnection(Base):
+    __tablename__ = "gmail_connections"
+    __table_args__ = (
+        Index(
+            "uq_gmail_active_workspace",
+            "workspace_id",
+            unique=True,
+            postgresql_where=text("status != 'DISCONNECTED'"),
+        ),
+        Index("ix_gmail_due", "status", "next_sync_at"),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"))
+    subject: Mapped[str] = mapped_column(String(255))
+    email: Mapped[str] = mapped_column(String(320))
+    status: Mapped[str] = mapped_column(String(30), default="ACTIVE")
+    credentials: Mapped[str | None] = mapped_column(Text)
+    history_id: Mapped[str] = mapped_column(String(100))
+    page_token: Mapped[str | None] = mapped_column(String(2048))
+    recovery_history_id: Mapped[str | None] = mapped_column(String(100))
+    connected_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    last_sync_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    next_sync_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    failure_count: Mapped[int] = mapped_column(default=0)
+    error: Mapped[str | None] = mapped_column(String(300))
+
+
+class GmailOAuthAttempt(Base):
+    __tablename__ = "gmail_oauth_attempts"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"))
+    connection_id: Mapped[UUID | None] = mapped_column(ForeignKey("gmail_connections.id"))
+    subject: Mapped[str] = mapped_column(String(255))
+    state_hash: Mapped[str] = mapped_column(String(64), unique=True)
+    browser_hash: Mapped[str] = mapped_column(String(64))
+    verifier: Mapped[str] = mapped_column(Text)
+    expires_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    consumed_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+
+
+class EmailMessage(Base):
+    __tablename__ = "email_messages"
+    __table_args__ = (UniqueConstraint("connection_id", "gmail_id"),)
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"))
+    connection_id: Mapped[UUID] = mapped_column(ForeignKey("gmail_connections.id"))
+    gmail_id: Mapped[str] = mapped_column(String(200))
+    sender: Mapped[str] = mapped_column(String(320))
+    subject: Mapped[str] = mapped_column(String(500))
+    body: Mapped[str] = mapped_column(Text)
+    received_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
+    status: Mapped[str] = mapped_column(String(30), default="DISCOVERED")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class EmailAttachment(Base):
+    __tablename__ = "email_attachments"
+    __table_args__ = (
+        UniqueConstraint("message_id", "part_id"),
+        Index("ix_email_attachment_due", "status", "next_attempt_at"),
+    )
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"))
+    message_id: Mapped[UUID] = mapped_column(ForeignKey("email_messages.id"))
+    part_id: Mapped[str] = mapped_column(String(200))
+    attachment_id: Mapped[str | None] = mapped_column(String(1000))
+    filename: Mapped[str] = mapped_column(String(255))
+    mime_type: Mapped[str] = mapped_column(String(150))
+    byte_size: Mapped[int]
+    sha256: Mapped[str | None] = mapped_column(String(64))
+    classification: Mapped[dict | None] = mapped_column(JSONB)
+    status: Mapped[str] = mapped_column(String(30), default="QUEUED")
+    attempts: Mapped[int] = mapped_column(default=0)
+    next_attempt_at: Mapped[datetime] = mapped_column(
+        DateTime(timezone=True), server_default=func.now()
+    )
+    error: Mapped[str | None] = mapped_column(String(300))
+    review: Mapped[dict | None] = mapped_column(JSONB)
+    document_id: Mapped[UUID | None] = mapped_column(ForeignKey("invoice_documents.id"))
+    run_id: Mapped[UUID | None] = mapped_column(ForeignKey("processing_runs.id"))
+    replayed: Mapped[bool] = mapped_column(default=False)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class EmailIntakeEvent(Base):
+    __tablename__ = "email_intake_events"
+    id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"))
+    connection_id: Mapped[UUID] = mapped_column(ForeignKey("gmail_connections.id"))
+    attachment_id: Mapped[UUID | None] = mapped_column(ForeignKey("email_attachments.id"))
+    stage: Mapped[str] = mapped_column(String(40))
+    outcome: Mapped[str] = mapped_column(String(30))
+    detail: Mapped[str] = mapped_column(String(500))
+    evidence: Mapped[dict | None] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

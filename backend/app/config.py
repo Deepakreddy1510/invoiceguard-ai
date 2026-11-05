@@ -31,6 +31,13 @@ class Settings(BaseSettings):
     gemini_api_key: SecretStr | None = None
     allow_manual_extraction_modes: bool = False
     gemini_model: str = Field(default="gemini-2.5-flash", pattern=r"^[A-Za-z0-9.-]+$")
+    gmail_client_id: str = ""
+    gmail_client_secret: SecretStr | None = None
+    gmail_redirect_uri: str = ""
+    gmail_trusted_origin: str = ""
+    gmail_encryption_key: SecretStr | None = None
+    gmail_poll_seconds: int = Field(default=60, ge=30, le=3600)
+    gmail_use_gemini: bool = False
     frontend_dist: Path = Path("../frontend/dist")
 
     @field_validator("database_url")

@@ -1,3 +1,4 @@
+import logging
 from contextlib import asynccontextmanager
 from datetime import date
 from decimal import Decimal
@@ -14,6 +15,8 @@ from sqlalchemy.orm import Session, selectinload
 from app.auth import User
 from app.config import get_settings
 from app.db import get_session
+from app.email_intake.api import RedactOAuthLog
+from app.email_intake.api import router as email_router
 from app.models import AuditEvent, FinancialCommitment, PurchaseOrder, Vendor
 from app.operations_api import router as operations_router
 from app.procurement import po_history, vendor_view
@@ -28,6 +31,9 @@ from app.workspaces_api import router as workspaces_router
 @asynccontextmanager
 async def lifespan(app):
     get_settings().validate_runtime()
+    logger = logging.getLogger("uvicorn.access")
+    if not any(isinstance(f, RedactOAuthLog) for f in logger.filters):
+        logger.addFilter(RedactOAuthLog())
     yield
 
 
@@ -146,6 +152,7 @@ app.include_router(router)
 app.include_router(review_router)
 app.include_router(operations_router)
 app.include_router(workspaces_router)
+app.include_router(email_router)
 app.include_router(procurement_router)
 app.include_router(imports_router)
 

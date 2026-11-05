@@ -204,6 +204,7 @@ def submit_correction(session, task_id, user, payload: CorrectionInput):
         review_comment=payload.comment,
     )
     run = ProcessingRun(
+        intake_context=parent.intake_context,
         document_id=task.document_id,
         parent_run_id=parent.id,
         status="QUEUED",
@@ -306,6 +307,7 @@ def release_held(session, task_id, user, payload: ReviewActionInput):
         .limit(1)
     )
     rejected = ProcessingRun(
+        intake_context=parent.intake_context,
         document_id=task.document_id,
         parent_run_id=parent.id,
         status="SUCCEEDED",

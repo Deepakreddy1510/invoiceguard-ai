@@ -67,6 +67,10 @@ def isolated_runtime_settings(monkeypatch):
     monkeypatch.setenv("STORAGE_BACKEND", "local")
     monkeypatch.setenv("LOCAL_WORKSPACE_ID", "00000000-0000-0000-0000-000000000001")
     monkeypatch.delenv("GEMINI_API_KEY", raising=False)
+    monkeypatch.setenv("GMAIL_CLIENT_ID", "")
+    monkeypatch.setenv("GMAIL_CLIENT_SECRET", "")
+    monkeypatch.setenv("GMAIL_ENCRYPTION_KEY", "")
+    monkeypatch.setenv("GMAIL_USE_GEMINI", "false")
     get_settings.cache_clear()
     yield
     get_settings.cache_clear()

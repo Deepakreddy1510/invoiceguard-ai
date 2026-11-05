@@ -6,8 +6,11 @@ The integrated workflow runs end-to-end: upload → persisted queue → digital 
 
 See [workspace management and Windows CMD upgrade instructions](docs/workspaces-procurement.md) for the sidebar workspace selector, vendor/PO management, transactional CSV imports and extraction modes. Existing demonstration data and commitments are preserved.
 
+See [Gmail intake setup, Google scope limitations, and Windows/live smoke instructions](docs/gmail-intake.md) for optional automatic email attachment processing. Live Gmail and live Gemini remain unverified until configured and observed.
+
 ## Features and architecture
 
+- Workspace-specific Gmail OAuth, encrypted tokens, durable inbox polling, source-backed Gemini/fallback intake, human intake review and versioned email PO provenance.
 - Isolated Demo and My workspaces; audited vendor/PO CRUD, safe cancellation/deactivation, transactional CSV preview/import and permission-controlled AUTO/GEMINI/FALLBACK extraction.
 - Dashboard, Process Invoice, Decision Details, Exception Review, Vendors, Purchase Orders and Audit History screens, responsive navigation and authenticated original-PDF preview.
 - Bounded PDF ingestion, byte-hash replay detection, request idempotency, durable runs, worker leases and safe retries. Stored PDF bytes are checked against their original hash before extraction.

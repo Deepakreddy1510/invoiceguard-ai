@@ -24,6 +24,13 @@ export type Rule = {
   expected: string | null;
 };
 export type RunSummary = {
+  intake_context?: {
+    policy_version: string;
+    message_id: string;
+    attachment_id: string;
+    po_evidence: { value: string; source: string; quote: string }[];
+    selected_po_number?: string | null;
+  } | null;
   requested_mode?: string;
   actual_provider?: string | null;
   model?: string | null;

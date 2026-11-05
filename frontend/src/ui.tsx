@@ -211,9 +211,11 @@ export function CopyButton({
 export function PdfPreview({
   documentId,
   file,
+  sourcePath,
 }: {
   documentId?: string;
   file?: File | null;
+  sourcePath?: string;
 }) {
   const [url, setUrl] = useState("");
   const [error, setError] = useState("");
@@ -229,7 +231,7 @@ export function PdfPreview({
           file ??
           (await (async () => {
             const response = await apiFetch(
-              "/api/v1/documents/" + documentId + "/content",
+              sourcePath ?? "/api/v1/documents/" + documentId + "/content",
               { signal: controller.signal },
             );
             if (!response.ok)
@@ -243,13 +245,13 @@ export function PdfPreview({
         if (!controller.signal.aborted) setError((e as Error).message);
       }
     };
-    if (file || documentId) void load();
+    if (file || documentId || sourcePath) void load();
     return () => {
       controller.abort();
       if (object) URL.revokeObjectURL(object);
     };
-  }, [documentId, file, retry]);
-  if (!file && !documentId) return null;
+  }, [documentId, file, sourcePath, retry]);
+  if (!file && !documentId && !sourcePath) return null;
   return (
     <section className="pdf-preview">
       <Notice error={error} onRetry={() => setRetry((v) => v + 1)} />
