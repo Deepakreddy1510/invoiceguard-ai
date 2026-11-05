@@ -24,6 +24,8 @@ The backend warning is the existing upstream Starlette/httpx TestClient deprecat
 
 Commands actually executed: `uv lock`; Ruff format/check; `TEST_DATABASE_URL=.../invoiceguard_gmail_test .venv/bin/pytest -q`; frontend `npm run format`, `npm run format:check`, `npm run lint`, `npm run typecheck`, `npm test`, `npm run build`; and `PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH=/usr/bin/chromium .venv/bin/python -m scripts.browser_regression`. Credentials were absent from these commands except the existing publicly documented disposable PostgreSQL development password. Real provider secrets were not configured or committed.
 
+Playwright emits GitHub annotations in Actions as well as its full list reporter, so failed assertions are directly reviewable without weakening tests.
+
 The GitHub Actions workflow retains backend checks, schema drift checks, frontend tests/build, real-service browser tests, production Docker build and reliable post-job cleanup. It is unchanged by this feature. The delivery response reports the observed run conclusion after publication; local results are not a substitute for that remote run.
 
 ## Implemented capability and evidence
@@ -86,3 +88,5 @@ Native Windows execution, production Auth0/S3 integration, Google production ver
 - `frontend/src/pages/EmailIntake.tsx`
 - `frontend/src/styles.css`
 - `frontend/src/ui.tsx`
+
+- `frontend/playwright.config.ts` (GitHub annotation reporter; all tests/assertions retained)
