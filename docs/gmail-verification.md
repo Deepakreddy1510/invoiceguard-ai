@@ -6,7 +6,7 @@ This change extends base revision `2427b8956c038e7e77f758964e8c51133646beb8`. It
 
 | Check | Actual result |
 |---|---|
-| Full backend pytest | **187 passed, 0 failed**, including all 138 pre-existing regressions and 49 Gmail/security/intake cases |
+| Full backend pytest | **188 passed, 0 failed**, including all 138 pre-existing regressions and 50 Gmail/security/intake cases |
 | Frontend Vitest | **28 passed, 0 failed**, including all 25 previous cases |
 | Real-service Playwright | **12 passed, 0 failed**, including all 11 previous scenarios and the new provider-mocked Gmail browser case |
 | Backend Ruff formatting/lint | Passed; final formatting check reports 100 files formatted |
@@ -100,3 +100,5 @@ The first published run failed in its browser step. Exact CI reproduction expose
 After the deterministic fixture change, the exact GitHub Actions browser shell passed all 12 cases locally with `CI=true`, real services and process-group cleanup. OCR character recognition remains a known limitation; verification of an OCR quote does not independently prove every rendered character was recognized correctly. No financial confidence rule or parser correction was introduced.
 
 The final safety regression covers a Gmail AUTO handoff of the same bytes previously validated under FALLBACK. The comparison run retains the current email context, routes a conflicting PO claim to financial review, preserves the original decision and keeps exactly one consuming 550-unit commitment. Ordinary manual mode comparisons still inherit their prior context.
+
+The explicit Gmail AI opt-out also covers automated Gmail PDF handoff: it requests FALLBACK even when a global Gemini key exists for manual uploads. An actual-worker regression forbids Gemini invocation in this mode and verifies the resulting validated invoice/provider metadata. Manual upload and authorized mode-comparison behavior remain unchanged.

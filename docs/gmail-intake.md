@@ -66,7 +66,7 @@ GMAIL_POLL_SECONDS=60
 GMAIL_USE_GEMINI=false
 ```
 
-The first five values are required to enable connecting. Poll interval defaults to 60 seconds, constrained to 30–3600. Email AI is an explicit server-side opt-in. To test it with synthetic messages, set `GMAIL_USE_GEMINI=true`, configure the existing `GEMINI_API_KEY` securely, and retain `GEMINI_MODEL` (default `gemini-2.5-flash`). The UI shows the configured email classifier and each actual result records its provider/model/fallback reason. Invalid Gemini output/provider failure uses conservative screening; no live success is implied by configuration.
+The first five values are required to enable connecting. Poll interval defaults to 60 seconds, constrained to 30–3600. Email AI is an explicit server-side opt-in. With it disabled, Gmail classification and automated Gmail PDF handoffs both force FALLBACK, even if a key is configured for manual uploads. With it enabled, Gmail-origin invoice runs request AUTO and record the actual provider. Manual uploads retain their existing AUTO default. To test it with synthetic messages, set `GMAIL_USE_GEMINI=true`, configure the existing `GEMINI_API_KEY` securely, and retain `GEMINI_MODEL` (default `gemini-2.5-flash`). The UI shows the configured email classifier and each actual result records its provider/model/fallback reason. Invalid Gemini output/provider failure uses conservative screening; no live success is implied by configuration.
 
 ## Google verification and privacy limitations
 

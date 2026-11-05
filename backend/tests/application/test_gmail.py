@@ -1087,3 +1087,21 @@ def test_email_mode_comparison_carries_current_source_context(mailbox):
             )
         ).all()
         assert len(active) == 1 and str(active[0].amount) == "550.000000"
+
+
+def test_mail_ai_opt_out_covers_pdf_extraction_even_with_global_key(mailbox, monkeypatch):
+    monkeypatch.setenv("GMAIL_USE_GEMINI", "false")
+    monkeypatch.setenv("GEMINI_API_KEY", "contract-only")
+    get_settings.cache_clear()
+
+    def forbidden(*args, **kwargs):
+        raise AssertionError("Mail AI opt-out must never call Gemini for its PDF.")
+
+    monkeypatch.setattr("app.extraction.pipeline.extract_gemini", forbidden)
+    add_message(mailbox)
+    identifier = sync(mailbox)[0]
+    run = execute(mailbox, identifier)
+    assert run["outcome"] == "VALIDATED" and run["requested_mode"] == "FALLBACK"
+    assert run["extraction"]["provider"] == "FALLBACK"
+    with mailbox.factory() as session:
+        assert session.get(EmailAttachment, identifier).classification["provider"] == "FALLBACK"

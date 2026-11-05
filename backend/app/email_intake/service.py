@@ -481,6 +481,7 @@ def intake_attachment(factory, identifier):
                         session,
                         a.workspace_id,
                         "gmail-worker",
+                        extraction_mode="AUTO" if get_settings().gmail_use_gemini else "FALLBACK",
                         email_attachment_id=a.id,
                         intake_context=context,
                     )
