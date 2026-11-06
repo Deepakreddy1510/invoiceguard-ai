@@ -63,6 +63,9 @@ sys.stdout.buffer.write(pdf.tobytes(garbage=4,deflate=True))`,
     }
   });
   await page.goto("/process");
+  await page
+    .getByRole("button", { name: "+ New invoice", exact: true })
+    .click();
   await page.getByLabel("Invoice PDF", { exact: true }).setInputFiles({
     name: "new-independent-document.pdf",
     mimeType: "application/pdf",
@@ -108,7 +111,10 @@ sys.stdout.buffer.write(pdf.tobytes(garbage=4,deflate=True))`,
   await expect(
     page.getByRole("region", { name: "Financial decision" }),
   ).toContainText("The recorded financial checks passed.");
-  await expect(page.locator('[data-stage="validation"] .rules')).toContainText(
+  await page
+    .getByRole("tab", { name: "Financial checks", exact: true })
+    .click();
+  await expect(page.locator(".rules")).toContainText(
     "Available purchase order balance",
   );
   await expect(
@@ -171,6 +177,9 @@ test("warm screens expose keyboard controls and have no detected WCAG A/AA viola
   expect(
     await page.evaluate(() => document.documentElement.scrollWidth),
   ).toBeLessThanOrEqual(1024);
+  await page
+    .getByRole("button", { name: "Close purchase order details", exact: true })
+    .click();
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "Open navigation" }).focus();
   await page.keyboard.press("Enter");

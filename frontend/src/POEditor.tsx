@@ -1,3 +1,4 @@
+import { Dialog } from "./Experience";
 import { useState } from "react";
 import { request, money } from "./client";
 import { Notice, useResource } from "./ui";
@@ -140,271 +141,282 @@ export default function POEditor({
   const update = (key: string, value: string) =>
     setForm((f) => ({ ...f, [key]: value }));
   return (
-    <section className="panel detail-panel" aria-label="Purchase order editor">
-      <div className="section-heading">
-        <h2>{initial ? "Edit purchase order" : "Create purchase order"}</h2>
-        <button type="button" disabled={busy} onClick={onClose}>
-          Close form
-        </button>
-      </div>
-      <Notice error={error || vendors.error} onRetry={vendors.reload} />
-      <form onSubmit={save}>
-        <fieldset disabled={busy}>
-          <div className="field-grid">
-            <label>
-              PO number
-              <input
-                aria-label="PO number"
-                required
-                maxLength={60}
-                value={form.number}
-                onChange={(e) => update("number", e.target.value)}
-              />
-            </label>
-            <label>
-              Vendor
-              <select
-                aria-label="PO vendor"
-                required
-                value={form.vendor_id}
-                onChange={(e) => update("vendor_id", e.target.value)}
-              >
-                <option value="">Select vendor in this workspace</option>
-                {vendors.data?.map((v) => (
-                  <option key={v.id} value={v.id}>
-                    {v.code} · {v.legal_name} · {v.status}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Currency
-              <select
-                aria-label="PO currency"
-                value={form.currency}
-                onChange={(e) => update("currency", e.target.value)}
-              >
-                {["USD", "INR", "EUR", "GBP", "JPY", "KWD"].map((c) => (
-                  <option key={c}>{c}</option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Status
-              <select
-                aria-label="PO status"
-                value={form.status}
-                onChange={(e) => update("status", e.target.value)}
-              >
-                {[
-                  "OPEN",
-                  "CLOSED",
-                  "CANCELLED",
-                  ...(initial?.status === "PARTIALLY_BILLED"
-                    ? ["PARTIALLY_BILLED"]
-                    : []),
-                ].map((status) => (
-                  <option key={status} disabled={status === "PARTIALLY_BILLED"}>
-                    {status}
-                  </option>
-                ))}
-              </select>
-            </label>
-            <label>
-              Issue date
-              <input
-                type="date"
-                aria-label="PO issue date"
-                required
-                value={form.issued_on}
-                onChange={(e) => update("issued_on", e.target.value)}
-              />
-            </label>
-            <label>
-              Valid until
-              <input
-                type="date"
-                aria-label="PO valid until"
-                min={form.issued_on}
-                required
-                value={form.valid_until}
-                onChange={(e) => update("valid_until", e.target.value)}
-              />
-            </label>
-            <label>
-              Billing mode
-              <select
-                aria-label="PO billing mode"
-                value={form.billing_mode}
-                onChange={(e) =>
-                  setForm((f) => ({
-                    ...f,
-                    billing_mode: e.target.value,
-                    items:
-                      e.target.value === "AMOUNT_BASED"
-                        ? []
-                        : f.items.length
-                          ? f.items
-                          : [blankItem()],
-                  }))
-                }
-              >
-                <option value="ITEMIZED">Itemized</option>
-                <option value="AMOUNT_BASED">Amount-based</option>
-              </select>
-            </label>
-            <label>
-              Authorized gross
-              <input
-                inputMode="decimal"
-                aria-label="Authorized gross"
-                required
-                value={form.authorized_gross}
-                onChange={(e) => update("authorized_gross", e.target.value)}
-              />
-            </label>
-          </div>
-          <h3>Line items</h3>
-          {form.billing_mode === "AMOUNT_BASED" && !form.items.length && (
-            <p className="footnote">
-              Amount-based authorization is set directly. No opening billed
-              balance or tax allocation is invented; real invoice controls still
-              run.
-            </p>
-          )}
-          <div className="table-scroll">
-            <table className="editable-items">
-              <thead>
-                <tr>
-                  {[
-                    "SKU",
-                    "Description",
-                    "Quantity",
-                    "Unit price",
-                    "Tax rate",
-                  ].map((label) => (
-                    <th key={label}>{label}</th>
+    <Dialog
+      title={initial ? "Edit purchase order" : "Create purchase order"}
+      wide
+      onClose={() => !busy && onClose()}
+    >
+      <section className="detail-panel" aria-label="Purchase order editor">
+        <div className="section-heading">
+          <h2>{initial ? "Edit purchase order" : "Create purchase order"}</h2>
+          <button type="button" disabled={busy} onClick={onClose}>
+            Close form
+          </button>
+        </div>
+        <Notice error={error || vendors.error} onRetry={vendors.reload} />
+        <form onSubmit={save}>
+          <fieldset disabled={busy}>
+            <div className="field-grid">
+              <label>
+                PO number
+                <input
+                  aria-label="PO number"
+                  required
+                  maxLength={60}
+                  value={form.number}
+                  onChange={(e) => update("number", e.target.value)}
+                />
+              </label>
+              <label>
+                Vendor
+                <select
+                  aria-label="PO vendor"
+                  required
+                  value={form.vendor_id}
+                  onChange={(e) => update("vendor_id", e.target.value)}
+                >
+                  <option value="">Select vendor in this workspace</option>
+                  {vendors.data?.map((v) => (
+                    <option key={v.id} value={v.id}>
+                      {v.code} · {v.legal_name} · {v.status}
+                    </option>
                   ))}
-                  <th>Action</th>
-                </tr>
-              </thead>
-              <tbody>
-                {form.items.map((item, index) => (
-                  <tr key={index}>
-                    {(
-                      [
-                        "sku",
-                        "description",
-                        "quantity",
-                        "unit_price",
-                        "tax_rate",
-                      ] as const
-                    ).map((key) => (
-                      <td key={key}>
-                        <input
-                          aria-label={"PO item " + (index + 1) + " " + key}
-                          required
-                          maxLength={
-                            key === "description"
-                              ? 300
-                              : key === "sku"
-                                ? 60
-                                : 22
+                </select>
+              </label>
+              <label>
+                Currency
+                <select
+                  aria-label="PO currency"
+                  value={form.currency}
+                  onChange={(e) => update("currency", e.target.value)}
+                >
+                  {["USD", "INR", "EUR", "GBP", "JPY", "KWD"].map((c) => (
+                    <option key={c}>{c}</option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Status
+                <select
+                  aria-label="PO status"
+                  value={form.status}
+                  onChange={(e) => update("status", e.target.value)}
+                >
+                  {[
+                    "OPEN",
+                    "CLOSED",
+                    "CANCELLED",
+                    ...(initial?.status === "PARTIALLY_BILLED"
+                      ? ["PARTIALLY_BILLED"]
+                      : []),
+                  ].map((status) => (
+                    <option
+                      key={status}
+                      disabled={status === "PARTIALLY_BILLED"}
+                    >
+                      {status}
+                    </option>
+                  ))}
+                </select>
+              </label>
+              <label>
+                Issue date
+                <input
+                  type="date"
+                  aria-label="PO issue date"
+                  required
+                  value={form.issued_on}
+                  onChange={(e) => update("issued_on", e.target.value)}
+                />
+              </label>
+              <label>
+                Valid until
+                <input
+                  type="date"
+                  aria-label="PO valid until"
+                  min={form.issued_on}
+                  required
+                  value={form.valid_until}
+                  onChange={(e) => update("valid_until", e.target.value)}
+                />
+              </label>
+              <label>
+                Billing mode
+                <select
+                  aria-label="PO billing mode"
+                  value={form.billing_mode}
+                  onChange={(e) =>
+                    setForm((f) => ({
+                      ...f,
+                      billing_mode: e.target.value,
+                      items:
+                        e.target.value === "AMOUNT_BASED"
+                          ? []
+                          : f.items.length
+                            ? f.items
+                            : [blankItem()],
+                    }))
+                  }
+                >
+                  <option value="ITEMIZED">Itemized</option>
+                  <option value="AMOUNT_BASED">Amount-based</option>
+                </select>
+              </label>
+              <label>
+                Authorized gross
+                <input
+                  inputMode="decimal"
+                  aria-label="Authorized gross"
+                  required
+                  value={form.authorized_gross}
+                  onChange={(e) => update("authorized_gross", e.target.value)}
+                />
+              </label>
+            </div>
+            <h3>Line items</h3>
+            {form.billing_mode === "AMOUNT_BASED" && !form.items.length && (
+              <p className="footnote">
+                Amount-based authorization is set directly. No opening billed
+                balance or tax allocation is invented; real invoice controls
+                still run.
+              </p>
+            )}
+            <div className="table-scroll">
+              <table className="editable-items">
+                <thead>
+                  <tr>
+                    {[
+                      "SKU",
+                      "Description",
+                      "Quantity",
+                      "Unit price",
+                      "Tax rate",
+                    ].map((label) => (
+                      <th key={label}>{label}</th>
+                    ))}
+                    <th>Action</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {form.items.map((item, index) => (
+                    <tr key={index}>
+                      {(
+                        [
+                          "sku",
+                          "description",
+                          "quantity",
+                          "unit_price",
+                          "tax_rate",
+                        ] as const
+                      ).map((key) => (
+                        <td key={key}>
+                          <input
+                            aria-label={"PO item " + (index + 1) + " " + key}
+                            required
+                            maxLength={
+                              key === "description"
+                                ? 300
+                                : key === "sku"
+                                  ? 60
+                                  : 22
+                            }
+                            inputMode={
+                              ["quantity", "unit_price", "tax_rate"].includes(
+                                key,
+                              )
+                                ? "decimal"
+                                : "text"
+                            }
+                            value={item[key]}
+                            onChange={(e) =>
+                              setForm((f) => ({
+                                ...f,
+                                items: f.items.map((row, i) =>
+                                  i === index
+                                    ? { ...row, [key]: e.target.value }
+                                    : row,
+                                ),
+                              }))
+                            }
+                          />
+                        </td>
+                      ))}
+                      <td>
+                        <button
+                          type="button"
+                          aria-label={"Remove PO item " + (index + 1)}
+                          disabled={
+                            form.billing_mode === "ITEMIZED" &&
+                            form.items.length === 1
                           }
-                          inputMode={
-                            ["quantity", "unit_price", "tax_rate"].includes(key)
-                              ? "decimal"
-                              : "text"
-                          }
-                          value={item[key]}
-                          onChange={(e) =>
+                          onClick={() =>
                             setForm((f) => ({
                               ...f,
-                              items: f.items.map((row, i) =>
-                                i === index
-                                  ? { ...row, [key]: e.target.value }
-                                  : row,
-                              ),
+                              items: f.items.filter((_, i) => i !== index),
                             }))
                           }
-                        />
+                        >
+                          Remove
+                        </button>
                       </td>
-                    ))}
-                    <td>
-                      <button
-                        type="button"
-                        aria-label={"Remove PO item " + (index + 1)}
-                        disabled={
-                          form.billing_mode === "ITEMIZED" &&
-                          form.items.length === 1
-                        }
-                        onClick={() =>
-                          setForm((f) => ({
-                            ...f,
-                            items: f.items.filter((_, i) => i !== index),
-                          }))
-                        }
-                      >
-                        Remove
-                      </button>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-          <button
-            type="button"
-            onClick={() =>
-              setForm((f) => ({ ...f, items: [...f.items, blankItem()] }))
-            }
-          >
-            Add PO item
-          </button>
-          {totals && (
-            <>
-              <dl className="financial-summary">
-                <div>
-                  <dt>Calculated subtotal</dt>
-                  <dd>{money(totals.subtotal, form.currency)}</dd>
-                </div>
-                <div>
-                  <dt>Calculated tax</dt>
-                  <dd>{money(totals.tax, form.currency)}</dd>
-                </div>
-                <div>
-                  <dt>Calculated gross</dt>
-                  <dd>{money(totals.gross, form.currency)}</dd>
-                </div>
-                <div>
-                  <dt>Authorized gross</dt>
-                  <dd>{money(form.authorized_gross, form.currency)}</dd>
-                </div>
-              </dl>
-              <button
-                type="button"
-                onClick={() => update("authorized_gross", totals.gross)}
-              >
-                Use calculated gross
-              </button>
-            </>
-          )}
-          <p className="footnote">
-            Tax rates use fractional decimals (0.10 = 10%). Calculations round
-            each line net and tax using currency-specific half-up rules. The
-            every value is checked again before saving.
-          </p>
-          <div className="toolbar">
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
             <button
-              className="primary"
-              type="submit"
-              disabled={busy || (form.billing_mode === "ITEMIZED" && !totals)}
+              type="button"
+              onClick={() =>
+                setForm((f) => ({ ...f, items: [...f.items, blankItem()] }))
+              }
             >
-              Save purchase order
+              Add PO item
             </button>
-          </div>
-        </fieldset>
-      </form>
-    </section>
+            {totals && (
+              <>
+                <dl className="financial-summary">
+                  <div>
+                    <dt>Calculated subtotal</dt>
+                    <dd>{money(totals.subtotal, form.currency)}</dd>
+                  </div>
+                  <div>
+                    <dt>Calculated tax</dt>
+                    <dd>{money(totals.tax, form.currency)}</dd>
+                  </div>
+                  <div>
+                    <dt>Calculated gross</dt>
+                    <dd>{money(totals.gross, form.currency)}</dd>
+                  </div>
+                  <div>
+                    <dt>Authorized gross</dt>
+                    <dd>{money(form.authorized_gross, form.currency)}</dd>
+                  </div>
+                </dl>
+                <button
+                  type="button"
+                  onClick={() => update("authorized_gross", totals.gross)}
+                >
+                  Use calculated gross
+                </button>
+              </>
+            )}
+            <p className="footnote">
+              Tax rates use fractional decimals (0.10 = 10%). Calculations round
+              each line net and tax using currency-specific half-up rules. The
+              every value is checked again before saving.
+            </p>
+            <div className="toolbar">
+              <button
+                className="primary"
+                type="submit"
+                disabled={busy || (form.billing_mode === "ITEMIZED" && !totals)}
+              >
+                Save purchase order
+              </button>
+            </div>
+          </fieldset>
+        </form>
+      </section>
+    </Dialog>
   );
 }

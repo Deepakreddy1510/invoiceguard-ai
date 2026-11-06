@@ -20,6 +20,7 @@ import {
 } from "./ui";
 import { Icon } from "./icons";
 import RunDetails from "./RunDetails";
+import { Dialog } from "./Experience";
 import { useRunDetails } from "./run-data";
 const stopRun = (run: RunDetail) => isTerminal(run);
 const emptyRuns: RunSummary[] = [];
@@ -39,6 +40,10 @@ export default function InvoiceWorkflow({
   const [offset, setOffset] = useState(0);
   const [filter, setFilter] = useState("");
   const [search, setSearch] = useState("");
+  const [uploadOpen, setUploadOpen] = useState(false);
+  const [mobileDetail, setMobileDetail] = useState(
+    !!initialRunId || !!new URLSearchParams(window.location.search).get("run"),
+  );
   const [mode, setMode] = useState("AUTO");
   const capabilities = useResource<{
     can_select_extraction_mode: boolean;
@@ -76,6 +81,7 @@ export default function InvoiceWorkflow({
         manual.current += 1;
         focusRun.current = null;
       }
+      setMobileDetail(true);
       selectedRef.current = id;
       setSelected(id);
       if (onSelectRun) onSelectRun(id);
@@ -113,7 +119,7 @@ export default function InvoiceWorkflow({
   useEffect(() => {
     if (detail.data && focusRun.current === detail.data.id) {
       focusRun.current = null;
-      runPanel.current?.scrollIntoView?.({ block: "start" });
+
       runPanel.current?.focus({ preventScroll: true });
     }
   }, [detail.data, message]);
@@ -178,6 +184,7 @@ export default function InvoiceWorkflow({
         focusRun.current = result.run_id;
         selectRun(result.run_id, false);
       }
+      setUploadOpen(false);
       setOffset(0);
       history.reload();
     } catch (e) {
@@ -225,173 +232,220 @@ export default function InvoiceWorkflow({
   }
   const shown = runs.filter((r) => !filter || r.outcome === filter);
   return (
-    <section className="workflow" aria-labelledby="processing-title">
+    <section
+      className={
+        "workflow invoice-workbench " +
+        (mobileDetail ? "show-detail" : "show-queue")
+      }
+      aria-label="Invoice processing workbench"
+    >
       <PageTitle
         eyebrow="VERIFICATION / INVOICE PROCESSING"
-        title="From invoice to a clear decision."
-        description="Upload a document. Follow the evidence. Understand every financial decision."
-      />
-      <section className="panel upload-panel">
-        <div className="upload-intro">
-          <span className="section-index">01</span>
-          <div>
-            <h2 id="processing-title">Process an invoice</h2>
-            <p>
-              PDF documents up to 10 MiB · 20 pages · Digital text or English
-              scans
-            </p>
-          </div>
-        </div>
-        {capabilities.data &&
-          (capabilities.data.vendor_count === 0 ||
-            capabilities.data.po_count === 0) && (
-            <div className="notice">
-              Start by adding a vendor and creating a purchase order. Then
-              upload your first invoice. <a href="/vendors">Manage vendors</a> ·{" "}
-              <a href="/purchase-orders">Create purchase order</a>
-            </div>
-          )}
-        <div className="extraction-mode">
-          <label htmlFor="extraction-mode">Extraction mode</label>
-          <select
-            id="extraction-mode"
-            aria-label="Extraction mode"
-            disabled={busy}
-            value={mode}
-            onChange={(e) => {
-              setMode(e.target.value);
-              uploadKey.current = null;
-            }}
-          >
-            <option value="AUTO">Automatic — Recommended</option>
-            {capabilities.data?.can_select_extraction_mode && (
-              <>
-                <option
-                  value="GEMINI"
-                  disabled={!capabilities.data.gemini_configured}
-                >
-                  AI-assisted
-                  {!capabilities.data.gemini_configured
-                    ? " — not configured"
-                    : ""}
-                </option>
-                <option value="FALLBACK">Standard extraction</option>
-              </>
-            )}
-          </select>
-          <p className="footnote">
-            {mode === "AUTO"
-              ? "Uses AI when available, with standard extraction as a backup."
-              : mode === "GEMINI"
-                ? "Uses Gemini-assisted extraction. If it cannot complete, processing stops and the failure is recorded."
-                : "Uses built-in document reading, including scanned PDFs. The same supplier, order and financial checks always apply."}
-            {capabilities.data?.can_select_extraction_mode &&
-              !capabilities.data.gemini_configured &&
-              " AI-assisted reading is not available in this workspace yet. Standard extraction is available."}
-          </p>
-        </div>
-        <form onSubmit={upload} className="upload-form">
-          <input
-            className="sr-only"
-            id="invoice-pdf"
-            ref={input}
-            tabIndex={-1}
-            type="file"
-            accept="application/pdf,.pdf"
-            aria-label="Invoice PDF"
-            aria-describedby="upload-help"
-            onChange={(e) => chooseFile(e.target.files?.[0] ?? null)}
-          />
+        title="Invoice workbench"
+        description="Your invoice queue, recorded decisions and source documents in one place."
+        action={
           <button
-            type="button"
-            className={"dropzone " + (drag ? "is-dragging" : "")}
-            onClick={() => input.current?.click()}
-            onDragOver={(e) => {
-              e.preventDefault();
-              setDrag(true);
-            }}
-            onDragLeave={() => setDrag(false)}
-            onDrop={(e) => {
-              e.preventDefault();
-              setDrag(false);
-              if (e.dataTransfer.files.length !== 1) {
-                setFileError("Choose one PDF at a time.");
-                return;
-              }
-              chooseFile(e.dataTransfer.files[0]);
-            }}
+            className="primary"
+            disabled={busy}
+            onClick={() => setUploadOpen(true)}
           >
-            <span className="dropzone-icon">
-              <Icon name="upload" />
-            </span>
-            <span>
-              <strong>
-                {file ? "Choose a different PDF" : "Drop your invoice here"}
-              </strong>
-              <span id="upload-help">or click to browse your files</span>
-            </span>
-            <span className="file-format">PDF</span>
+            + New invoice
           </button>
-          <div className="upload-action">
-            {file ? (
-              <div className="selected-file">
-                <Icon name="file" />
-                <div>
-                  <strong>{file.name}</strong>
-                  <span>{(file.size / 1024 / 1024).toFixed(2)} MiB</span>
+        }
+      />
+      {uploadOpen && (
+        <Dialog title="New invoice" onClose={() => setUploadOpen(false)}>
+          <section className="upload-panel">
+            <div className="upload-intro">
+              <span className="section-index">01</span>
+              <div>
+                <h2 id="processing-title">Process an invoice</h2>
+                <p>
+                  PDF documents up to 10 MiB · 20 pages · Digital text or
+                  English scans
+                </p>
+              </div>
+            </div>
+            {capabilities.data &&
+              (capabilities.data.vendor_count === 0 ||
+                capabilities.data.po_count === 0) && (
+                <div className="notice">
+                  Start by adding a vendor and creating a purchase order. Then
+                  upload your first invoice.{" "}
+                  <a href="/vendors">Manage vendors</a> ·{" "}
+                  <a href="/purchase-orders">Create purchase order</a>
                 </div>
+              )}
+            <div className="extraction-mode">
+              <label htmlFor="extraction-mode">Extraction mode</label>
+              <select
+                id="extraction-mode"
+                aria-label="Extraction mode"
+                disabled={busy}
+                value={mode}
+                onChange={(e) => {
+                  setMode(e.target.value);
+                  uploadKey.current = null;
+                }}
+              >
+                <option value="AUTO">Automatic — Recommended</option>
+                {capabilities.data?.can_select_extraction_mode && (
+                  <>
+                    <option
+                      value="GEMINI"
+                      disabled={!capabilities.data.gemini_configured}
+                    >
+                      AI-assisted
+                      {!capabilities.data.gemini_configured
+                        ? " — not configured"
+                        : ""}
+                    </option>
+                    <option value="FALLBACK">Standard extraction</option>
+                  </>
+                )}
+              </select>
+              <p className="footnote">
+                {mode === "AUTO"
+                  ? "Uses AI when available, with standard extraction as a backup."
+                  : mode === "GEMINI"
+                    ? "Uses Gemini-assisted extraction. If it cannot complete, processing stops and the failure is recorded."
+                    : "Uses built-in document reading, including scanned PDFs. The same supplier, order and financial checks always apply."}
+                {capabilities.data?.can_select_extraction_mode &&
+                  !capabilities.data.gemini_configured &&
+                  " AI-assisted reading is not available in this workspace yet. Standard extraction is available."}
+              </p>
+            </div>
+            <form onSubmit={upload} className="upload-form">
+              <input
+                className="sr-only"
+                id="invoice-pdf"
+                ref={input}
+                tabIndex={-1}
+                type="file"
+                accept="application/pdf,.pdf"
+                aria-label="Invoice PDF"
+                aria-describedby="upload-help"
+                onChange={(e) => chooseFile(e.target.files?.[0] ?? null)}
+              />
+              <button
+                type="button"
+                className={"dropzone " + (drag ? "is-dragging" : "")}
+                onClick={() => input.current?.click()}
+                onDragOver={(e) => {
+                  e.preventDefault();
+                  setDrag(true);
+                }}
+                onDragLeave={() => setDrag(false)}
+                onDrop={(e) => {
+                  e.preventDefault();
+                  setDrag(false);
+                  if (e.dataTransfer.files.length !== 1) {
+                    setFileError("Choose one PDF at a time.");
+                    return;
+                  }
+                  chooseFile(e.dataTransfer.files[0]);
+                }}
+              >
+                <span className="dropzone-icon">
+                  <Icon name="upload" />
+                </span>
+                <span>
+                  <strong>
+                    {file ? "Choose a different PDF" : "Drop your invoice here"}
+                  </strong>
+                  <span id="upload-help">or click to browse your files</span>
+                </span>
+                <span className="file-format">PDF</span>
+              </button>
+              <div className="upload-action">
+                {file ? (
+                  <div className="selected-file">
+                    <Icon name="file" />
+                    <div>
+                      <strong>{file.name}</strong>
+                      <span>{(file.size / 1024 / 1024).toFixed(2)} MiB</span>
+                    </div>
+                    <button
+                      type="button"
+                      className="icon-button"
+                      aria-label="Remove selected PDF"
+                      onClick={() => chooseFile(null)}
+                    >
+                      <Icon name="close" />
+                    </button>
+                  </div>
+                ) : (
+                  <p className="muted-text">
+                    Your document is checked by the actual verification
+                    pipeline.
+                  </p>
+                )}
                 <button
-                  type="button"
-                  className="icon-button"
-                  aria-label="Remove selected PDF"
-                  onClick={() => chooseFile(null)}
+                  className="primary"
+                  disabled={!file || busy}
+                  type="submit"
                 >
-                  <Icon name="close" />
+                  <Icon name="arrow" />
+                  {busy ? "Submitting…" : "Upload and process"}
                 </button>
               </div>
-            ) : (
-              <p className="muted-text">
-                Your document is checked by the actual verification pipeline.
+            </form>
+            {fileError && (
+              <p className="inline-error" role="alert">
+                {fileError}
               </p>
             )}
-            <button className="primary" disabled={!file || busy} type="submit">
-              <Icon name="arrow" />
-              {busy ? "Submitting…" : "Upload and process"}
-            </button>
-          </div>
-        </form>
-        {fileError && (
-          <p className="inline-error" role="alert">
-            {fileError}
-          </p>
-        )}
-        {file && (
-          <details className="source-panel upload-preview">
-            <summary>Preview selected PDF</summary>
-            <PdfPreview file={file} />
-          </details>
-        )}
-        {message && (
-          <p role="status" className="submission-message">
-            <Icon name="check" />
-            {message}
-          </p>
-        )}
+            {file && (
+              <details className="source-panel upload-preview">
+                <summary>Preview selected PDF</summary>
+                <PdfPreview file={file} />
+              </details>
+            )}
+            {message && (
+              <p role="status" className="submission-message">
+                <Icon name="check" />
+                {message}
+              </p>
+            )}
+            <Notice
+              error={error}
+              onRetry={() => {
+                if (operation === "upload") void upload();
+                else if (operation === "retry") void retry();
+                else void review();
+              }}
+            />
+          </section>
+        </Dialog>
+      )}
+      {busy && operation === "upload" && !uploadOpen && (
+        <p role="status">
+          Uploading document… You can continue browsing the queue.
+        </p>
+      )}
+      {message && !uploadOpen && (
+        <p role="status" className="submission-message">
+          {message}
+        </p>
+      )}
+      {!uploadOpen && (
         <Notice
           error={error}
-          onRetry={() => {
-            if (operation === "upload") void upload();
-            else if (operation === "retry") void retry();
-            else void review();
-          }}
+          onRetry={
+            operation === "upload"
+              ? () => void upload()
+              : operation === "retry"
+                ? retry
+                : review
+          }
         />
-      </section>
+      )}
       <div className="workflow-columns">
         <section className="panel history">
           <div className="section-heading">
             <div>
               <p className="eyebrow">YOUR WORKSPACE</p>
-              <h2>Processing history</h2>
+              <h2>Invoice queue</h2>
             </div>
             <span className="tag">{runs.length} on this page</span>
           </div>
@@ -455,7 +509,10 @@ export default function InvoiceWorkflow({
                   >
                     <div className="history-row-top">
                       <strong>
-                        {run.invoice_number ?? "Invoice number missing"}
+                        {run.invoice_number ??
+                          (isTerminal(run)
+                            ? "Invoice number missing"
+                            : "New invoice · awaiting details")}
                       </strong>
                       <Icon name="chevron" />
                     </div>
@@ -527,9 +584,13 @@ export default function InvoiceWorkflow({
           className="panel run-detail"
           aria-label="Processing run"
         >
+          <button className="queue-back" onClick={() => setMobileDetail(false)}>
+            ← Back to invoice queue
+          </button>
           <Notice error={detail.error} onRetry={detail.reload} />
           {detail.data ? (
             <RunDetails
+              key={detail.data.id}
               run={detail.data}
               busy={busy}
               onRetry={retry}
@@ -553,8 +614,24 @@ export default function InvoiceWorkflow({
             </EmptyState>
           )}
         </section>
+        <aside
+          className="panel workbench-document"
+          aria-label="Source document panel"
+        >
+          <div className="section-heading">
+            <h2>Original invoice</h2>
+            <span>Source document</span>
+          </div>
+          {detail.data ? (
+            <PdfPreview documentId={detail.data.document_id} />
+          ) : (
+            <p className="muted-text">
+              Select an invoice to compare its original PDF.
+            </p>
+          )}
+        </aside>
       </div>
-      <p className="footnote">
+      <p className="footnote retention-note">
         Invoice uploads are audited from ingestion and cannot be silently
         deleted. Use source review and explicit rejection/release; settled
         commitments cannot be released through deletion.

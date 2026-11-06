@@ -1,3 +1,4 @@
+import { WorkbenchTabs } from "./Workbench";
 import { POComparison } from "./POComparison";
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -25,7 +26,7 @@ const stageNames: Record<string, string> = {
   ingestion: "Invoice received",
   text_extraction: "Document read",
   ocr: "Scanned document reading",
-  field_extraction: "Details identified",
+  field_extraction: "Details extracted",
   validation: "Financial checks",
   decision: "Decision recorded",
   supplier_po: "Supplier and PO checked",
@@ -78,7 +79,9 @@ function Elapsed({ run }: { run: RunDetail }) {
 }
 export function ExtractedFields({
   run,
+  includeDocument = true,
 }: {
+  includeDocument?: boolean;
   run: Pick<RunDetail, "extraction" | "document_id">;
 }) {
   if (!run.extraction) return null;
@@ -235,10 +238,12 @@ export function ExtractedFields({
           </div>
         </details>
       )}
-      <details className="source-panel">
-        <summary>Original PDF and evidence</summary>
-        <PdfPreview documentId={run.document_id} />
-      </details>
+      {includeDocument && (
+        <details className="source-panel">
+          <summary>Original PDF and evidence</summary>
+          <PdfPreview documentId={run.document_id} />
+        </details>
+      )}
     </div>
   );
 }
@@ -346,11 +351,10 @@ function Stage({ name, run }: { name: string; run: RunDetail }) {
     name === "supplier_po" && last?.outcome === "SUCCEEDED" && !run.decision
       ? "RUNNING"
       : (last?.outcome ?? "PENDING");
-  const [open, setOpen] = useState(
-    state === "RUNNING" || state === "FAILED" || name === "field_extraction",
-  );
+  const [open, setOpen] = useState(state === "RUNNING" || state === "FAILED");
   useEffect(() => {
     if (state === "RUNNING" || state === "FAILED") setOpen(true);
+    else if (state === "SUCCEEDED" || state === "SKIPPED") setOpen(false);
   }, [state, last?.id]);
   const ms =
     last && name !== "supplier_po" ? stageInterval(events, last) : null;
@@ -423,21 +427,6 @@ function Stage({ name, run }: { name: string; run: RunDetail }) {
               ))}
             </div>
           )}
-          {name === "field_extraction" && state === "SUCCEEDED" && (
-            <ExtractedFields run={run} />
-          )}
-          {name === "supplier_po" && run.decision && (
-            <ul>
-              {run.decision.rules
-                .filter((r) => /^(VENDOR|PO_)/.test(r.rule_id))
-                .map((r) => (
-                  <li key={r.rule_id}>{checkExplanation(r)}</li>
-                ))}
-            </ul>
-          )}
-          {name === "validation" && state === "SUCCEEDED" && (
-            <FinancialOutput run={run} />
-          )}
           {name === "review_disposition" && run.decision && (
             <RuleResults rules={run.decision.rules} />
           )}
@@ -459,6 +448,7 @@ export default function RunDetails({
   onSelect: (id: string) => void;
   onReview: () => void;
 }) {
+  const [tab, setTab] = useState("overview");
   const stages = useMemo(
     () =>
       run.events.some((e) => e.stage === "review_disposition")
@@ -499,7 +489,7 @@ export default function RunDetails({
           <h2>
             {run.invoice_number ??
               fact(run, "invoice_number")?.value ??
-              "Invoice number missing"}
+              (isTerminal(run) ? "Invoice number missing" : "Reading invoice…")}
           </h2>
           {(run.vendor_name || fact(run, "vendor_name")?.value) && (
             <p>{run.vendor_name ?? fact(run, "vendor_name")?.value}</p>
@@ -546,225 +536,285 @@ export default function RunDetails({
           </span>
         )}
       </div>
-      {run.decision ? (
-        <section
-          className={
-            "decision-card decision-" + run.decision.outcome.toLowerCase()
-          }
-          aria-label="Financial decision"
-        >
-          <p className="eyebrow">FINANCIAL DECISION</p>
-          <div className="decision-title">
-            <span className="decision-icon">
-              <Icon
-                name={
-                  run.decision.outcome === "VALIDATED"
-                    ? "check"
+      <WorkbenchTabs
+        value={tab}
+        onChange={setTab}
+        tabs={[
+          { value: "overview", label: "Overview" },
+          { value: "checks", label: "Financial checks" },
+          { value: "activity", label: "Activity" },
+          { value: "document", label: "Document" },
+        ]}
+      >
+        <div hidden={tab !== "overview"} className="invoice-overview">
+          {run.decision ? (
+            <section
+              className={
+                "decision-card decision-" + run.decision.outcome.toLowerCase()
+              }
+              aria-label="Financial decision"
+            >
+              <p className="eyebrow">FINANCIAL DECISION</p>
+              <div className="decision-title">
+                <span className="decision-icon">
+                  <Icon
+                    name={
+                      run.decision.outcome === "VALIDATED"
+                        ? "check"
+                        : run.decision.outcome === "BLOCKED"
+                          ? "close"
+                          : "review"
+                    }
+                  />
+                </span>
+                <h3>{humanize(run.decision.outcome)}</h3>
+              </div>
+              <p>
+                {run.decision.summary.manual_rejection === true
+                  ? "A reviewer rejected this invoice."
+                  : run.decision.outcome === "VALIDATED"
+                    ? "The recorded financial checks passed."
                     : run.decision.outcome === "BLOCKED"
-                      ? "close"
-                      : "review"
-                }
-              />
-            </span>
-            <h3>{humanize(run.decision.outcome)}</h3>
-          </div>
-          <p>
-            {run.decision.summary.manual_rejection === true
-              ? "A reviewer rejected this invoice."
-              : run.decision.outcome === "VALIDATED"
-                ? "The recorded financial checks passed."
-                : run.decision.outcome === "BLOCKED"
-                  ? "Financial controls blocked this invoice."
-                  : "This invoice requires a source or policy review."}
-          </p>
-          {reasons.length > 0 && (
-            <ul>
-              {reasons
-                .filter((rule) => rule.explanation.trim())
-                .slice(0, 3)
-                .map((rule) => (
-                  <li key={rule.rule_id}>{checkExplanation(rule)}</li>
-                ))}
-            </ul>
-          )}
-          <div className="decision-links">
-            {run.review_task_id && (
+                      ? "Financial controls blocked this invoice."
+                      : "This invoice requires a source or policy review."}
+              </p>
+              {reasons.length > 0 && (
+                <ul>
+                  {reasons
+                    .filter((rule) => rule.explanation.trim())
+                    .slice(0, 3)
+                    .map((rule) => (
+                      <li key={rule.rule_id}>{checkExplanation(rule)}</li>
+                    ))}
+                </ul>
+              )}
+              <div className="decision-links">
+                {run.review_task_id && (
+                  <a
+                    className="button primary"
+                    href={"/reviews/" + run.review_task_id}
+                  >
+                    Open in Exception review <Icon name="arrow" />
+                  </a>
+                )}
+                {typeof po === "string" && (
+                  <a
+                    className="button"
+                    href={"/purchase-orders?po=" + encodeURIComponent(po)}
+                  >
+                    View purchase order
+                  </a>
+                )}
+                <a className="button" href={"/audit?run_id=" + run.id}>
+                  View activity history
+                </a>
+              </div>
+              <p>
+                <strong>Next action</strong>
+                <br />
+                {nextAction(run.decision.outcome)}
+              </p>
+            </section>
+          ) : null}
+          <TechnicalDetails>
+            <div className="run-meta">
+              <code title={run.id}>{run.id}</code>
+              <CopyButton text={run.id} label="Copy run ID" />
+              <Elapsed run={run} />
+            </div>
+            <dl className="mode-summary">
+              <div>
+                <dt>Requested extraction</dt>
+                <dd>{run.requested_mode ?? "AUTO"}</dd>
+              </div>
+              {run.extraction?.provider && (
+                <div>
+                  <dt>Actual provider</dt>
+                  <dd>{humanize(run.extraction.provider)}</dd>
+                </div>
+              )}
+              {run.extraction?.model && (
+                <div>
+                  <dt>Model used</dt>
+                  <dd>{String(run.extraction.model)}</dd>
+                </div>
+              )}
+              {run.extraction?.attempted_provider && (
+                <div>
+                  <dt>Attempted provider</dt>
+                  <dd>
+                    {String(run.extraction.attempted_provider)}
+                    {run.extraction.attempted_model
+                      ? " · " + String(run.extraction.attempted_model)
+                      : ""}
+                  </dd>
+                </div>
+              )}
+            </dl>
+          </TechnicalDetails>
+          {run.intake_context && (
+            <details className="source-panel">
+              <summary>Email and invoice purchase order references</summary>
+              <p>Email candidates remain separate from PDF-extracted fields.</p>
+              <p>
+                <strong>PO reference in PDF:</strong>{" "}
+                {fact(run, "po_number")?.verified
+                  ? fact(run, "po_number")?.value
+                  : "Not found or needs verification"}
+              </p>
+              {run.intake_context.po_evidence.map((e, i) => (
+                <blockquote key={i}>
+                  {e.source}: {e.quote} · Candidate {e.value}
+                </blockquote>
+              ))}
+              {run.intake_context.selected_po_number && (
+                <p>
+                  Reviewer-selected procurement candidate:{" "}
+                  {run.intake_context.selected_po_number}
+                </p>
+              )}
               <a
-                className="button primary"
-                href={"/reviews/" + run.review_task_id}
+                href={"/email-intake?message=" + run.intake_context.message_id}
               >
-                Open in Exception review <Icon name="arrow" />
+                Open source email and intake history
               </a>
-            )}
-            {typeof po === "string" && (
-              <a
-                className="button"
-                href={"/purchase-orders?po=" + encodeURIComponent(po)}
+            </details>
+          )}
+          <p className="sr-only" aria-live="polite" aria-atomic="true">
+            {latest
+              ? humanize(latest.stage) + ": " + humanize(latest.outcome)
+              : "Processing " + humanize(run.status)}
+          </p>
+          {run.parent_run_id && (
+            <p className="footnote">
+              Derived from{" "}
+              <button
+                className="text-button"
+                onClick={() => onSelect(run.parent_run_id!)}
               >
-                View purchase order
-              </a>
-            )}
-            <a className="button" href={"/audit?run_id=" + run.id}>
-              View activity history
-            </a>
-          </div>
-          <p>
-            <strong>Next action</strong>
-            <br />
-            {nextAction(run.decision.outcome)}
-          </p>
-        </section>
-      ) : null}
-      <TechnicalDetails>
-        <div className="run-meta">
-          <code title={run.id}>{run.id}</code>
-          <CopyButton text={run.id} label="Copy run ID" />
-          <Elapsed run={run} />
-        </div>
-        <dl className="mode-summary">
-          <div>
-            <dt>Requested extraction</dt>
-            <dd>{run.requested_mode ?? "AUTO"}</dd>
-          </div>
-          {run.extraction?.provider && (
-            <div>
-              <dt>Actual provider</dt>
-              <dd>{humanize(run.extraction.provider)}</dd>
-            </div>
-          )}
-          {run.extraction?.model && (
-            <div>
-              <dt>Model used</dt>
-              <dd>{String(run.extraction.model)}</dd>
-            </div>
-          )}
-          {run.extraction?.attempted_provider && (
-            <div>
-              <dt>Attempted provider</dt>
-              <dd>
-                {String(run.extraction.attempted_provider)}
-                {run.extraction.attempted_model
-                  ? " · " + String(run.extraction.attempted_model)
-                  : ""}
-              </dd>
-            </div>
-          )}
-        </dl>
-      </TechnicalDetails>
-      {run.intake_context && (
-        <details className="source-panel">
-          <summary>Email and invoice purchase order references</summary>
-          <p>Email candidates remain separate from PDF-extracted fields.</p>
-          <p>
-            <strong>PO reference in PDF:</strong>{" "}
-            {fact(run, "po_number")?.verified
-              ? fact(run, "po_number")?.value
-              : "Not found or needs verification"}
-          </p>
-          {run.intake_context.po_evidence.map((e, i) => (
-            <blockquote key={i}>
-              {e.source}: {e.quote} · Candidate {e.value}
-            </blockquote>
-          ))}
-          {run.intake_context.selected_po_number && (
-            <p>
-              Reviewer-selected procurement candidate:{" "}
-              {run.intake_context.selected_po_number}
+                the previous processing record
+              </button>{" "}
+              · prior execution remains in history.
             </p>
           )}
-          <a href={"/email-intake?message=" + run.intake_context.message_id}>
-            Open source email and intake history
-          </a>
-        </details>
-      )}
-      <p className="sr-only" aria-live="polite" aria-atomic="true">
-        {latest
-          ? humanize(latest.stage) + ": " + humanize(latest.outcome)
-          : "Processing " + humanize(run.status)}
-      </p>
-      {run.parent_run_id && (
-        <p className="footnote">
-          Derived from{" "}
-          <button
-            className="text-button"
-            onClick={() => onSelect(run.parent_run_id!)}
-          >
-            the previous processing record
-          </button>{" "}
-          · prior execution remains in history.
-        </p>
-      )}
-      {run.status === "QUEUED" && (
-        <div className="notice">
-          Waiting to process this invoice. Stages will appear as they are
-          recorded.
-        </div>
-      )}
-      {run.error && (
-        <div className="error-banner" role="alert">
-          <div>
-            <strong>Processing could not finish.</strong>
-            <p>{run.error}</p>
+          {run.status === "QUEUED" && (
+            <div className="notice">
+              Waiting to process this invoice. Stages will appear as they are
+              recorded.
+            </div>
+          )}
+          {run.error && (
+            <div className="error-banner" role="alert">
+              <div>
+                <strong>Processing could not finish.</strong>
+                <p>{run.error}</p>
+              </div>
+              {run.status === "FAILED" && (
+                <button disabled={busy} onClick={onRetry}>
+                  Retry failed run
+                </button>
+              )}
+            </div>
+          )}
+          <div className="section-heading">
+            <h3>Live processing stages</h3>
+            <span>Updates as your invoice is processed</span>
           </div>
-          {run.status === "FAILED" && (
-            <button disabled={busy} onClick={onRetry}>
-              Retry failed run
+          <ol className="timeline" aria-label="Actual execution stages">
+            {stages.map((stage) => (
+              <Stage key={run.id + stage} name={stage} run={run} />
+            ))}
+          </ol>
+          {run.extraction && (
+            <details className="source-panel extracted-facts">
+              <summary>Extracted fields and source evidence</summary>
+              <ExtractedFields run={run} includeDocument={false} />
+            </details>
+          )}
+          <TechnicalDetails label="Persisted execution events">
+            {run.events.length > 0 && (
+              <details className="operational-events">
+                <summary>
+                  All persisted execution events ({run.events.length})
+                </summary>
+                <ol>
+                  {run.events.map((event) => (
+                    <li key={event.id}>
+                      <strong>
+                        {humanize(event.stage)} · {humanize(event.outcome)}
+                      </strong>
+                      <p>{event.detail}</p>
+                      <time dateTime={event.created_at}>
+                        {when(event.created_at)}
+                      </time>{" "}
+                      · attempt {event.attempt}
+                    </li>
+                  ))}
+                </ol>
+              </details>
+            )}
+          </TechnicalDetails>
+          {!run.decision && (
+            <div className="decision-awaiting">
+              <Icon name="review" />
+              <p>
+                No financial decision has been recorded.
+                {run.status === "FAILED"
+                  ? " Resolve the technical failure before retrying."
+                  : " Processing status does not imply financial approval."}
+              </p>
+            </div>
+          )}
+          {!run.review_task_id && run.decision && (
+            <button
+              className="text-button correction-action"
+              disabled={busy}
+              onClick={onReview}
+            >
+              Request source correction <Icon name="arrow" />
             </button>
           )}
         </div>
-      )}
-      <div className="section-heading">
-        <h3>Processing timeline</h3>
-        <span>Updates as your invoice is processed</span>
-      </div>
-      <ol className="timeline" aria-label="Actual execution stages">
-        {stages.map((stage) => (
-          <Stage key={run.id + stage} name={stage} run={run} />
-        ))}
-      </ol>
-      <TechnicalDetails label="Persisted execution events">
-        {run.events.length > 0 && (
-          <details className="operational-events">
-            <summary>
-              All persisted execution events ({run.events.length})
-            </summary>
-            <ol>
+        {tab === "checks" &&
+          (run.decision ? (
+            <FinancialOutput run={run} />
+          ) : (
+            <p>Financial checks will appear when a decision is recorded.</p>
+          ))}
+        {tab === "activity" && (
+          <section aria-label="Invoice activity">
+            <h3>Recorded processing activity</h3>
+            <p className="footnote">
+              Actual events for this run. Earlier revisions remain in their
+              original processing record.
+            </p>
+            <ol className="business-execution">
               {run.events.map((event) => (
                 <li key={event.id}>
-                  <strong>
-                    {humanize(event.stage)} · {humanize(event.outcome)}
-                  </strong>
-                  <p>{event.detail}</p>
+                  <div>
+                    <strong>
+                      {stageNames[event.stage] ?? humanize(event.stage)}
+                    </strong>
+                    <Status value={event.outcome} />
+                  </div>
                   <time dateTime={event.created_at}>
                     {when(event.created_at)}
-                  </time>{" "}
-                  · attempt {event.attempt}
+                  </time>
                 </li>
               ))}
             </ol>
-          </details>
+            {run.parent_run_id && (
+              <button
+                className="text-button"
+                onClick={() => onSelect(run.parent_run_id!)}
+              >
+                Open previous processing record
+              </button>
+            )}
+          </section>
         )}
-      </TechnicalDetails>
-      {!run.decision && (
-        <div className="decision-awaiting">
-          <Icon name="review" />
-          <p>
-            No financial decision has been recorded.
-            {run.status === "FAILED"
-              ? " Resolve the technical failure before retrying."
-              : " Processing status does not imply financial approval."}
-          </p>
-        </div>
-      )}
-      {!run.review_task_id && run.decision && (
-        <button
-          className="text-button correction-action"
-          disabled={busy}
-          onClick={onReview}
-        >
-          Request source correction <Icon name="arrow" />
-        </button>
-      )}
+        {tab === "document" && <PdfPreview documentId={run.document_id} />}
+      </WorkbenchTabs>
     </>
   );
 }

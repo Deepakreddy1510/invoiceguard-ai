@@ -1,5 +1,5 @@
-import { useEffect, useState, type ReactNode } from "react";
-import { apiFetch, request } from "./client";
+import { lazy, Suspense, useEffect, useState, type ReactNode } from "react";
+import { request } from "./client";
 import { businessLabels } from "./business";
 import { Icon } from "./icons";
 export function useResource<T>(
@@ -212,63 +212,15 @@ export function CopyButton({
     </span>
   );
 }
-export function PdfPreview({
-  documentId,
-  file,
-  sourcePath,
-}: {
+const LazyDocumentViewer = lazy(() => import("./DocumentViewer"));
+export function PdfPreview(props: {
   documentId?: string;
   file?: File | null;
   sourcePath?: string;
 }) {
-  const [url, setUrl] = useState("");
-  const [error, setError] = useState("");
-  const [retry, setRetry] = useState(0);
-  useEffect(() => {
-    const controller = new AbortController();
-    let object = "";
-    setError("");
-    setUrl("");
-    const load = async () => {
-      try {
-        const blob =
-          file ??
-          (await (async () => {
-            const response = await apiFetch(
-              sourcePath ?? "/api/v1/documents/" + documentId + "/content",
-              { signal: controller.signal },
-            );
-            if (!response.ok)
-              throw new Error("Document preview could not be loaded.");
-            return response.blob();
-          })());
-        if (controller.signal.aborted) return;
-        object = URL.createObjectURL(blob);
-        setUrl(object);
-      } catch (e) {
-        if (!controller.signal.aborted) setError((e as Error).message);
-      }
-    };
-    if (file || documentId || sourcePath) void load();
-    return () => {
-      controller.abort();
-      if (object) URL.revokeObjectURL(object);
-    };
-  }, [documentId, file, sourcePath, retry]);
-  if (!file && !documentId && !sourcePath) return null;
   return (
-    <section className="pdf-preview">
-      <Notice error={error} onRetry={() => setRetry((v) => v + 1)} />
-      {url ? (
-        <>
-          <a className="button" href={url} target="_blank" rel="noreferrer">
-            Open source PDF <Icon name="arrow" />
-          </a>
-          <iframe title="Original invoice PDF" src={url} />
-        </>
-      ) : (
-        !error && <Skeleton label="Loading document evidence" rows={2} />
-      )}
-    </section>
+    <Suspense fallback={<p role="status">Loading document viewer…</p>}>
+      <LazyDocumentViewer {...props} />
+    </Suspense>
   );
 }

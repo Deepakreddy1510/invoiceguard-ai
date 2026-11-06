@@ -1,4 +1,5 @@
-import { Help } from "../Experience";
+import { TablePagination } from "../Workbench";
+import { Dialog, Help } from "../Experience";
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { request } from "../client";
@@ -26,6 +27,7 @@ const blank = { legal_name: "", code: "", tax_id: "", status: "APPROVED" };
 export default function Vendors() {
   const resource = useResource<Vendor[]>("/vendors", 5000);
   const me = useResource<{ can_manage_procurement: boolean }>("/me");
+  const [page, setPage] = useState(0);
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
   const [editing, setEditing] = useState<Vendor | null | false>(false);
@@ -101,6 +103,10 @@ export default function Vendors() {
         .toLowerCase()
         .includes(search.toLowerCase()),
   );
+  const currentPage = Math.min(
+    page,
+    Math.max(0, Math.ceil(shown.length / 20) - 1),
+  );
   return (
     <>
       <PageTitle
@@ -140,86 +146,92 @@ export default function Vendors() {
         </p>
       </Help>
       {editing !== false && (
-        <section className="panel detail-panel">
-          <div className="section-heading">
-            <h2>{editing ? "Edit vendor" : "Create vendor"}</h2>
-            <button onClick={() => setEditing(false)}>Close form</button>
-          </div>
-          {editing && editing.identity_locked && (
-            <div className="notice">
-              This supplier already has orders or invoices. Its identifying
-              details are protected to preserve history. You can still update
-              its status. Add a separate supplier when its legal identity
-              changes.
+        <Dialog
+          title={editing ? "Edit vendor" : "Create vendor"}
+          onClose={() => !busy && setEditing(false)}
+        >
+          <section className="detail-panel">
+            <div className="section-heading">
+              <h2>{editing ? "Edit vendor" : "Create vendor"}</h2>
+              <button onClick={() => setEditing(false)}>Close form</button>
             </div>
-          )}
-          <form onSubmit={save}>
-            <fieldset disabled={busy}>
-              <div className="field-grid">
-                <label>
-                  Legal vendor name
-                  <input
-                    aria-label="Legal vendor name"
-                    required
-                    minLength={2}
-                    maxLength={200}
-                    disabled={!!(editing && editing.identity_locked)}
-                    value={values.legal_name}
-                    onChange={(e) =>
-                      setValues((v) => ({ ...v, legal_name: e.target.value }))
-                    }
-                  />
-                </label>
-                <label>
-                  Vendor code
-                  <input
-                    aria-label="Vendor code"
-                    required
-                    maxLength={40}
-                    disabled={!!(editing && editing.identity_locked)}
-                    value={values.code}
-                    onChange={(e) =>
-                      setValues((v) => ({ ...v, code: e.target.value }))
-                    }
-                  />
-                </label>
-                <label>
-                  Tax identifier
-                  <input
-                    aria-label="Tax identifier"
-                    maxLength={80}
-                    disabled={!!(editing && editing.identity_locked)}
-                    value={values.tax_id}
-                    onChange={(e) =>
-                      setValues((v) => ({ ...v, tax_id: e.target.value }))
-                    }
-                  />
-                </label>
-                <label>
-                  Status
-                  <select
-                    aria-label="Vendor status"
-                    value={values.status}
-                    onChange={(e) =>
-                      setValues((v) => ({ ...v, status: e.target.value }))
-                    }
-                  >
-                    {["APPROVED", "SUSPENDED", "INACTIVE"].map((value) => (
-                      <option key={value} value={value}>
-                        {value[0] + value.slice(1).toLowerCase()}
-                      </option>
-                    ))}
-                  </select>
-                </label>
+            {editing && editing.identity_locked && (
+              <div className="notice">
+                This supplier already has orders or invoices. Its identifying
+                details are protected to preserve history. You can still update
+                its status. Add a separate supplier when its legal identity
+                changes.
               </div>
-              <div className="toolbar">
-                <button className="primary" type="submit">
-                  Save vendor
-                </button>
-              </div>
-            </fieldset>
-          </form>
-        </section>
+            )}
+            <Notice error={error} />
+            <form onSubmit={save}>
+              <fieldset disabled={busy}>
+                <div className="field-grid">
+                  <label>
+                    Legal vendor name
+                    <input
+                      aria-label="Legal vendor name"
+                      required
+                      minLength={2}
+                      maxLength={200}
+                      disabled={!!(editing && editing.identity_locked)}
+                      value={values.legal_name}
+                      onChange={(e) =>
+                        setValues((v) => ({ ...v, legal_name: e.target.value }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    Vendor code
+                    <input
+                      aria-label="Vendor code"
+                      required
+                      maxLength={40}
+                      disabled={!!(editing && editing.identity_locked)}
+                      value={values.code}
+                      onChange={(e) =>
+                        setValues((v) => ({ ...v, code: e.target.value }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    Tax identifier
+                    <input
+                      aria-label="Tax identifier"
+                      maxLength={80}
+                      disabled={!!(editing && editing.identity_locked)}
+                      value={values.tax_id}
+                      onChange={(e) =>
+                        setValues((v) => ({ ...v, tax_id: e.target.value }))
+                      }
+                    />
+                  </label>
+                  <label>
+                    Status
+                    <select
+                      aria-label="Vendor status"
+                      value={values.status}
+                      onChange={(e) =>
+                        setValues((v) => ({ ...v, status: e.target.value }))
+                      }
+                    >
+                      {["APPROVED", "SUSPENDED", "INACTIVE"].map((value) => (
+                        <option key={value} value={value}>
+                          {value[0] + value.slice(1).toLowerCase()}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                </div>
+                <div className="toolbar">
+                  <button className="primary" type="submit">
+                    Save vendor
+                  </button>
+                </div>
+              </fieldset>
+            </form>
+          </section>
+        </Dialog>
       )}
       {manager && <ProcurementImport kind="vendors" onDone={resource.reload} />}
       <section className="panel">
@@ -227,7 +239,10 @@ export default function Vendors() {
           <FilterChips
             label="Filter vendor status"
             value={status}
-            onChange={setStatus}
+            onChange={(value) => {
+              setStatus(value);
+              setPage(0);
+            }}
             options={[
               { value: "", label: "All" },
               ...["APPROVED", "SUSPENDED", "INACTIVE"].map((value) => ({
@@ -240,7 +255,10 @@ export default function Vendors() {
             aria-label="Search vendors"
             placeholder="Name, code or tax identifier"
             value={search}
-            onChange={(e) => setSearch(e.target.value)}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setPage(0);
+            }}
           />
         </div>
         {resource.loading ? (
@@ -272,43 +290,53 @@ export default function Vendors() {
                 </tr>
               </thead>
               <tbody>
-                {shown.map((vendor) => (
-                  <tr key={vendor.id}>
-                    <td>
-                      <strong>{vendor.legal_name}</strong>
-                      <span className="vendor">{vendor.code}</span>
-                    </td>
-                    <td>{vendor.tax_id ?? "—"}</td>
-                    <td>
-                      <Status value={vendor.status} />
-                    </td>
-                    <td className="amount">{vendor.po_count}</td>
-                    <td>
-                      {manager && (
-                        <div className="action-buttons">
-                          <button disabled={busy} onClick={() => edit(vendor)}>
-                            Edit / deactivate
-                          </button>
-                          <button
-                            disabled={vendor.identity_locked}
-                            title={
-                              vendor.identity_locked
-                                ? "Dependent history prevents deletion. Deactivate instead."
-                                : undefined
-                            }
-                            onClick={() => setConfirmDelete(vendor)}
-                          >
-                            Delete
-                          </button>
-                        </div>
-                      )}
-                    </td>
-                  </tr>
-                ))}
+                {shown
+                  .slice(currentPage * 20, currentPage * 20 + 20)
+                  .map((vendor) => (
+                    <tr key={vendor.id}>
+                      <td>
+                        <strong>{vendor.legal_name}</strong>
+                        <span className="vendor">{vendor.code}</span>
+                      </td>
+                      <td>{vendor.tax_id ?? "—"}</td>
+                      <td>
+                        <Status value={vendor.status} />
+                      </td>
+                      <td className="amount">{vendor.po_count}</td>
+                      <td>
+                        {manager && (
+                          <div className="action-buttons">
+                            <button
+                              disabled={busy}
+                              onClick={() => edit(vendor)}
+                            >
+                              Edit / deactivate
+                            </button>
+                            <button
+                              disabled={vendor.identity_locked}
+                              title={
+                                vendor.identity_locked
+                                  ? "Dependent history prevents deletion. Deactivate instead."
+                                  : undefined
+                              }
+                              onClick={() => setConfirmDelete(vendor)}
+                            >
+                              Delete
+                            </button>
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
               </tbody>
             </table>
           </div>
         )}
+        <TablePagination
+          page={currentPage}
+          total={shown.length}
+          onChange={setPage}
+        />
       </section>
       {confirmDelete && (
         <section className="notice" role="alert">

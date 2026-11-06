@@ -78,9 +78,10 @@ type ReviewDetail = Task & {
 export default function Reviews() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const [offset, setOffset] = useState(0);
   const [showAll, setShowAll] = useState(false);
   const queue = useResource<{ tasks: Task[] }>(
-    "/reviews?status=" + (showAll ? "ALL" : "OPEN"),
+    `/reviews?status=${showAll ? "ALL" : "OPEN"}&offset=${offset}&limit=20`,
     3000,
   );
   const detail = useResource<ReviewDetail>(id ? "/reviews/" + id : null, 2000);
@@ -203,13 +204,21 @@ export default function Reviews() {
             role="switch"
             type="checkbox"
             checked={showAll}
-            onChange={(e) => setShowAll(e.target.checked)}
+            onChange={(e) => {
+              setShowAll(e.target.checked);
+              setOffset(0);
+            }}
           />
           <span className="switch-track" aria-hidden="true" />
           Include resolved reviews
         </label>
         <span>{queue.data?.tasks.length ?? "…"} tasks on this page</span>
       </div>
+      {id && (
+        <Link className="review-back" to="/reviews">
+          ← Back to exception queue
+        </Link>
+      )}
       <div className={id ? "review-layout" : "review-layout queue-only"}>
         <section className="panel review-queue" aria-label="Exception queue">
           <div className="section-heading">
@@ -261,7 +270,32 @@ export default function Reviews() {
               );
             })
           )}
+          <nav className="pagination" aria-label="Review queue pages">
+            <button
+              disabled={!offset}
+              onClick={() => setOffset(Math.max(0, offset - 20))}
+            >
+              Newer reviews
+            </button>
+            <button
+              disabled={(queue.data?.tasks.length ?? 0) < 20}
+              onClick={() => setOffset(offset + 20)}
+            >
+              Older reviews
+            </button>
+          </nav>
         </section>
+        {id && task && (
+          <aside
+            className="panel review-evidence"
+            aria-label="Review source document"
+          >
+            <div className="panel-heading">
+              <h2>Original invoice</h2>
+            </div>
+            <PdfPreview documentId={task.document_id} />
+          </aside>
+        )}
         {id && (
           <section
             className="panel review-detail"
@@ -301,7 +335,7 @@ export default function Reviews() {
                       </Link>
                     )}
                   </div>
-                  <details className="source-panel">
+                  <details className="source-panel review-inline-document">
                     <summary>Original document</summary>
                     <PdfPreview documentId={task.document_id} />
                   </details>
@@ -322,7 +356,10 @@ export default function Reviews() {
                         <br />
                         {nextAction(latestDecision.outcome)}
                       </p>
-                      <RuleResults rules={latestDecision.rules} />
+                      <details className="source-panel">
+                        <summary>Financial checks requiring attention</summary>
+                        <RuleResults rules={latestDecision.rules} />
+                      </details>
                     </>
                   ) : (
                     <p className="muted-text">
@@ -570,30 +607,34 @@ export default function Reviews() {
                       processing run.
                     </EmptyState>
                   )}
-                  <h3>Previous revisions and decisions</h3>
-                  <ol className="revision-history">
-                    {task.decisions.map((d) => (
-                      <li key={d.run_id}>
-                        <Link to={"/runs/" + d.run_id}>
-                          <Status value={d.outcome} />
-                          <Icon name="arrow" />
-                        </Link>
-                        <time dateTime={d.created_at}>
-                          {when(d.created_at)}
+                  <details className="source-panel">
+                    <summary>Previous revisions and decisions</summary>
+                    <ol className="revision-history">
+                      {task.decisions.map((d) => (
+                        <li key={d.run_id}>
+                          <Link to={"/runs/" + d.run_id}>
+                            <Status value={d.outcome} />
+                            <Icon name="arrow" />
+                          </Link>
+                          <time dateTime={d.created_at}>
+                            {when(d.created_at)}
+                          </time>
+                        </li>
+                      ))}
+                    </ol>
+                    {task.corrections.map((c) => (
+                      <article className="correction-record" key={c.id}>
+                        <strong>{actorLabel(c.actor)}</strong>
+                        <time dateTime={c.created_at}>
+                          {when(c.created_at)}
                         </time>
-                      </li>
+                        <p>{c.comment}</p>
+                        <Link to={"/runs/" + c.run_id}>
+                          Inspect corrected revision <Icon name="arrow" />
+                        </Link>
+                      </article>
                     ))}
-                  </ol>
-                  {task.corrections.map((c) => (
-                    <article className="correction-record" key={c.id}>
-                      <strong>{actorLabel(c.actor)}</strong>
-                      <time dateTime={c.created_at}>{when(c.created_at)}</time>
-                      <p>{c.comment}</p>
-                      <Link to={"/runs/" + c.run_id}>
-                        Inspect corrected revision <Icon name="arrow" />
-                      </Link>
-                    </article>
-                  ))}
+                  </details>
                 </>
               )
             )}

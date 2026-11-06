@@ -17,6 +17,9 @@ function pdf(settings: Record<string, unknown>) {
 }
 async function upload(page: Page, settings: Record<string, unknown>) {
   await page.goto("/process");
+  await page
+    .getByRole("button", { name: "+ New invoice", exact: true })
+    .click();
   await page.getByLabel("Invoice PDF", { exact: true }).setInputFiles({
     name: "brand-new-document.pdf",
     mimeType: "application/pdf",
@@ -37,7 +40,7 @@ async function upload(page: Page, settings: Record<string, unknown>) {
 }
 test("reviewer corrects a fresh missing identifier and sees persisted revalidation and audit", async ({
   page,
-}) => {
+}, info) => {
   await upload(page, {
     number: "UI-REVIEW-001",
     missing: true,
@@ -53,6 +56,22 @@ test("reviewer corrects a fresh missing identifier and sees persisted revalidati
   await page
     .getByRole("link", { name: "Open in Exception review", exact: true })
     .click();
+  await page.setViewportSize({ width: 1920, height: 1080 });
+  await expect(
+    page
+      .getByRole("complementary", { name: "Review source document" })
+      .getByText("Page 1 of 1", { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page
+      .getByRole("complementary", { name: "Review source document" })
+      .locator(".document-canvas"),
+  ).toHaveAttribute("aria-busy", "false");
+  await page.screenshot({
+    path: info.outputPath("review-workbench-1920.png"),
+    fullPage: true,
+  });
+  await page.setViewportSize({ width: 1280, height: 900 });
   await page
     .getByRole("textbox", { name: "Correct invoice number", exact: true })
     .fill("UI-REVIEW-001");
@@ -115,6 +134,9 @@ test("partial invoices enforce cumulative balance and all operational pages load
       page.getByRole("heading", { name: outcome, exact: true }),
     ).toBeVisible({ timeout: 30000 });
   }
+  await page
+    .getByRole("tab", { name: "Financial checks", exact: true })
+    .click();
   await expect(page.locator(".rules")).toContainText("remaining USD 3500");
   await page
     .getByRole("link", { name: "Purchase orders", exact: true })
@@ -127,6 +149,9 @@ test("partial invoices enforce cumulative balance and all operational pages load
     page.getByRole("heading", { name: "Commitment history", exact: true }),
   ).toBeVisible();
   await page.reload();
+  await page
+    .getByRole("button", { name: "Close purchase order details", exact: true })
+    .click();
   await expect(
     page.getByRole("heading", {
       name: "Every order. Within budget.",

@@ -10,6 +10,9 @@ export function useRunDetails(runs: RunSummary[]) {
     .join("|");
   useEffect(() => {
     const controller = new AbortController();
+    const retained = new Set(runs.map((run) => run.id));
+    for (const id of Object.keys(cache.current))
+      if (!retained.has(id)) delete cache.current[id];
     const missing = runs.filter(
       (r) =>
         !cache.current[r.id] ||

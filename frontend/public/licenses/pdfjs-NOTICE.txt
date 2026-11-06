@@ -1,0 +1,4 @@
+InvoiceGuard uses PDF.js (pdfjs-dist 6.5.438), an Apache-2.0 licensed Mozilla project.
+Source: https://github.com/mozilla/pdf.js
+The accompanying pdfjs-LICENSE.txt contains the Apache License, Version 2.0.
+Original copyright and license notices remain in distributed PDF.js JavaScript files.

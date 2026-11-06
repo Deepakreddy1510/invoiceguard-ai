@@ -1,5 +1,7 @@
 # InvoiceGuard AI
 
+The current [invoice workbench and safe Windows update guide](docs/workbench-experience.md) documents the compact queue, tabbed decisions, private PDF reader and native browser zoom verification. See the [workbench verification report](docs/workbench-verification.md) for executed checks and visual evidence.
+
 See the [premium customer experience and safe Windows upgrade](docs/premium-experience.md) and [executed verification report](docs/premium-verification.md) for the current interface, workspace rename/archive/restore and preserved financial workflows.
 
 Invoice verification and exception management for the Zamp case study. React + TypeScript, FastAPI, PostgreSQL, a separate Python worker, PyMuPDF/Tesseract OCR and optional Gemini structured extraction. **Validation reserves PO capacity; it never pays an invoice.** All procurement and demonstration documents are synthetic.

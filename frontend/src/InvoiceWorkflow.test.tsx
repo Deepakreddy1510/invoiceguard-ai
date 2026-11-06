@@ -1,3 +1,4 @@
+import { MemoryRouter } from "react-router-dom";
 import {
   act,
   cleanup,
@@ -69,7 +70,11 @@ it("renders technical failure separately from a financial decision and queues a 
     ),
   );
   vi.stubGlobal("fetch", fetcher);
-  render(<InvoiceWorkflow initialRunId="failed-run" />);
+  render(
+    <MemoryRouter>
+      <InvoiceWorkflow initialRunId="failed-run" />
+    </MemoryRouter>,
+  );
   const region = screen.getByRole("region", { name: "Processing run" });
   expect(
     await within(region).findByText("Processing failed", {
@@ -106,7 +111,11 @@ it("keeps unobserved stages pending for a queued run and never invents outputs o
       response(url.includes("/runs?") ? { runs: [queued] } : queued),
     ),
   );
-  render(<InvoiceWorkflow initialRunId="queued-run" />);
+  render(
+    <MemoryRouter>
+      <InvoiceWorkflow initialRunId="queued-run" />
+    </MemoryRouter>,
+  );
   expect(await screen.findByTestId("run-id")).toHaveTextContent("queued-run");
   expect(
     screen.getByText(/Waiting to process this invoice/),
@@ -137,7 +146,11 @@ it("selects the latest run on load, then preserves an explicit selection", async
       ),
     ),
   );
-  render(<InvoiceWorkflow />);
+  render(
+    <MemoryRouter>
+      <InvoiceWorkflow />
+    </MemoryRouter>,
+  );
   expect(await screen.findByTestId("run-id")).toHaveTextContent("newest");
   fireEvent.click(screen.getByRole("button", { name: /older/ }));
   await waitFor(() =>
@@ -151,7 +164,12 @@ it("validates file type, size and removal before allowing upload", async () => {
     "fetch",
     vi.fn(async () => response({ runs: [] })),
   );
-  render(<InvoiceWorkflow />);
+  render(
+    <MemoryRouter>
+      <InvoiceWorkflow />
+    </MemoryRouter>,
+  );
+  fireEvent.click(screen.getByRole("button", { name: "+ New invoice" }));
   const input = screen.getByLabelText("Invoice PDF", { exact: true });
   const submit = screen.getByRole("button", { name: "Upload and process" });
   expect(submit).toBeDisabled();
@@ -208,8 +226,13 @@ it("selects the new persisted run on upload without simulating completed stages"
       );
     }),
   );
-  render(<InvoiceWorkflow />);
+  render(
+    <MemoryRouter>
+      <InvoiceWorkflow />
+    </MemoryRouter>,
+  );
   expect(await screen.findByTestId("run-id")).toHaveTextContent("old");
+  fireEvent.click(screen.getByRole("button", { name: "+ New invoice" }));
   fireEvent.change(screen.getByLabelText("Invoice PDF", { exact: true }), {
     target: {
       files: [
@@ -255,8 +278,13 @@ it("preserves manual selection while upload is in flight", async () => {
           ),
     ),
   );
-  render(<InvoiceWorkflow />);
+  render(
+    <MemoryRouter>
+      <InvoiceWorkflow />
+    </MemoryRouter>,
+  );
   expect(await screen.findByTestId("run-id")).toHaveTextContent("a");
+  fireEvent.click(screen.getByRole("button", { name: "+ New invoice" }));
   fireEvent.change(screen.getByLabelText("Invoice PDF", { exact: true }), {
     target: {
       files: [
@@ -265,6 +293,7 @@ it("preserves manual selection while upload is in flight", async () => {
     },
   });
   fireEvent.click(screen.getByRole("button", { name: "Upload and process" }));
+  fireEvent.click(screen.getByRole("button", { name: "Close dialog" }));
   fireEvent.click(screen.getByRole("button", { name: /^b Synthetic vendor/ }));
   await waitFor(() =>
     expect(screen.getByTestId("run-id")).toHaveTextContent("b"),
@@ -280,7 +309,11 @@ it("polls recorded changes, announces completion and stops polling completed det
   );
   vi.stubGlobal("fetch", fetcher);
   await act(async () => {
-    render(<InvoiceWorkflow initialRunId="live" />);
+    render(
+      <MemoryRouter>
+        <InvoiceWorkflow initialRunId="live" />
+      </MemoryRouter>,
+    );
   });
   current = {
     ...current,

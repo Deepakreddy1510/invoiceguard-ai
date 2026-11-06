@@ -149,6 +149,7 @@ export default function WorkspaceSettings() {
           </Link>
         </section>
       )}
+      {active?.role === "ADMIN" && <EmailSettings />}
       {target && (
         <Dialog
           title={
@@ -215,5 +216,62 @@ export default function WorkspaceSettings() {
         </Dialog>
       )}
     </>
+  );
+}
+
+function EmailSettings() {
+  const email = useResource<{
+    available: boolean;
+    configuration_message: string;
+    email_classifier: string;
+    connections: { id: string; email: string; status: string }[];
+  }>("/email", 5000);
+  return (
+    <section
+      className="panel email-settings"
+      id="email-settings"
+      aria-label="Email configuration"
+    >
+      <div className="panel-heading">
+        <div>
+          <h2>Email intake settings</h2>
+          <p>
+            Read-only connection and privacy configuration for this workspace.
+          </p>
+        </div>
+        <Link className="button" to="/email-intake">
+          Open invoice inbox
+        </Link>
+      </div>
+      <Notice error={email.error} />
+      {email.loading ? (
+        <Skeleton label="Loading email settings" />
+      ) : (
+        <div className="settings-content">
+          <p>
+            {email.data?.available
+              ? "Gmail authorization is available. Connect or manage the account from Email Intake."
+              : "Gmail authorization is unavailable. An administrator must configure Google OAuth and server-side token encryption."}
+          </p>
+          <p>
+            Only new incoming mail is checked. Access is read-only.
+            Disconnecting retains invoices and financial history.
+          </p>
+          <p>
+            {email.data?.email_classifier === "GEMINI"
+              ? "Email AI is explicitly enabled by server configuration. Relevant email/document text may be sent to Gemini for classification."
+              : "Standard email classification is configured. Email content is not sent to an AI service."}
+          </p>
+          <details>
+            <summary>Administrator configuration details</summary>
+            <p>{email.data?.configuration_message}</p>
+            <p>
+              Set provider credentials privately on the server. This interface
+              never displays or collects secret keys.
+            </p>
+          </details>
+        </div>
+      )}
+    </section>
   );
 }

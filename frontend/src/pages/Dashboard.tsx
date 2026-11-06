@@ -50,7 +50,7 @@ export default function Dashboard() {
   );
   const view = query.size ? filtered : base;
   const data = base.data;
-  const runs = view.data?.recent_runs ?? empty;
+  const runs = (view.data?.recent_runs ?? empty).slice(0, 6);
   const details = useRunDetails(runs);
   const cards = [
     {
@@ -185,149 +185,162 @@ export default function Dashboard() {
           </div>
         )}
       </TechnicalDetails>
-      <section className="panel activity-panel">
-        <div className="panel-heading">
-          <div>
-            <p className="eyebrow">THE WORK, AS IT HAPPENS</p>
-            <h2>Recent processing activity</h2>
-            <p>
-              Open an invoice to see its decision, supporting details and next
-              action.
-            </p>
-          </div>
-          <Link to="/process">
-            View processing history <Icon name="arrow" />
-          </Link>
-        </div>
-        <div className="table-toolbar">
-          <FilterChips
-            label="Filter dashboard outcomes"
-            value={outcome}
-            onChange={setOutcome}
-            options={[
-              { value: "", label: "All", count: data?.total_invoices },
-              ...outcomes.map((value) => ({
-                value,
-                label: humanize(value),
-                count: data?.outcomes[value],
-              })),
-            ]}
-          />
-          <label className="search-field">
-            <Icon name="search" />
-            <span className="sr-only">Search invoices</span>
-            <input
-              aria-label="Search invoices"
-              placeholder="Search invoice or vendor"
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-            />
-          </label>
-        </div>
-        {view.loading ? (
-          <Skeleton label="Loading persisted activity" rows={4} />
-        ) : !runs.length ? (
-          <EmptyState
-            title={
-              query.size
-                ? "No matching activity"
-                : "Your invoice history starts here"
-            }
-          >
-            {query.size
-              ? "Try a different search or outcome."
-              : "Process a PDF to see its real stages and decision."}
-          </EmptyState>
-        ) : (
-          <div className="table-scroll">
-            <table className="activity-table">
-              <thead>
-                <tr>
-                  <th>Invoice</th>
-                  <th>Vendor</th>
-                  <th className="amount">Amount</th>
-                  <th>Outcome / processing</th>
-                  <th className="amount">Duration</th>
-                  <th>Time</th>
-                </tr>
-              </thead>
-              <tbody>
-                {runs.map((run) => {
-                  const total = amount(details[run.id]);
-                  return (
-                    <tr
-                      key={run.id}
-                      className="clickable-row"
-                      tabIndex={0}
-                      aria-label={"Open run " + (run.invoice_number ?? run.id)}
-                      onClick={(e) => {
-                        if (!(e.target as HTMLElement).closest("a"))
-                          navigate("/runs/" + run.id);
-                      }}
-                      onKeyDown={(e) => {
-                        if (
-                          e.target === e.currentTarget &&
-                          ["Enter", " "].includes(e.key)
-                        ) {
-                          e.preventDefault();
-                          navigate("/runs/" + run.id);
-                        }
-                      }}
-                    >
-                      <td>
-                        <Link to={"/runs/" + run.id}>
-                          {run.invoice_number ?? "Invoice number missing"}
-                        </Link>
-                        {run.parent_run_id && (
-                          <span className="vendor">Retry / revision</span>
-                        )}
-                      </td>
-                      <td>{run.vendor_name ?? "Unresolved"}</td>
-                      <td className="amount">
-                        {total
-                          ? total.currency
-                            ? money(total.value, total.currency)
-                            : total.value
-                          : "—"}
-                      </td>
-                      <td>
-                        {run.outcome ? (
-                          <Status value={run.outcome} />
-                        ) : (
-                          <span className="muted-text">Awaiting decision</span>
-                        )}
-                        <span className="vendor">
-                          Processing: {humanize(run.status)}
-                        </span>
-                      </td>
-                      <td
-                        className="amount"
-                        title="From persisted run timestamps, including queue time"
-                      >
-                        {run.finished_at
-                          ? duration(
-                              Date.parse(run.finished_at) -
-                                Date.parse(run.created_at),
-                            )
-                          : "—"}
-                      </td>
-                      <td>
-                        <time
-                          dateTime={run.created_at}
-                          title={when(run.created_at)}
-                        >
-                          {relativeTime(run.created_at)}
-                        </time>
-                      </td>
+      <div className="dashboard-bottom-grid">
+        <div>
+          <section className="panel activity-panel">
+            <div className="panel-heading">
+              <div>
+                <p className="eyebrow">THE WORK, AS IT HAPPENS</p>
+                <h2>Recent processing activity</h2>
+                <p>
+                  Open an invoice to see its decision, supporting details and
+                  next action.
+                </p>
+              </div>
+              <Link to="/process">
+                View processing history <Icon name="arrow" />
+              </Link>
+            </div>
+            <div className="table-toolbar">
+              <FilterChips
+                label="Filter dashboard outcomes"
+                value={outcome}
+                onChange={setOutcome}
+                options={[
+                  { value: "", label: "All", count: data?.total_invoices },
+                  ...outcomes.map((value) => ({
+                    value,
+                    label: humanize(value),
+                    count: data?.outcomes[value],
+                  })),
+                ]}
+              />
+              <label className="search-field">
+                <Icon name="search" />
+                <span className="sr-only">Search invoices</span>
+                <input
+                  aria-label="Search invoices"
+                  placeholder="Search invoice or vendor"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                />
+              </label>
+            </div>
+            {view.loading ? (
+              <Skeleton label="Loading persisted activity" rows={4} />
+            ) : !runs.length ? (
+              <EmptyState
+                title={
+                  query.size
+                    ? "No matching activity"
+                    : "Your invoice history starts here"
+                }
+              >
+                {query.size
+                  ? "Try a different search or outcome."
+                  : "Process a PDF to see its real stages and decision."}
+              </EmptyState>
+            ) : (
+              <div className="table-scroll">
+                <table className="activity-table">
+                  <thead>
+                    <tr>
+                      <th>Invoice</th>
+                      <th>Vendor</th>
+                      <th className="amount">Amount</th>
+                      <th>Outcome / processing</th>
+                      <th className="amount">Duration</th>
+                      <th>Time</th>
                     </tr>
-                  );
-                })}
-              </tbody>
-            </table>
+                  </thead>
+                  <tbody>
+                    {runs.map((run) => {
+                      const total = amount(details[run.id]);
+                      return (
+                        <tr
+                          key={run.id}
+                          className="clickable-row"
+                          tabIndex={0}
+                          aria-label={
+                            "Open run " + (run.invoice_number ?? run.id)
+                          }
+                          onClick={(e) => {
+                            if (!(e.target as HTMLElement).closest("a"))
+                              navigate("/runs/" + run.id);
+                          }}
+                          onKeyDown={(e) => {
+                            if (
+                              e.target === e.currentTarget &&
+                              ["Enter", " "].includes(e.key)
+                            ) {
+                              e.preventDefault();
+                              navigate("/runs/" + run.id);
+                            }
+                          }}
+                        >
+                          <td>
+                            <Link to={"/runs/" + run.id}>
+                              {run.invoice_number ?? "Invoice number missing"}
+                            </Link>
+                            {run.parent_run_id && (
+                              <span className="vendor">Retry / revision</span>
+                            )}
+                          </td>
+                          <td>{run.vendor_name ?? "Unresolved"}</td>
+                          <td className="amount">
+                            {total
+                              ? total.currency
+                                ? money(total.value, total.currency)
+                                : total.value
+                              : "—"}
+                          </td>
+                          <td>
+                            {run.outcome ? (
+                              <Status value={run.outcome} />
+                            ) : (
+                              <span className="muted-text">
+                                Awaiting decision
+                              </span>
+                            )}
+                            <span className="vendor">
+                              Processing: {humanize(run.status)}
+                            </span>
+                          </td>
+                          <td
+                            className="amount"
+                            title="From persisted run timestamps, including queue time"
+                          >
+                            {run.finished_at
+                              ? duration(
+                                  Date.parse(run.finished_at) -
+                                    Date.parse(run.created_at),
+                                )
+                              : "—"}
+                          </td>
+                          <td>
+                            <time
+                              dateTime={run.created_at}
+                              title={when(run.created_at)}
+                            >
+                              {relativeTime(run.created_at)}
+                            </time>
+                          </td>
+                        </tr>
+                      );
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
+          <div className="dashboard-more">
+            <Link className="button" to="/process">
+              View all invoices →
+            </Link>
           </div>
-        )}
-      </section>
-      <BusinessActivity />
+        </div>
+        <BusinessActivity />
+      </div>
     </>
   );
 }

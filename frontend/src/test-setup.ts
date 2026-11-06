@@ -9,3 +9,10 @@ if (!HTMLDialogElement.prototype.close)
   HTMLDialogElement.prototype.close = function () {
     this.open = false;
   };
+
+if (!globalThis.ResizeObserver)
+  globalThis.ResizeObserver = class {
+    observe() {}
+    unobserve() {}
+    disconnect() {}
+  };

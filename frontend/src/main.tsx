@@ -3,6 +3,7 @@ import App from "./App";
 import { Authentication } from "./auth";
 import "./styles.css";
 import "./premium.css";
+import "./workbench.css";
 const root = createRoot(document.getElementById("root")!);
 async function start() {
   try {

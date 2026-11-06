@@ -20,7 +20,6 @@ import {
   Status,
   useResource,
 } from "../ui";
-import { useWorkspace } from "../workspaces";
 import type { RunDetail } from "../models";
 type Fact = {
   kind: string;
@@ -487,7 +486,6 @@ function AttachmentDetail({
   );
 }
 export default function EmailIntake() {
-  const { active } = useWorkspace();
   const [params, setParams] = useSearchParams();
   const [search, setSearch] = useState("");
   const [status, setStatus] = useState("");
@@ -495,6 +493,7 @@ export default function EmailIntake() {
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
+  const [manage, setManage] = useState(false);
   const [disconnect, setDisconnect] = useState(false);
   const [view, setView] = useState("actionable");
   const list = useResource<Overview>(
@@ -585,139 +584,122 @@ export default function EmailIntake() {
         </p>
       )}
       <section className="panel email-connection" aria-label="Gmail connection">
-        <div className="panel-heading">
-          <h2>Gmail connection</h2>
-          <span className="tag">
-            {active?.kind === "MY" ? "My Workspace" : active?.name}
-          </span>
-        </div>
-        {list.loading ? (
-          <Skeleton label="Loading Gmail connection" />
-        ) : (
-          <>
-            <p>
-              {list.data?.available
-                ? current?.status === "ACTIVE"
-                  ? "Gmail connected. New invoices are checked automatically."
-                  : "Connect Gmail to collect incoming supplier invoices."
-                : "Gmail connection unavailable. Ask your administrator to finish email setup, or upload a PDF manually."}
-            </p>
-            <Help title="How do I connect Gmail?">
-              <p>
-                A workspace administrator can select Connect Gmail, choose an
-                account and grant read-only access. New incoming invoice
-                attachments are checked automatically after connection; existing
-                mailbox history is not imported automatically. Disconnecting
-                pauses checks while retaining your invoice records.
-              </p>
-            </Help>
-            <TechnicalDetails label="Email configuration">
-              {list.data?.configuration_message && (
-                <p>{list.data.configuration_message}</p>
-              )}
-              <p className="footnote">
-                Configured email classifier:{" "}
-                {list.data?.email_classifier ?? "FALLBACK"}. Gmail message
-                content is sent to Gemini only when the server explicitly
-                enables email AI.
-              </p>
-            </TechnicalDetails>
-            {current ? (
-              <>
-                <dl className="financial-summary">
-                  <div>
-                    <dt>Account</dt>
-                    <dd>{current.email}</dd>
-                  </div>
-                  <div>
-                    <dt>Connection status</dt>
-                    <dd>
-                      <Status value={current.status} />
-                    </dd>
-                  </div>
-                  <div>
-                    <dt>Last successful check</dt>
-                    <dd>{when(current.last_sync_at)}</dd>
-                  </div>
-                  <div>
-                    <dt>Next check</dt>
-                    <dd>
-                      {["ACTIVE", "REVOKE_PENDING"].includes(current.status)
-                        ? when(current.next_sync_at)
-                        : "—"}
-                    </dd>
-                  </div>
-                </dl>
-                <Notice error={current.error ?? ""} />
-              </>
-            ) : (
-              <p>No mailbox is connected to this workspace.</p>
-            )}
-            {list.data?.can_manage && (
-              <div className="toolbar">
-                <button
-                  className="primary"
-                  disabled={
-                    busy ||
-                    !list.data.available ||
-                    (!!current &&
-                      !["DISCONNECTED", "AUTH_REQUIRED"].includes(
-                        current.status,
-                      ))
-                  }
-                  onClick={() => void control("connect")}
-                >
-                  {current?.status === "AUTH_REQUIRED"
-                    ? "Reconnect Gmail"
-                    : "Connect Gmail"}
-                </button>
-                {current?.status === "ACTIVE" && (
-                  <button
-                    disabled={busy || !list.data.available}
-                    onClick={() => void control("sync")}
-                  >
-                    Check for new emails
-                  </button>
-                )}
-                {current &&
-                  !["DISCONNECTED", "REVOKE_PENDING"].includes(
-                    current.status,
-                  ) && (
-                    <button disabled={busy} onClick={() => setDisconnect(true)}>
-                      Disconnect Gmail
-                    </button>
-                  )}
-              </div>
-            )}
-            {disconnect && (
-              <div className="notice">
+        <div className="connection-summary">
+          <strong>Gmail</strong>
+          {list.loading ? (
+            <span role="status">Loading connection…</span>
+          ) : (
+            <>
+              {current ? (
+                <>
+                  <span>{current.email}</span>
+                  <Status value={current.status} />
+                  <span>Last checked {when(current.last_sync_at)}</span>
+                </>
+              ) : (
                 <p>
-                  Stop reading this mailbox and revoke Google access? Existing
-                  messages, invoices and financial history will remain.
+                  {list.data?.available
+                    ? "Connect Gmail to collect incoming supplier invoices."
+                    : "Gmail connection unavailable. Ask your administrator to finish email setup, or upload a PDF manually."}
                 </p>
-                <button
-                  disabled={busy}
-                  onClick={() => void control("disconnect")}
-                >
-                  Confirm Gmail disconnect
-                </button>
-                <button disabled={busy} onClick={() => setDisconnect(false)}>
-                  Keep connection
-                </button>
-              </div>
+              )}
+            </>
+          )}
+        </div>
+        <div className="toolbar">
+          {list.data?.can_manage && current?.status === "ACTIVE" && (
+            <button
+              disabled={busy || !list.data.available}
+              onClick={() => void control("sync")}
+            >
+              Check now
+            </button>
+          )}
+          {list.data?.can_manage &&
+            (!current ||
+              ["DISCONNECTED", "AUTH_REQUIRED"].includes(current.status)) && (
+              <button
+                className="primary"
+                disabled={busy || !list.data.available}
+                onClick={() => void control("connect")}
+              >
+                {current?.status === "AUTH_REQUIRED"
+                  ? "Reconnect Gmail"
+                  : "Connect Gmail"}
+              </button>
             )}
-            <p className="footnote">
-              Only new inbox mail is checked. Gmail access is read-only, and
-              existing invoice records remain when you disconnect.
-            </p>
-            <p className="footnote">
-              {list.data?.email_classifier === "GEMINI"
-                ? "AI-assisted email reading is enabled. Relevant email and document text may be sent to Gemini for identification; financial checks remain separate."
-                : "Standard email reading is enabled. Email content is not sent to an AI service."}
-            </p>
-          </>
-        )}
+          <button onClick={() => setManage(true)}>Manage connection</button>
+        </div>
       </section>
+      {manage && (
+        <Dialog
+          title="Gmail connection"
+          onClose={() => {
+            setManage(false);
+            setDisconnect(false);
+          }}
+        >
+          <p>
+            {current
+              ? `Connected account: ${current.email}`
+              : "No mailbox is connected to this workspace."}
+          </p>
+          {current && (
+            <>
+              <Status value={current.status} />
+              <p>Last successful check: {when(current.last_sync_at)}</p>
+              <p>
+                Next check:{" "}
+                {["ACTIVE", "REVOKE_PENDING"].includes(current.status)
+                  ? when(current.next_sync_at)
+                  : "Not scheduled"}
+              </p>
+              <Notice error={current.error ?? ""} />
+            </>
+          )}
+          <Help title="How do I connect Gmail?">
+            <p>
+              Select Connect Gmail, grant read-only access and keep this
+              workspace selected. Only new inbox mail is collected; existing
+              financial history is retained when you disconnect.
+            </p>
+          </Help>
+          <p>
+            {list.data?.email_classifier === "GEMINI"
+              ? "AI-assisted email reading is enabled by your administrator. Relevant text may be sent to Gemini; financial checks remain separate."
+              : "Standard email reading is enabled. Email content is not sent to an AI service."}
+          </p>
+          <p>
+            <a href="/settings#email-settings">
+              Email configuration and privacy settings
+            </a>
+          </p>
+          {list.data?.can_manage &&
+            current &&
+            !["DISCONNECTED", "REVOKE_PENDING"].includes(current.status) && (
+              <button disabled={busy} onClick={() => setDisconnect(true)}>
+                Disconnect Gmail
+              </button>
+            )}
+          {disconnect && (
+            <div className="notice">
+              <p>
+                Stop reading this mailbox and revoke Google access? Existing
+                messages, invoices and financial history will remain.
+              </p>
+              <button
+                disabled={busy}
+                onClick={() => void control("disconnect")}
+              >
+                Confirm Gmail disconnect
+              </button>
+              <button onClick={() => setDisconnect(false)}>
+                Keep connection
+              </button>
+            </div>
+          )}
+        </Dialog>
+      )}
       {list.data && (
         <section
           className="metric-grid email-metrics"

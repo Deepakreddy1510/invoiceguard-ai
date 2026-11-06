@@ -9,7 +9,7 @@ import {
   useParams,
   useLocation,
 } from "react-router-dom";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import InvoiceWorkflow from "./InvoiceWorkflow";
 import EmailIntake from "./pages/EmailIntake";
 import Vendors from "./pages/Vendors";
@@ -40,6 +40,17 @@ function Shell() {
   const { data } = useResource<{ workspace_name: string; role: string }>("/me");
   const location = useLocation();
   const [open, setOpen] = useState(false);
+  const [collapsed, setCollapsed] = useState(false);
+  const [compact, setCompact] = useState(
+    () => window.matchMedia?.("(max-width:768px)").matches ?? false,
+  );
+  useEffect(() => {
+    const query = window.matchMedia?.("(max-width:768px)");
+    if (!query) return;
+    const update = () => setCompact(query.matches);
+    query.addEventListener("change", update);
+    return () => query.removeEventListener("change", update);
+  }, []);
   const nav = [
     { to: "/", label: "Overview", icon: "grid" },
     { to: "/process", label: "Invoice processing", icon: "upload" },
@@ -50,7 +61,7 @@ function Shell() {
     { to: "/settings", label: "Settings", icon: "grid" },
   ] as const;
   return (
-    <div className="app-shell">
+    <div className={"app-shell " + (collapsed ? "sidebar-collapsed" : "")}>
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
@@ -64,6 +75,14 @@ function Shell() {
             </span>
           </NavLink>
           <button
+            className="icon-button sidebar-collapse"
+            aria-label={collapsed ? "Expand navigation" : "Collapse navigation"}
+            aria-expanded={!collapsed}
+            onClick={() => setCollapsed(!collapsed)}
+          >
+            <Icon name="menu" />
+          </button>
+          <button
             className="icon-button nav-toggle"
             aria-label={open ? "Close navigation" : "Open navigation"}
             aria-expanded={open}
@@ -73,7 +92,7 @@ function Shell() {
             <Icon name={open ? "close" : "menu"} />
           </button>
         </div>
-        <WorkspaceSelector />
+        {(!collapsed || compact) && <WorkspaceSelector />}
         <nav id="workspace-navigation" aria-label="Main navigation">
           {nav.map(({ to, label, icon }) => (
             <NavLink
@@ -89,7 +108,7 @@ function Shell() {
               }
             >
               <Icon name={icon} />
-              {label}
+              <span className="nav-label">{label}</span>
             </NavLink>
           ))}
         </nav>
@@ -115,6 +134,11 @@ function Shell() {
               </span>
             )}
           </div>
+          {collapsed && !compact && (
+            <div className="header-workspace">
+              <WorkspaceSelector />
+            </div>
+          )}
           <AccountControl />
         </header>
         <main id="main-content" className="content" tabIndex={-1}>

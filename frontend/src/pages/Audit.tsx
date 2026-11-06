@@ -11,6 +11,7 @@ import {
   Notice,
   PageTitle,
   Skeleton,
+  Status,
   useResource,
 } from "../ui";
 import { Icon } from "../icons";
@@ -53,7 +54,7 @@ export default function Audit() {
   const query = new URLSearchParams({
     ...Object.fromEntries(params),
     offset: String(offset),
-    limit: "50",
+    limit: "20",
     view: "business",
     search,
     actor,
@@ -138,142 +139,130 @@ export default function Audit() {
             ]}
           />
         </div>
-        <div className="audit-list">
+        <div className="table-scroll audit-table">
           {resource.loading ? (
             <Skeleton label="Loading audit history" rows={5} />
           ) : !shown.length ? (
             <EmptyState title="No matching audit events">
-              {events.length
-                ? "Change the filters or browse another page."
-                : "Events will appear when documents are processed or reviewed."}
+              Change the filters or browse another page. Events appear when
+              documents are processed or reviewed.
             </EmptyState>
           ) : (
-            shown.map((event, index) => {
-              const tone = event.action.endsWith(":FAILED")
-                ? "failed"
-                : event.action.endsWith(":RUNNING")
-                  ? "running"
-                  : event.action.endsWith(":SUCCEEDED")
-                    ? "succeeded"
-                    : "neutral";
-              const newRun =
-                index === 0 || shown[index - 1].run_id !== event.run_id;
-              return (
-                <article
-                  className={
-                    "audit-event event-" +
-                    tone +
-                    (newRun ? " thread-start" : "")
-                  }
-                  key={event.id}
-                >
-                  {newRun && event.run_id && (
-                    <div className="thread-label">
-                      <span className="eyebrow">INVOICE PROCESSING RECORD</span>
-                      <Link to={"/runs/" + event.run_id}>
-                        Open run <Icon name="arrow" />
-                      </Link>
-                    </div>
-                  )}
-                  <span className="audit-marker">
-                    <Icon
-                      name={
-                        tone === "failed"
-                          ? "close"
-                          : tone === "succeeded"
-                            ? "check"
-                            : tone === "running"
-                              ? "clock"
-                              : "audit"
-                      }
-                    />
-                  </span>
-                  <div className="audit-event-content">
-                    <div className="audit-event-heading">
+            <table>
+              <thead>
+                <tr>
+                  <th>Event / author</th>
+                  <th>Invoice / supplier</th>
+                  <th className="amount">Amount</th>
+                  <th>Financial outcome</th>
+                  <th>Recorded</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {shown.map((event) => (
+                  <tr key={event.id}>
+                    <td>
                       <strong>{eventLabel(event.action)}</strong>
+                      <span className="vendor">{actorLabel(event.actor)}</span>
+                    </td>
+                    <td>
+                      {event.entity ? (
+                        <>
+                          <strong>
+                            {event.entity.invoice_number ??
+                              "Invoice details awaiting verification"}
+                          </strong>
+                          {event.entity.vendor && (
+                            <span className="vendor">
+                              {event.entity.vendor}
+                            </span>
+                          )}
+                        </>
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td className="amount">
+                      {event.entity?.amount && event.entity.currency
+                        ? money(event.entity.amount, event.entity.currency)
+                        : "—"}
+                    </td>
+                    <td>
+                      {event.entity?.outcome ? (
+                        <Status value={event.entity.outcome} />
+                      ) : (
+                        "—"
+                      )}
+                    </td>
+                    <td>
                       <time
                         dateTime={event.created_at}
                         title={when(event.created_at)}
                       >
                         {relativeTime(event.created_at)}
                       </time>
-                    </div>
-                    {event.entity && (
-                      <div className="activity-entity">
-                        <p>
-                          <strong>
-                            {event.entity.invoice_number ??
-                              "Invoice details awaiting verification"}
-                          </strong>
-                          {event.entity.vendor && <> · {event.entity.vendor}</>}
-                          {event.entity.amount && event.entity.currency && (
-                            <>
-                              {" "}
-                              ·{" "}
-                              {money(
-                                event.entity.amount,
-                                event.entity.currency,
-                              )}
-                            </>
-                          )}
-                          {event.entity.outcome && (
-                            <> · {humanize(event.entity.outcome)}</>
-                          )}
-                        </p>
-                        {event.entity.reason && (
-                          <p>
-                            {event.entity.reason.replace(
-                              /original document [0-9a-f-]{36}/gi,
-                              "original recorded invoice",
-                            )}
-                          </p>
-                        )}
-                      </div>
-                    )}
-                    <div className="event-meta">
-                      <span>{actorLabel(event.actor)}</span>
-                      <time dateTime={event.created_at}>
-                        {when(event.created_at)}
-                      </time>
-                      {event.run_id && !newRun && (
-                        <Link to={"/runs/" + event.run_id}>Open run</Link>
+                    </td>
+                    <td>
+                      {event.run_id && (
+                        <Link
+                          className="text-button"
+                          to={"/runs/" + event.run_id}
+                        >
+                          Open run
+                        </Link>
                       )}
-                    </div>
-                    {typeof event.detail.message === "string" && (
-                      <p className="audit-message">{event.detail.message}</p>
-                    )}
-                    <TechnicalDetails label="Original audit record">
-                      <details className="json-details">
-                        <summary>
-                          Event details <Icon name="chevron" />
-                        </summary>
-                        <div className="json-heading">
-                          <code>{event.action}</code>
+                      {(event.entity?.reason ||
+                        typeof event.detail.message === "string") && (
+                        <details className="event-context">
+                          <summary>View context</summary>
+                          {event.entity?.reason && (
+                            <p>
+                              {event.entity.reason.replace(
+                                /original document [0-9a-f-]{36}/gi,
+                                "original recorded invoice",
+                              )}
+                            </p>
+                          )}
+                          {typeof event.detail.message === "string" && (
+                            <p>{event.detail.message}</p>
+                          )}
+                          <time dateTime={event.created_at}>
+                            {when(event.created_at)}
+                          </time>
+                        </details>
+                      )}
+                      <TechnicalDetails label="Original audit record">
+                        <details className="json-details">
+                          <summary>
+                            {eventLabel(event.action)} ·{" "}
+                            {when(event.created_at)}
+                          </summary>
                           <CopyButton
                             label="Copy event JSON"
                             text={JSON.stringify(event.detail, null, 2)}
                           />
-                        </div>
-                        <pre>{JSON.stringify(event.detail, null, 2)}</pre>
-                      </details>
-                    </TechnicalDetails>
-                  </div>
-                </article>
-              );
-            })
+                          <pre>{JSON.stringify(event.detail, null, 2)}</pre>
+                        </details>
+                      </TechnicalDetails>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           )}
         </div>
         <div className="pagination">
           <button
             disabled={offset === 0}
-            onClick={() => setOffset(Math.max(0, offset - 50))}
+            onClick={() => setOffset(Math.max(0, offset - 20))}
           >
             Newer
           </button>
-          <span>Page {Math.floor(offset / 50) + 1}</span>
+          <span>Page {Math.floor(offset / 20) + 1}</span>
           <button
-            disabled={events.length < 50}
-            onClick={() => setOffset(offset + 50)}
+            disabled={events.length < 20}
+            onClick={() => setOffset(offset + 20)}
           >
             Older
           </button>

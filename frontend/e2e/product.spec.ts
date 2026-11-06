@@ -48,6 +48,9 @@ async function upload(
     .getByRole("link", { name: "Invoice processing", exact: true })
     .click();
   await page
+    .getByRole("button", { name: "+ New invoice", exact: true })
+    .click();
+  await page
     .getByLabel("Extraction mode", { exact: true })
     .selectOption("FALLBACK");
   await page.getByLabel("Invoice PDF", { exact: true }).setInputFiles({
@@ -136,6 +139,15 @@ test("private workspace procurement, actual PDFs, commitments and retained histo
     .getByRole("button", { name: "Save purchase order", exact: true })
     .click();
   await expect(page.getByText("Purchase order saved.")).toBeVisible();
+  await expect(
+    page.getByRole("dialog", { name: "Purchase order details", exact: true }),
+  ).toBeVisible();
+  await page
+    .getByRole("button", { name: "Close purchase order details", exact: true })
+    .click();
+  await expect(
+    page.getByRole("dialog", { name: "Purchase order details", exact: true }),
+  ).toHaveCount(0);
   const valid = await upload(
     page,
     "BROWSER-VALID",
@@ -145,6 +157,9 @@ test("private workspace procurement, actual PDFs, commitments and retained histo
     "66",
     "Validated",
   );
+  await page
+    .getByRole("tab", { name: "Financial checks", exact: true })
+    .click();
   await expect(page.locator(".rules")).toContainText(
     "Available purchase order balance",
   );
@@ -164,6 +179,9 @@ test("private workspace procurement, actual PDFs, commitments and retained histo
     "176",
     "Blocked",
   );
+  await page
+    .getByRole("tab", { name: "Financial checks", exact: true })
+    .click();
   await expect(page.locator(".rules")).toContainText(
     "Available purchase order balance",
   );

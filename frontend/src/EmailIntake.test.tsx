@@ -45,9 +45,11 @@ it("shows unavailable Gmail without inventing connection or email activity", asy
   );
   expect(await screen.findByText(/Gmail connection unavailable/)).toBeVisible();
   expect(screen.getByRole("button", { name: "Connect Gmail" })).toBeDisabled();
+  fireEvent.click(screen.getByRole("button", { name: "Manage connection" }));
   expect(
     screen.getByText("No mailbox is connected to this workspace."),
   ).toBeVisible();
+  fireEvent.click(screen.getByRole("button", { name: "Close dialog" }));
   expect(screen.getByText("No incoming email in this view")).toBeVisible();
 });
 it("queues actual sync requests with the active workspace and renders distinct processing/decision states", async () => {
@@ -103,7 +105,7 @@ it("queues actual sync requests with the active workspace and renders distinct p
   ).toBeVisible();
   expect(screen.getByText("Completed")).toBeVisible();
   expect(screen.getByText("Needs review")).toBeVisible();
-  fireEvent.click(screen.getByRole("button", { name: "Check for new emails" }));
+  fireEvent.click(screen.getByRole("button", { name: "Check now" }));
   await waitFor(() =>
     expect(fetcher).toHaveBeenCalledWith(
       "/api/v1/email/connections/c1/sync",

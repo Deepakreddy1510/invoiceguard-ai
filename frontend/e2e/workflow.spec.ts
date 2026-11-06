@@ -8,6 +8,9 @@ async function upload(page: Page, file: string) {
     .getByRole("link", { name: "Invoice processing", exact: true })
     .click();
   await page
+    .getByRole("button", { name: "+ New invoice", exact: true })
+    .click();
+  await page
     .getByLabel("Invoice PDF", { exact: true })
     .setInputFiles(path.join(fixtures, file));
   const accepted = page.waitForResponse(
@@ -45,7 +48,7 @@ test.describe
     await upload(page, "valid.pdf");
     await outcome(page, "VALIDATED");
     const run = await page.getByTestId("run-id").textContent();
-    await expect(page.locator(".timeline")).toContainText("Details identified");
+    await expect(page.locator(".timeline")).toContainText("Details extracted");
     await expect(page.locator(".timeline")).toContainText("Decision recorded");
     await expect(
       page
@@ -55,6 +58,9 @@ test.describe
     await page.reload();
     await outcome(page, "VALIDATED");
     await expect(page.getByTestId("run-id")).toHaveText(run!);
+    await page
+      .getByRole("button", { name: "+ New invoice", exact: true })
+      .click();
     await page
       .getByLabel("Invoice PDF", { exact: true })
       .setInputFiles(path.join(fixtures, "valid.pdf"));
@@ -73,6 +79,9 @@ test.describe
   }) => {
     await upload(page, "duplicate-reexported.pdf");
     await outcome(page, "BLOCKED");
+    await page
+      .getByRole("tab", { name: "Financial checks", exact: true })
+      .click();
     await expect(page.locator(".rules")).toContainText(
       "Confirmed duplicate business invoice.",
     );
@@ -80,6 +89,9 @@ test.describe
   test("missing invoice number routes to review", async ({ page }) => {
     await upload(page, "missing.pdf");
     await outcome(page, "NEEDS_REVIEW");
+    await page
+      .getByRole("tab", { name: "Financial checks", exact: true })
+      .click();
     await expect(page.locator(".rules")).toContainText(
       "Invoice number required",
     );
@@ -90,6 +102,9 @@ test.describe
     await expect(page.locator(".timeline")).toContainText(
       "OCR executed on pages 1",
     );
+    await page
+      .getByText("Extracted fields and source evidence", { exact: true })
+      .click();
     await page.locator(".evidence-table details > summary").first().click();
     await expect(
       page
@@ -102,6 +117,9 @@ test.describe
     await page.goto("/");
     await page
       .getByRole("link", { name: "Invoice processing", exact: true })
+      .click();
+    await page
+      .getByRole("button", { name: "+ New invoice", exact: true })
       .click();
     await page.getByLabel("Invoice PDF", { exact: true }).setInputFiles({
       name: "corrupt.pdf",

@@ -32,6 +32,10 @@ test("provider-mocked Gmail handoff uses real PostgreSQL, PDF worker, decisions 
   await expect(
     page.getByRole("button", { name: "Connect Gmail" }),
   ).toBeDisabled();
+  await page.screenshot({
+    path: info.outputPath("email-disconnected.png"),
+    fullPage: true,
+  });
   await page
     .getByLabel("Workspace", { exact: true })
     .selectOption({ label: "Email contract workspace" });
@@ -39,6 +43,10 @@ test("provider-mocked Gmail handoff uses real PostgreSQL, PDF worker, decisions 
   await expect(
     page.getByText("provider-contract@example.invalid", { exact: true }),
   ).toBeVisible();
+  await page.screenshot({
+    path: info.outputPath("email-connected-provider-mock.png"),
+    fullPage: true,
+  });
   await page
     .getByRole("button", { name: "Provider-mocked Gmail initial", exact: true })
     .click();

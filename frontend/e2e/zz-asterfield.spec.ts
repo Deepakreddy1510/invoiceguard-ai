@@ -58,6 +58,9 @@ test("verified sample company is selectable, preserves legacy procurement and re
   );
   await page.goto("/process");
   await page
+    .getByRole("button", { name: "+ New invoice", exact: true })
+    .click();
+  await page
     .getByLabel("Invoice PDF", { exact: true })
     .setInputFiles(
       path.join(backend, "demo/asterfield-v1/01-office-supplies.pdf"),
