@@ -211,3 +211,16 @@ def test_explicit_local_legacy_cleanup_retains_all_historical_records(workflow_d
             )
     finally:
         app.dependency_overrides.clear()
+
+
+def test_private_api_responses_are_not_cached_after_account_logout(secure_client):
+    client, factory, token = secure_client
+    bootstrap(client, token, "cache-account")
+    for path, headers in [
+        ("/api/v1/dashboard", token("cache-account")),
+        ("/api/v1/vendors", {}),
+        ("/api/v1/audit-events", token("cache-account")),
+    ]:
+        response = client.get(path, headers=headers)
+        assert response.headers["Cache-Control"] == "no-store"
+        assert response.headers["Pragma"] == "no-cache"

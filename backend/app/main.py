@@ -40,6 +40,16 @@ async def lifespan(app):
 app = FastAPI(title="InvoiceGuard AI", version="0.1.0", lifespan=lifespan)
 
 
+@app.middleware("http")
+async def private_api_responses(request, call_next):
+    response = await call_next(request)
+    if request.url.path.startswith("/api/v1/"):
+        # Account/workspace switches must not restore financial data from HTTP caches.
+        response.headers["Cache-Control"] = "no-store"
+        response.headers["Pragma"] = "no-cache"
+    return response
+
+
 class VendorOut(BaseModel):
     model_config = ConfigDict(from_attributes=True)
     id: UUID
