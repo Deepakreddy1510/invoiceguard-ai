@@ -177,7 +177,14 @@ export default function DocumentViewer({
         </div>
       )}
       {!pdf && !error && <p role="status">Loading original PDF…</p>}
-      <div ref={container} className="document-canvas" aria-busy={rendering}>
+      <div
+        ref={container}
+        className="document-canvas"
+        aria-busy={rendering}
+        role="region"
+        aria-label="Scrollable PDF page"
+        tabIndex={0}
+      >
         <canvas
           ref={canvas}
           role="img"

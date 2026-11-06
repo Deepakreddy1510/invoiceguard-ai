@@ -1,7 +1,7 @@
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
-from sqlalchemy import select
+from sqlalchemy import or_, select
 
 from app.audit import audit, financial_lock
 from app.auth import Reviewer, User
@@ -50,12 +50,25 @@ def queue(
     status: str = "OPEN",
     offset: int = Query(0, ge=0),
     limit: int = Query(30, ge=1, le=100),
+    search: str | None = Query(None, max_length=160),
 ):
     query = (
         select(ReviewTask)
         .join(InvoiceDocument)
         .where(InvoiceDocument.workspace_id == user.workspace_id)
     )
+    if search:
+        term = "%" + search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
+        query = query.join(ProcessingRun, ProcessingRun.id == ReviewTask.latest_run_id).where(
+            or_(
+                *(
+                    ProcessingRun.extraction["fields"][field]["value"].astext.ilike(
+                        term, escape="\\"
+                    )
+                    for field in ["invoice_number", "vendor_name", "po_number"]
+                )
+            )
+        )
     if status != "ALL":
         query = query.where(
             ReviewTask.status.in_(["OPEN", "REVALIDATING"])

@@ -105,7 +105,7 @@ export default function Vendors() {
   );
   const currentPage = Math.min(
     page,
-    Math.max(0, Math.ceil(shown.length / 20) - 1),
+    Math.max(0, Math.ceil(shown.length / 10) - 1),
   );
   return (
     <>
@@ -278,7 +278,12 @@ export default function Vendors() {
             your first invoice.
           </EmptyState>
         ) : (
-          <div className="table-scroll">
+          <div
+            className="table-scroll catalogue-table"
+            role="region"
+            aria-label="Scrollable supplier table"
+            tabIndex={0}
+          >
             <table>
               <thead>
                 <tr>
@@ -291,7 +296,7 @@ export default function Vendors() {
               </thead>
               <tbody>
                 {shown
-                  .slice(currentPage * 20, currentPage * 20 + 20)
+                  .slice(currentPage * 10, currentPage * 10 + 10)
                   .map((vendor) => (
                     <tr key={vendor.id}>
                       <td>
@@ -333,6 +338,7 @@ export default function Vendors() {
           </div>
         )}
         <TablePagination
+          size={10}
           page={currentPage}
           total={shown.length}
           onChange={setPage}

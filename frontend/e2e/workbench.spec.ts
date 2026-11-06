@@ -228,13 +228,17 @@ test("real paginated invoice workbench, private PDF controls, outcomes, tabs and
     .fill("WB-INVOICE-2026-0024");
   await expect(page.locator(".history-run")).toHaveCount(1);
   await page.getByRole("link", { name: "Vendors", exact: true }).click();
-  await expect(page.locator("tbody > tr")).toHaveCount(20);
+  await expect(page.locator("tbody > tr")).toHaveCount(10);
+  await page.getByRole("button", { name: "Next page", exact: true }).click();
+  await expect(page.locator("tbody > tr")).toHaveCount(10);
   await page.getByRole("button", { name: "Next page", exact: true }).click();
   await expect(page.locator("tbody > tr")).toHaveCount(5);
   await page
     .getByRole("link", { name: "Purchase orders", exact: true })
     .click();
-  await expect(page.locator("tbody > tr")).toHaveCount(20);
+  await expect(page.locator("tbody > tr")).toHaveCount(10);
+  await page.getByRole("button", { name: "Next page", exact: true }).click();
+  await expect(page.locator("tbody > tr")).toHaveCount(10);
   await page.getByRole("button", { name: "Next page", exact: true }).click();
   await expect(page.locator("tbody > tr")).toHaveCount(5);
 });

@@ -1,3 +1,5 @@
+import { InvoiceIdentity } from "./InvoiceIdentity";
+import { Help } from "./Experience";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { request, money, relativeTime } from "./client";
 import {
@@ -493,7 +495,12 @@ export default function InvoiceWorkflow({
                 : "Upload your first PDF to start a recorded verification."}
             </EmptyState>
           ) : (
-            <div className="history-list">
+            <div
+              className="history-list"
+              role="region"
+              aria-label="Scrollable invoice queue"
+              tabIndex={0}
+            >
               {shown.map((run) => {
                 const total = amount(extras[run.id]);
                 const rules = extras[run.id]?.decision?.rules;
@@ -507,18 +514,15 @@ export default function InvoiceWorkflow({
                     aria-pressed={selected === run.id}
                     onClick={() => selectRun(run.id)}
                   >
-                    <div className="history-row-top">
-                      <strong>
-                        {run.invoice_number ??
-                          (isTerminal(run)
-                            ? "Invoice number missing"
-                            : "New invoice · awaiting details")}
-                      </strong>
-                      <Icon name="chevron" />
-                    </div>
-                    {run.vendor_name && (
-                      <span className="history-vendor">{run.vendor_name}</span>
-                    )}
+                    <InvoiceIdentity
+                      number={run.invoice_number}
+                      supplier={run.vendor_name ?? null}
+                      fallback={
+                        isTerminal(run)
+                          ? "Invoice number missing"
+                          : "New invoice · awaiting details"
+                      }
+                    />
                     {total && (
                       <strong className="history-amount">
                         {total.currency
@@ -580,7 +584,7 @@ export default function InvoiceWorkflow({
         </section>
         <section
           ref={runPanel}
-          tabIndex={-1}
+          tabIndex={0}
           className="panel run-detail"
           aria-label="Processing run"
         >
@@ -631,11 +635,14 @@ export default function InvoiceWorkflow({
           )}
         </aside>
       </div>
-      <p className="footnote retention-note">
-        Invoice uploads are audited from ingestion and cannot be silently
-        deleted. Use source review and explicit rejection/release; settled
-        commitments cannot be released through deletion.
-      </p>
+      <Help title="How invoice history is protected">
+        <p>
+          Uploads and financial commitments retain their audit history. Source
+          corrections are revalidated; unsettled holds can be released only
+          through an explicit review action. Settled amounts cannot be removed
+          by deleting an upload.
+        </p>
+      </Help>
       {toast && (
         <div className="toast" role="status">
           <Icon name="check" />

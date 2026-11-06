@@ -1,12 +1,21 @@
+import { InvoiceIdentity } from "../InvoiceIdentity";
+import { WorkbenchTabs } from "../Workbench";
 import { RuleResults } from "../RunDetails";
 import { Help } from "../Experience";
-import { nextAction, actorLabel } from "../business";
-import { useEffect, useState } from "react";
+import {
+  nextAction,
+  actorLabel,
+  primaryIssues,
+  ruleLabel,
+  checkExplanation,
+} from "../business";
+import { useEffect, useRef, useState } from "react";
 import { Link, useNavigate, useParams } from "react-router-dom";
 import { jsonPost, money, relativeTime, when } from "../client";
 import { amount, type Extraction, type Rule, type RunSummary } from "../models";
 import { useRunDetails } from "../run-data";
 import {
+  CopyButton,
   EmptyState,
   humanize,
   Notice,
@@ -78,14 +87,33 @@ type ReviewDetail = Task & {
 export default function Reviews() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const panel = useRef<HTMLDivElement>(null);
+  const requestedFocus = useRef<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [tab, setTab] = useState("correction");
+  const [mobileList, setMobileList] = useState(!id);
   const [offset, setOffset] = useState(0);
   const [showAll, setShowAll] = useState(false);
   const queue = useResource<{ tasks: Task[] }>(
-    `/reviews?status=${showAll ? "ALL" : "OPEN"}&offset=${offset}&limit=20`,
+    `/reviews?status=${showAll ? "ALL" : "OPEN"}&offset=${offset}&limit=20${search ? "&search=" + encodeURIComponent(search) : ""}`,
     3000,
   );
   const detail = useResource<ReviewDetail>(id ? "/reviews/" + id : null, 2000);
   const extras = useRunDetails((queue.data?.tasks ?? []).map((t) => t.run));
+  useEffect(() => {
+    if (id || !queue.data) return;
+    const first =
+      queue.data.tasks.find((task) =>
+        ["OPEN", "REVALIDATING"].includes(task.status),
+      ) ?? (showAll ? queue.data.tasks[0] : undefined);
+    if (first) navigate("/reviews/" + first.id, { replace: true });
+  }, [id, queue.data, showAll, navigate]);
+  useEffect(() => {
+    if (detail.data && requestedFocus.current === detail.data.id) {
+      requestedFocus.current = null;
+      panel.current?.focus({ preventScroll: true });
+    }
+  }, [detail.data]);
   const [baseVersion, setBaseVersion] = useState(0);
   const [confirmed, setConfirmed] = useState<string[]>([]);
   const [reset, setReset] = useState(0);
@@ -183,93 +211,143 @@ export default function Reviews() {
   const latestDecision = task?.decisions.at(-1);
   const po = task?.extraction?.fields.po_number as
     { value?: string } | undefined;
+  const tasks = queue.data?.tasks ?? [];
+  const issue = latestDecision ? primaryIssues(latestDecision.rules)[0] : null;
+  const empty = !id && !queue.loading && !tasks.length && !queue.error;
   return (
-    <>
+    <section className="reviews-page">
       <PageTitle
         eyebrow="EXCEPTIONS / HUMAN REVIEW"
         title="Resolve uncertainty with evidence."
-        description="Correct the source facts. Keep the history. Revalidate every financial control."
+        description="Compare the invoice with its source, correct supported facts and revalidate."
       />
       <Notice
-        error={error || queue.error || detail.error}
+        error={error}
         onRetry={() => {
           setError("");
-          queue.reload();
           detail.reload();
+          queue.reload();
         }}
       />
-      <div className="toolbar">
-        <label className="switch-label">
-          <input
-            role="switch"
-            type="checkbox"
-            checked={showAll}
-            onChange={(e) => {
-              setShowAll(e.target.checked);
-              setOffset(0);
-            }}
-          />
-          <span className="switch-track" aria-hidden="true" />
-          Include resolved reviews
-        </label>
-        <span>{queue.data?.tasks.length ?? "…"} tasks on this page</span>
-      </div>
-      {id && (
-        <Link className="review-back" to="/reviews">
-          ← Back to exception queue
-        </Link>
-      )}
-      <div className={id ? "review-layout" : "review-layout queue-only"}>
+      <button
+        className="review-back"
+        hidden={mobileList}
+        onClick={() => setMobileList(true)}
+      >
+        ← Back to exception queue
+      </button>
+      <div
+        className={
+          "review-workbench " +
+          (empty ? "is-empty " : "") +
+          (mobileList ? "show-review-list" : "show-review-detail")
+        }
+      >
         <section className="panel review-queue" aria-label="Exception queue">
-          <div className="section-heading">
+          <div className="review-queue-toolbar">
             <h2>Exception queue</h2>
-            <Icon name="review" />
+            <label className="search-field">
+              <span className="sr-only">Search exception queue</span>
+              <Icon name="search" />
+              <input
+                aria-label="Search exception queue"
+                placeholder="Invoice or supplier"
+                value={search}
+                onChange={(e) => {
+                  setSearch(e.target.value);
+                  setOffset(0);
+                }}
+                maxLength={160}
+              />
+            </label>
+            <label className="switch-label">
+              <input
+                role="switch"
+                type="checkbox"
+                checked={showAll}
+                onChange={(e) => {
+                  setShowAll(e.target.checked);
+                  setOffset(0);
+                }}
+              />
+              <span className="switch-track" aria-hidden="true" />
+              Include resolved reviews
+            </label>
+            <small>
+              {queue.loading
+                ? "Loading reviews…"
+                : `${tasks.length} ${tasks.length === 1 ? "review" : "reviews"} on this page`}
+            </small>
           </div>
-          {queue.loading ? (
-            <Skeleton label="Loading exceptions" rows={3} />
-          ) : queue.data && !queue.data.tasks.length ? (
-            <EmptyState title="No open exceptions">
-              Invoices needing source or policy review will appear here.
-            </EmptyState>
-          ) : (
-            queue.data?.tasks.map((t) => {
-              const record = extras[t.run.id];
-              const total = amount(record);
-              const reason = record?.decision?.rules.find(
-                (rule) => rule.outcome !== "PASS",
-              )?.explanation;
-              return (
-                <Link
-                  aria-current={t.id === id ? "page" : undefined}
-                  className={"review-card " + (t.id === id ? "selected" : "")}
-                  key={t.id}
-                  to={"/reviews/" + t.id}
-                >
-                  <div className="review-card-heading">
-                    <strong>
-                      {t.run.invoice_number ?? "Invoice number missing"}
-                    </strong>
-                    <Icon name="chevron" />
-                  </div>
-                  {t.run.vendor_name && <span>{t.run.vendor_name}</span>}
-                  {reason && <p className="review-reason">{reason}</p>}
-                  <div className="review-card-bottom">
-                    {total && (
-                      <strong>
-                        {total.currency
-                          ? money(total.value, total.currency)
-                          : total.value}
-                      </strong>
+          <Notice error={queue.error} onRetry={queue.reload} />
+          <div
+            className="review-queue-scroll"
+            role="region"
+            aria-label="Scrollable exception queue"
+            tabIndex={0}
+          >
+            {queue.loading ? (
+              <Skeleton label="Loading exceptions" rows={3} />
+            ) : !tasks.length ? (
+              <EmptyState
+                title={search ? "No matching exceptions" : "No open exceptions"}
+              >
+                {search
+                  ? "Try another invoice or supplier, or clear the search."
+                  : "Invoices needing source or policy review will appear here."}
+              </EmptyState>
+            ) : (
+              tasks.map((t) => {
+                const record = extras[t.run.id];
+                const total = amount(record);
+                const firstIssue = record?.decision
+                  ? primaryIssues(record.decision.rules)[0]
+                  : null;
+                return (
+                  <Link
+                    className={
+                      "review-queue-row " + (t.id === id ? "selected" : "")
+                    }
+                    aria-current={t.id === id ? "page" : undefined}
+                    key={t.id}
+                    to={"/reviews/" + t.id}
+                    onClick={() => {
+                      requestedFocus.current = t.id;
+                      setMobileList(false);
+                      setTab("correction");
+                    }}
+                  >
+                    <InvoiceIdentity
+                      number={t.run.invoice_number}
+                      supplier={t.run.vendor_name ?? null}
+                      fallback="Invoice number missing"
+                    />
+                    {firstIssue && (
+                      <p className="review-row-reason">
+                        {ruleLabel(firstIssue.rule_id)}
+                      </p>
                     )}
-                    <Status value={t.status} />
-                  </div>
-                  <time dateTime={t.created_at} title={when(t.created_at)}>
-                    {relativeTime(t.created_at)}
-                  </time>
-                </Link>
-              );
-            })
-          )}
+                    <div className="review-row-meta">
+                      {total && (
+                        <strong>
+                          {total.currency
+                            ? money(total.value, total.currency)
+                            : total.value}
+                        </strong>
+                      )}
+                      <Status value={t.outcome ?? t.run.status} />
+                    </div>
+                    <div className="review-row-meta">
+                      <small>{humanize(t.status)}</small>
+                      <time dateTime={t.created_at} title={when(t.created_at)}>
+                        {relativeTime(t.created_at)}
+                      </time>
+                    </div>
+                  </Link>
+                );
+              })
+            )}
+          </div>
           <nav className="pagination" aria-label="Review queue pages">
             <button
               disabled={!offset}
@@ -278,48 +356,70 @@ export default function Reviews() {
               Newer reviews
             </button>
             <button
-              disabled={(queue.data?.tasks.length ?? 0) < 20}
+              disabled={tasks.length < 20}
               onClick={() => setOffset(offset + 20)}
             >
               Older reviews
             </button>
           </nav>
         </section>
-        {id && task && (
-          <aside
-            className="panel review-evidence"
-            aria-label="Review source document"
-          >
-            <div className="panel-heading">
-              <h2>Original invoice</h2>
-            </div>
-            <PdfPreview documentId={task.document_id} />
-          </aside>
-        )}
-        {id && (
+        {!empty && (
           <section
             className="panel review-detail"
             aria-label="Exception details"
           >
-            {detail.loading ? (
-              <Skeleton label="Loading review and evidence" rows={5} />
-            ) : (
-              task && (
+            <div
+              className="review-panel-scroll"
+              role="region"
+              aria-label="Scrollable review details"
+              tabIndex={0}
+              ref={panel}
+            >
+              {detail.error ? (
                 <>
-                  <div className="panel-heading">
-                    <div>
-                      <p className="eyebrow">INVOICE REVIEW</p>
-                      <h2>
-                        {task.run.invoice_number ?? "Invoice number missing"}
-                      </h2>
-                      {task.run.vendor_name && <p>{task.run.vendor_name}</p>}
-                      <small>
-                        {task.assignee
-                          ? "Assigned to " + actorLabel(task.assignee)
-                          : "Unassigned"}
-                      </small>
+                  <Notice error={detail.error} onRetry={detail.reload} />
+                  <EmptyState title="This review could not be opened">
+                    Your other records remain available.{" "}
+                    <button onClick={() => navigate("/reviews")}>
+                      Open first available exception
+                    </button>
+                  </EmptyState>
+                </>
+              ) : detail.loading || (!id && queue.loading) ? (
+                <Skeleton label="Loading review and evidence" rows={5} />
+              ) : task ? (
+                <>
+                  <div className="review-record-heading">
+                    <h2>
+                      <InvoiceIdentity
+                        number={task.run.invoice_number}
+                        supplier={task.run.vendor_name ?? null}
+                        compact={false}
+                        fallback="Invoice number missing"
+                      />
+                    </h2>
+                    <div className="review-record-actions">
+                      {task.run.invoice_number && (
+                        <CopyButton
+                          text={task.run.invoice_number}
+                          label="Copy invoice number"
+                        />
+                      )}
+                      <span>
+                        Review status <Status value={task.status} />
+                      </span>
+                      {latestDecision && (
+                        <span>
+                          Latest recorded decision{" "}
+                          <Status value={latestDecision.outcome} />
+                        </span>
+                      )}
                     </div>
-                    <Status value={task.status} />
+                    <small>
+                      {task.assignee
+                        ? "Assigned to " + actorLabel(task.assignee)
+                        : "Unassigned"}
+                    </small>
                   </div>
                   <div className="review-links">
                     <Link to={"/runs/" + task.latest_run_id}>
@@ -335,312 +435,382 @@ export default function Reviews() {
                       </Link>
                     )}
                   </div>
-                  <details className="source-panel review-inline-document">
-                    <summary>Original document</summary>
-                    <PdfPreview documentId={task.document_id} />
-                  </details>
-                  <Help title="How to resolve this invoice">
-                    <p>
-                      Compare the flagged details with the original invoice.
-                      Correct only what the source supports, explain your
-                      changes and confirm that you checked the document. Saving
-                      runs the full financial checks again; it does not bypass a
-                      block or execute payment.
-                    </p>
-                  </Help>
-                  <h3>Why this invoice needs attention</h3>
-                  {latestDecision ? (
-                    <>
-                      <p>
-                        <strong>Next action</strong>
-                        <br />
-                        {nextAction(latestDecision.outcome)}
-                      </p>
-                      <details className="source-panel">
-                        <summary>Financial checks requiring attention</summary>
-                        <RuleResults rules={latestDecision.rules} />
-                      </details>
-                    </>
-                  ) : (
-                    <p className="muted-text">
-                      Revalidation is in progress. The next decision will appear
-                      when recorded.
-                    </p>
-                  )}
-                  {task.commitments.some((c) =>
-                    ["HELD", "RESERVED"].includes(c.status),
-                  ) && (
-                    <div className="notice">
-                      <strong>Capacity remains reserved during review.</strong>
-                      {task.commitments
-                        .filter((c) => ["HELD", "RESERVED"].includes(c.status))
-                        .map((c) => (
-                          <p key={c.id}>
-                            {money(c.amount, c.currency)} · {humanize(c.status)}
-                          </p>
-                        ))}
+                  {issue && (
+                    <div className="review-primary-issue">
+                      <strong>{ruleLabel(issue.rule_id)}</strong>
+                      <p>{checkExplanation(issue)}</p>
                     </div>
                   )}
-                  {task.extraction ? (
-                    <form onSubmit={submit}>
-                      {stale && task.status === "OPEN" && (
+                  <WorkbenchTabs
+                    label="Review sections"
+                    value={tab}
+                    onChange={setTab}
+                    tabs={[
+                      { value: "correction", label: "Review & correct" },
+                      { value: "checks", label: "Financial checks" },
+                      { value: "history", label: "History" },
+                      { value: "document", label: "Document" },
+                    ]}
+                  >
+                    <div hidden={tab !== "correction"}>
+                      <Help title="How to resolve this invoice">
+                        <p>
+                          Compare the flagged details with the original invoice.
+                          Correct only what the source supports, explain your
+                          changes and confirm that you checked the document.
+                          Saving runs the full financial checks again; it cannot
+                          bypass a block or execute payment.
+                        </p>
+                      </Help>
+                      {latestDecision ? (
+                        <p className="review-next-action">
+                          <strong>Next action</strong>
+                          <br />
+                          {nextAction(latestDecision.outcome)}
+                        </p>
+                      ) : (
+                        <p>
+                          Revalidation is in progress. The next decision will
+                          appear when recorded.
+                        </p>
+                      )}
+                      {task.commitments.some((c) =>
+                        ["HELD", "RESERVED"].includes(c.status),
+                      ) && (
                         <div className="notice">
-                          This review changed.{" "}
-                          <button type="button" onClick={reloadForm}>
-                            Reload current revision
-                          </button>
+                          <strong>
+                            Capacity remains reserved during review.
+                          </strong>
+                          {task.commitments
+                            .filter((c) =>
+                              ["HELD", "RESERVED"].includes(c.status),
+                            )
+                            .map((c) => (
+                              <p key={c.id}>
+                                {money(c.amount, c.currency)} ·{" "}
+                                {humanize(c.status)}
+                              </p>
+                            ))}
                         </div>
                       )}
-                      <fieldset
-                        disabled={stale || task.status !== "OPEN" || busy}
-                      >
-                        <div className="section-heading">
-                          <h3>Verify & correct invoice fields</h3>
-                          <span>Source evidence below each value</span>
-                        </div>
-                        <div className="field-grid">
-                          {fields.map((field) => {
-                            const source = task.extraction!.fields[field] as {
-                              verified?: boolean;
-                              method?: string;
-                              page?: number;
-                              quote?: string;
-                            };
-                            return (
-                              <div className="review-field" key={field}>
-                                <label htmlFor={"correct-" + field}>
-                                  {humanize(field)}
-                                </label>
-                                {field === "pricing_mode" ? (
-                                  <select
-                                    id={"correct-" + field}
-                                    aria-label={
-                                      "Correct " + humanize(field).toLowerCase()
-                                    }
-                                    value={values[field] ?? ""}
-                                    onChange={(e) =>
-                                      setValues((v) => ({
-                                        ...v,
-                                        [field]: e.target.value,
-                                      }))
-                                    }
-                                  >
-                                    <option value="">Needs verification</option>
-                                    <option value="TAX_EXCLUSIVE">
-                                      Tax added to net price
-                                    </option>
-                                    <option value="TAX_INCLUSIVE">
-                                      Tax included in price
-                                    </option>
-                                  </select>
-                                ) : (
-                                  <input
-                                    id={"correct-" + field}
-                                    aria-label={
-                                      "Correct " + humanize(field).toLowerCase()
-                                    }
-                                    value={values[field] ?? ""}
-                                    onChange={(e) =>
-                                      setValues((v) => ({
-                                        ...v,
-                                        [field]: e.target.value,
-                                      }))
-                                    }
-                                  />
-                                )}
-                                <small
-                                  className={
-                                    source?.verified
-                                      ? "evidence-verified"
-                                      : "evidence-flag"
-                                  }
-                                >
-                                  {source?.method === "HUMAN"
-                                    ? "Previously reviewer supplied"
-                                    : source?.verified
-                                      ? "Source-backed value"
-                                      : "Unverified or missing"}
-                                </small>
-                                {source?.quote && (
-                                  <blockquote>
-                                    {source.page != null && (
-                                      <span>Page {source.page} · </span>
-                                    )}
-                                    {source.quote}
-                                  </blockquote>
-                                )}
-                                {!source?.verified && values[field] && (
-                                  <label className="confirm-field">
-                                    <input
-                                      type="checkbox"
-                                      aria-label={
-                                        "Confirm " +
-                                        humanize(field).toLowerCase()
-                                      }
-                                      checked={confirmed.includes(field)}
-                                      onChange={(e) =>
-                                        setConfirmed((previous) =>
-                                          e.target.checked
-                                            ? [...previous, field]
-                                            : previous.filter(
-                                                (k) => k !== field,
-                                              ),
-                                        )
-                                      }
-                                    />{" "}
-                                    Confirm against source
-                                  </label>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                        <h3>Line items</h3>
-                        <div className="table-scroll">
-                          <table className="editable-items">
-                            <thead>
-                              <tr>
-                                {itemKeys.map((k) => (
-                                  <th key={k}>{humanize(k)}</th>
-                                ))}
-                                <th>Action</th>
-                              </tr>
-                            </thead>
-                            <tbody>
-                              {items.map((row, index) => (
-                                <tr key={index}>
-                                  {itemKeys.map((k) => (
-                                    <td key={k}>
-                                      <input
-                                        aria-label={`Item ${index + 1} ${k}`}
-                                        value={row[k]}
+                      {task.extraction ? (
+                        <form onSubmit={submit}>
+                          {stale && task.status === "OPEN" && (
+                            <div className="notice">
+                              This review changed.{" "}
+                              <button type="button" onClick={reloadForm}>
+                                Reload current revision
+                              </button>
+                            </div>
+                          )}
+                          <fieldset
+                            disabled={stale || task.status !== "OPEN" || busy}
+                          >
+                            <div className="section-heading">
+                              <h3>Verify & correct invoice fields</h3>
+                              <span>Source evidence below each value</span>
+                            </div>
+                            <div className="field-grid">
+                              {fields.map((field) => {
+                                const source = task.extraction!.fields[
+                                  field
+                                ] as {
+                                  verified?: boolean;
+                                  method?: string;
+                                  page?: number;
+                                  quote?: string;
+                                };
+                                return (
+                                  <div className="review-field" key={field}>
+                                    <label htmlFor={"correct-" + field}>
+                                      {humanize(field)}
+                                    </label>
+                                    {field === "pricing_mode" ? (
+                                      <select
+                                        id={"correct-" + field}
+                                        aria-label={
+                                          "Correct " +
+                                          humanize(field).toLowerCase()
+                                        }
+                                        value={values[field] ?? ""}
                                         onChange={(e) =>
-                                          setItems((rows) =>
-                                            rows.map((r, i) =>
-                                              i === index
-                                                ? { ...r, [k]: e.target.value }
-                                                : r,
-                                            ),
-                                          )
+                                          setValues((v) => ({
+                                            ...v,
+                                            [field]: e.target.value,
+                                          }))
+                                        }
+                                      >
+                                        <option value="">
+                                          Needs verification
+                                        </option>
+                                        <option value="TAX_EXCLUSIVE">
+                                          Tax added to net price
+                                        </option>
+                                        <option value="TAX_INCLUSIVE">
+                                          Tax included in price
+                                        </option>
+                                      </select>
+                                    ) : (
+                                      <input
+                                        id={"correct-" + field}
+                                        aria-label={
+                                          "Correct " +
+                                          humanize(field).toLowerCase()
+                                        }
+                                        value={values[field] ?? ""}
+                                        onChange={(e) =>
+                                          setValues((v) => ({
+                                            ...v,
+                                            [field]: e.target.value,
+                                          }))
                                         }
                                       />
-                                    </td>
-                                  ))}
-                                  <td>
-                                    <button
-                                      type="button"
-                                      aria-label={"Remove item " + (index + 1)}
-                                      onClick={() =>
-                                        setItems((rows) =>
-                                          rows.filter((_, i) => i !== index),
-                                        )
+                                    )}
+                                    <small
+                                      className={
+                                        source?.verified
+                                          ? "evidence-verified"
+                                          : "evidence-flag"
                                       }
                                     >
-                                      Remove
-                                    </button>
-                                  </td>
-                                </tr>
-                              ))}
-                            </tbody>
-                          </table>
-                        </div>
-                        <button
-                          type="button"
-                          onClick={() =>
-                            setItems((rows) => [
-                              ...rows,
-                              Object.fromEntries(itemKeys.map((k) => [k, ""])),
-                            ])
-                          }
-                        >
-                          Add item
-                        </button>
-                        <label className="comment-label">
-                          Reviewer comment
-                          <textarea
-                            aria-label="Reviewer comment"
-                            minLength={10}
-                            maxLength={2000}
-                            value={comment}
-                            onChange={(e) => setComment(e.target.value)}
-                            required
-                            placeholder="Describe the source evidence and the reason for your correction."
-                          />
-                        </label>
-                        <label className="attestation">
-                          <input
-                            type="checkbox"
-                            checked={attest}
-                            onChange={(e) => setAttest(e.target.checked)}
-                            required
-                          />
-                          I checked this revision against document or vendor
-                          evidence. Financial controls will still run.
-                        </label>
-                        <div className="review-actions">
-                          <button
-                            className="primary"
-                            disabled={!attest || busy}
-                            type="submit"
-                          >
-                            {busy
-                              ? "Submitting…"
-                              : "Save correction and revalidate"}
-                            <Icon name="arrow" />
-                          </button>
-                          <button
-                            className="danger"
-                            type="button"
-                            disabled={
-                              !attest || comment.trim().length < 10 || busy
-                            }
-                            onClick={release}
-                          >
-                            Reject case and release hold
-                          </button>
-                        </div>
-                      </fieldset>
-                    </form>
-                  ) : (
-                    <EmptyState title="No extraction available yet">
-                      Wait for recorded extraction or retry the failed
-                      processing run.
-                    </EmptyState>
-                  )}
-                  <details className="source-panel">
-                    <summary>Previous revisions and decisions</summary>
-                    <ol className="revision-history">
-                      {task.decisions.map((d) => (
-                        <li key={d.run_id}>
-                          <Link to={"/runs/" + d.run_id}>
-                            <Status value={d.outcome} />
-                            <Icon name="arrow" />
-                          </Link>
-                          <time dateTime={d.created_at}>
-                            {when(d.created_at)}
-                          </time>
-                        </li>
+                                      {source?.method === "HUMAN"
+                                        ? "Previously reviewer supplied"
+                                        : source?.verified
+                                          ? "Source-backed value"
+                                          : "Unverified or missing"}
+                                    </small>
+                                    {source?.quote && (
+                                      <blockquote>
+                                        {source.page != null && (
+                                          <span>Page {source.page} · </span>
+                                        )}
+                                        {source.quote}
+                                      </blockquote>
+                                    )}
+                                    {!source?.verified && values[field] && (
+                                      <label className="confirm-field">
+                                        <input
+                                          type="checkbox"
+                                          aria-label={
+                                            "Confirm " +
+                                            humanize(field).toLowerCase()
+                                          }
+                                          checked={confirmed.includes(field)}
+                                          onChange={(e) =>
+                                            setConfirmed((previous) =>
+                                              e.target.checked
+                                                ? [...previous, field]
+                                                : previous.filter(
+                                                    (k) => k !== field,
+                                                  ),
+                                            )
+                                          }
+                                        />{" "}
+                                        Confirm against source
+                                      </label>
+                                    )}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                            <h3>Line items</h3>
+                            <div className="table-scroll">
+                              <table className="editable-items">
+                                <thead>
+                                  <tr>
+                                    {itemKeys.map((k) => (
+                                      <th key={k}>{humanize(k)}</th>
+                                    ))}
+                                    <th>Action</th>
+                                  </tr>
+                                </thead>
+                                <tbody>
+                                  {items.map((row, index) => (
+                                    <tr key={index}>
+                                      {itemKeys.map((k) => (
+                                        <td key={k}>
+                                          <input
+                                            aria-label={`Item ${index + 1} ${k}`}
+                                            value={row[k]}
+                                            onChange={(e) =>
+                                              setItems((rows) =>
+                                                rows.map((r, i) =>
+                                                  i === index
+                                                    ? {
+                                                        ...r,
+                                                        [k]: e.target.value,
+                                                      }
+                                                    : r,
+                                                ),
+                                              )
+                                            }
+                                          />
+                                        </td>
+                                      ))}
+                                      <td>
+                                        <button
+                                          type="button"
+                                          aria-label={
+                                            "Remove item " + (index + 1)
+                                          }
+                                          onClick={() =>
+                                            setItems((rows) =>
+                                              rows.filter(
+                                                (_, i) => i !== index,
+                                              ),
+                                            )
+                                          }
+                                        >
+                                          Remove
+                                        </button>
+                                      </td>
+                                    </tr>
+                                  ))}
+                                </tbody>
+                              </table>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() =>
+                                setItems((rows) => [
+                                  ...rows,
+                                  Object.fromEntries(
+                                    itemKeys.map((k) => [k, ""]),
+                                  ),
+                                ])
+                              }
+                            >
+                              Add item
+                            </button>
+                            <label className="comment-label">
+                              Reviewer comment
+                              <textarea
+                                aria-label="Reviewer comment"
+                                minLength={10}
+                                maxLength={2000}
+                                value={comment}
+                                onChange={(e) => setComment(e.target.value)}
+                                required
+                                placeholder="Describe the source evidence and the reason for your correction."
+                              />
+                            </label>
+                            <label className="attestation">
+                              <input
+                                type="checkbox"
+                                checked={attest}
+                                onChange={(e) => setAttest(e.target.checked)}
+                                required
+                              />
+                              I checked this revision against document or vendor
+                              evidence. Financial controls will still run.
+                            </label>
+                            <div className="review-actions">
+                              <button
+                                className="primary"
+                                disabled={!attest || busy}
+                                type="submit"
+                              >
+                                {busy
+                                  ? "Submitting…"
+                                  : "Save correction and revalidate"}
+                                <Icon name="arrow" />
+                              </button>
+                              <button
+                                className="danger"
+                                type="button"
+                                disabled={
+                                  !attest || comment.trim().length < 10 || busy
+                                }
+                                onClick={release}
+                              >
+                                Reject case and release hold
+                              </button>
+                            </div>
+                          </fieldset>
+                        </form>
+                      ) : (
+                        <EmptyState title="No extraction available yet">
+                          Wait for recorded extraction or retry the failed
+                          processing run.
+                        </EmptyState>
+                      )}
+                    </div>
+                    {tab === "checks" &&
+                      (latestDecision ? (
+                        <RuleResults rules={latestDecision.rules} />
+                      ) : (
+                        <p>No financial decision has been recorded yet.</p>
                       ))}
-                    </ol>
-                    {task.corrections.map((c) => (
-                      <article className="correction-record" key={c.id}>
-                        <strong>{actorLabel(c.actor)}</strong>
-                        <time dateTime={c.created_at}>
-                          {when(c.created_at)}
-                        </time>
-                        <p>{c.comment}</p>
-                        <Link to={"/runs/" + c.run_id}>
-                          Inspect corrected revision <Icon name="arrow" />
-                        </Link>
-                      </article>
-                    ))}
-                  </details>
+                    {tab === "history" && (
+                      <section aria-label="Review history">
+                        <h3>Previous revisions and decisions</h3>{" "}
+                        <ol className="revision-history">
+                          {task.decisions.map((d) => (
+                            <li key={d.run_id}>
+                              <Link to={"/runs/" + d.run_id}>
+                                <Status value={d.outcome} />
+                                <Icon name="arrow" />
+                              </Link>
+                              <time dateTime={d.created_at}>
+                                {when(d.created_at)}
+                              </time>
+                            </li>
+                          ))}
+                        </ol>
+                        {task.corrections.map((c) => (
+                          <article className="correction-record" key={c.id}>
+                            <strong>{actorLabel(c.actor)}</strong>
+                            <time dateTime={c.created_at}>
+                              {when(c.created_at)}
+                            </time>
+                            <p>{c.comment}</p>
+                            <Link to={"/runs/" + c.run_id}>
+                              Inspect corrected revision <Icon name="arrow" />
+                            </Link>
+                          </article>
+                        ))}
+                      </section>
+                    )}
+                    {tab === "document" && (
+                      <PdfPreview documentId={task.document_id} />
+                    )}
+                  </WorkbenchTabs>
                 </>
-              )
-            )}
+              ) : (
+                <EmptyState
+                  title={
+                    queue.error
+                      ? "Review queue unavailable"
+                      : "Select an exception"
+                  }
+                >
+                  Choose a review from the queue to inspect its source and
+                  correction controls.
+                </EmptyState>
+              )}
+            </div>
           </section>
         )}
+        {!empty && (
+          <aside
+            className="panel review-evidence"
+            aria-label="Review source document"
+          >
+            <div className="panel-heading">
+              <h2>Original invoice</h2>
+            </div>
+            {task ? (
+              <PdfPreview documentId={task.document_id} />
+            ) : (
+              <p className="reader-placeholder">
+                {detail.loading || queue.loading
+                  ? "Loading the selected invoice’s evidence…"
+                  : "Evidence appears when a review is selected."}
+              </p>
+            )}
+          </aside>
+        )}
       </div>
-    </>
+    </section>
   );
 }

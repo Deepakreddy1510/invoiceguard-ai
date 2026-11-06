@@ -49,6 +49,7 @@ type PODetail = {
 export default function PurchaseOrders() {
   const [params, setParams] = useSearchParams();
   const [page, setPage] = useState(0);
+  const [status, setStatus] = useState("");
   const [search, setSearch] = useState("");
   const me = useResource<{ can_manage_procurement: boolean }>("/me");
   const [editing, setEditing] = useState<EditablePO | null | false>(false);
@@ -64,14 +65,16 @@ export default function PurchaseOrders() {
     selected ? "/purchase-orders/" + selected.id : null,
     5000,
   );
-  const shown = orders.filter((po) =>
-    (po.number + " " + po.vendor.legal_name)
-      .toLowerCase()
-      .includes(search.toLowerCase()),
+  const shown = orders.filter(
+    (po) =>
+      (!status || po.status === status) &&
+      (po.number + " " + po.vendor.legal_name)
+        .toLowerCase()
+        .includes(search.toLowerCase()),
   );
   const currentPage = Math.min(
     page,
-    Math.max(0, Math.ceil(shown.length / 20) - 1),
+    Math.max(0, Math.ceil(shown.length / 10) - 1),
   );
   async function mutate() {
     if (!selected || !action) return;
@@ -206,6 +209,24 @@ export default function PurchaseOrders() {
               }}
             />
           </label>
+          <label>
+            Order status
+            <select
+              aria-label="Filter purchase order status"
+              value={status}
+              onChange={(e) => {
+                setStatus(e.target.value);
+                setPage(0);
+              }}
+            >
+              <option value="">All statuses</option>
+              {[...new Set(orders.map((po) => po.status))].map((value) => (
+                <option key={value} value={value}>
+                  {value.toLowerCase().replaceAll("_", " ")}
+                </option>
+              ))}
+            </select>
+          </label>
         </div>
         {list.loading ? (
           <Skeleton label="Loading purchase orders" rows={5} />
@@ -216,7 +237,12 @@ export default function PurchaseOrders() {
               : "Authorized procurement records will appear here."}
           </EmptyState>
         ) : (
-          <div className="table-scroll po-scroll">
+          <div
+            className="table-scroll po-scroll catalogue-table"
+            role="region"
+            aria-label="Scrollable purchase orders"
+            tabIndex={0}
+          >
             <table>
               <thead>
                 <tr>
@@ -231,7 +257,7 @@ export default function PurchaseOrders() {
               </thead>
               <tbody>
                 {shown
-                  .slice(currentPage * 20, currentPage * 20 + 20)
+                  .slice(currentPage * 10, currentPage * 10 + 10)
                   .map((po) => {
                     const percent = utilization(
                       po.reserved_gross,
@@ -311,6 +337,7 @@ export default function PurchaseOrders() {
           </div>
         )}
         <TablePagination
+          size={10}
           page={currentPage}
           total={shown.length}
           onChange={setPage}

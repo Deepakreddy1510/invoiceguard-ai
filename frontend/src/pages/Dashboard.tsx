@@ -1,3 +1,4 @@
+import { InvoiceIdentity } from "../InvoiceIdentity";
 import { Help } from "../Experience";
 import { TechnicalDetails } from "../TechnicalDetails";
 import { Link, useNavigate } from "react-router-dom";
@@ -280,7 +281,10 @@ export default function Dashboard() {
                         >
                           <td>
                             <Link to={"/runs/" + run.id}>
-                              {run.invoice_number ?? "Invoice number missing"}
+                              <InvoiceIdentity
+                                number={run.invoice_number}
+                                fallback="Invoice number missing"
+                              />
                             </Link>
                             {run.parent_run_id && (
                               <span className="vendor">Retry / revision</span>

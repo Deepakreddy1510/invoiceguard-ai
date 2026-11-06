@@ -50,8 +50,11 @@ test("verified sample company is selectable, preserves legacy procurement and re
   }
   await page.setViewportSize({ width: 1280, height: 1000 });
   await page.getByRole("link", { name: "Vendors", exact: true }).click();
+  await expect(page).toHaveURL(/\/vendors$/);
   await expect(
-    page.getByText("Willowbridge Office Supplies", { exact: true }),
+    page
+      .getByRole("region", { name: "Scrollable supplier table", exact: true })
+      .getByText("Willowbridge Office Supplies", { exact: true }),
   ).toBeVisible();
   const original = result.results.find(
     (r: { file: string }) => r.file === "01-office-supplies.pdf",

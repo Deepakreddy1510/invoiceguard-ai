@@ -1,3 +1,4 @@
+import { captureNativeWindow } from "./native-zoom";
 import { test, expect, chromium } from "@playwright/test";
 
 test("actual Chromium browser zoom at 80, 100, 125, 150 and 200 percent on every page", async ({
@@ -11,7 +12,8 @@ test("actual Chromium browser zoom at 80, 100, 125, 150 and 200 percent on every
     executablePath:
       process.env.PLAYWRIGHT_CHROMIUM_EXECUTABLE_PATH ||
       chromium.executablePath(),
-    viewport: { width: 1440, height: 1000 },
+    viewport: null,
+    args: ["--window-size=1440,1000"],
   });
   try {
     const page = context.pages()[0];
@@ -40,6 +42,10 @@ test("actual Chromium browser zoom at 80, 100, 125, 150 and 200 percent on every
         await expect
           .poll(() => page.evaluate(() => window.devicePixelRatio))
           .toBeCloseTo(zoom);
+        expect(await page.evaluate(() => innerWidth)).toBeLessThan(1500 / zoom);
+        expect(await page.evaluate(() => innerWidth)).toBeGreaterThan(
+          1300 / zoom,
+        );
         await expect
           .poll(() =>
             page.evaluate(
@@ -48,12 +54,12 @@ test("actual Chromium browser zoom at 80, 100, 125, 150 and 200 percent on every
           )
           .toBe(true);
         await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-        await page.screenshot({
-          path: info.outputPath(
+        await captureNativeWindow(
+          page,
+          info.outputPath(
             `${route.replaceAll("/", "") || "overview"}-browser-zoom-${zoom * 100}.png`,
           ),
-          fullPage: true,
-        });
+        );
       }
     }
   } finally {

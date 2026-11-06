@@ -1,3 +1,4 @@
+import { InvoiceIdentity } from "../InvoiceIdentity";
 import { TechnicalDetails } from "../TechnicalDetails";
 import { actorLabel } from "../business";
 import { useState } from "react";
@@ -168,17 +169,11 @@ export default function Audit() {
                     </td>
                     <td>
                       {event.entity ? (
-                        <>
-                          <strong>
-                            {event.entity.invoice_number ??
-                              "Invoice details awaiting verification"}
-                          </strong>
-                          {event.entity.vendor && (
-                            <span className="vendor">
-                              {event.entity.vendor}
-                            </span>
-                          )}
-                        </>
+                        <InvoiceIdentity
+                          number={event.entity.invoice_number}
+                          supplier={event.entity.vendor ?? null}
+                          fallback="Invoice details awaiting verification"
+                        />
                       ) : (
                         "—"
                       )}

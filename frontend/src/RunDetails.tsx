@@ -1,3 +1,4 @@
+import { InvoiceIdentity } from "./InvoiceIdentity";
 import { WorkbenchTabs } from "./Workbench";
 import { POComparison } from "./POComparison";
 import { useEffect, useMemo, useState } from "react";
@@ -487,12 +488,22 @@ export default function RunDetails({
             {isTerminal(run) ? "RECORDED EXECUTION" : "LIVE RUN VIEW"}
           </p>
           <h2>
-            {run.invoice_number ??
-              fact(run, "invoice_number")?.value ??
-              (isTerminal(run) ? "Invoice number missing" : "Reading invoice…")}
+            <InvoiceIdentity
+              number={run.invoice_number ?? fact(run, "invoice_number")?.value}
+              supplier={
+                run.vendor_name ?? fact(run, "vendor_name")?.value ?? null
+              }
+              compact={false}
+              fallback={
+                isTerminal(run) ? "Invoice number missing" : "Reading invoice…"
+              }
+            />
           </h2>
-          {(run.vendor_name || fact(run, "vendor_name")?.value) && (
-            <p>{run.vendor_name ?? fact(run, "vendor_name")?.value}</p>
+          {(run.invoice_number || fact(run, "invoice_number")?.value) && (
+            <CopyButton
+              text={run.invoice_number ?? fact(run, "invoice_number")!.value!}
+              label="Copy invoice number"
+            />
           )}
         </div>
         <div className="run-status">

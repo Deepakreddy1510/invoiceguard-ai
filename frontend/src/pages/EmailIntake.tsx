@@ -1,3 +1,5 @@
+import { Icon } from "../icons";
+import { InvoiceIdentity } from "../InvoiceIdentity";
 import { TechnicalDetails } from "../TechnicalDetails";
 import { humanize } from "../ui";
 import { Dialog, Help } from "../Experience";
@@ -168,7 +170,17 @@ function AttachmentDetail({
       aria-label={"Attachment " + a.filename}
     >
       <div className="panel-heading">
-        <h3>{a.filename}</h3>
+        <h3>
+          <InvoiceIdentity
+            number={
+              run.data?.invoice_number ??
+              fact(run.data, "invoice_number")?.value
+            }
+            supplier={run.data?.vendor_name ?? undefined}
+            compact={false}
+            fallback={a.filename}
+          />
+        </h3>
         <span className="email-intake-tag">
           <small>Email intake</small>
           <Status value={a.status} />
@@ -771,7 +783,12 @@ export default function EmailIntake() {
             invoice attachments and their results will appear here.
           </EmptyState>
         ) : (
-          <div className="table-scroll">
+          <div
+            className="table-scroll inbox-table"
+            role="region"
+            aria-label="Scrollable email inbox"
+            tabIndex={0}
+          >
             <table>
               <thead>
                 <tr>
@@ -789,13 +806,28 @@ export default function EmailIntake() {
                 {list.data.messages.flatMap((m) =>
                   (m.attachments.length ? m.attachments : [null]).map(
                     (a, index) => (
-                      <tr key={m.id + ":" + index}>
+                      <tr
+                        key={m.id + ":" + index}
+                        className={
+                          selected === m.id ? "selected-row" : undefined
+                        }
+                      >
                         <td>
                           <button
                             className="table-link"
                             onClick={() => setParams({ message: m.id })}
                           >
-                            {m.subject || "(No subject)"}
+                            <span className="email-subject-identity">
+                              <span
+                                className="invoice-document-mark"
+                                aria-hidden="true"
+                              >
+                                <Icon name="file" />
+                              </span>
+                              <span title={m.subject || "No subject"}>
+                                {m.subject || "(No subject)"}
+                              </span>
+                            </span>
                           </button>
                           <span className="vendor">
                             {m.sender || "Sender unavailable"}

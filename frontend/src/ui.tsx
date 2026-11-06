@@ -85,7 +85,33 @@ export function Notice({
 export function Status({ value }: { value: string }) {
   return (
     <span className={"status status-" + value.toLowerCase()}>
-      <span className="status-dot" />
+      {[
+        "VALIDATED",
+        "NEEDS_REVIEW",
+        "BLOCKED",
+        "RUNNING",
+        "QUEUED",
+        "RETRY_WAIT",
+        "FAILED",
+      ].includes(value) ? (
+        <span className="status-symbol" data-status-icon={value}>
+          <Icon
+            name={
+              value === "VALIDATED"
+                ? "check-circle"
+                : value === "NEEDS_REVIEW"
+                  ? "alert-circle"
+                  : value === "BLOCKED"
+                    ? "x-circle"
+                    : value === "FAILED"
+                      ? "processing-error"
+                      : "progress"
+            }
+          />
+        </span>
+      ) : (
+        <span className="status-dot" />
+      )}
       {humanize(value)}
     </span>
   );

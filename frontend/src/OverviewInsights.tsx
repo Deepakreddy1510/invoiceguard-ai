@@ -1,3 +1,7 @@
+import { InvoiceIdentity } from "./InvoiceIdentity";
+import { amount, type RunSummary } from "./models";
+import { useRunDetails } from "./run-data";
+import { money } from "./client";
 import { Link } from "react-router-dom";
 import {
   useResource,
@@ -11,7 +15,7 @@ import { when, relativeTime } from "./client";
 import { actorLabel } from "./business";
 type Task = {
   id: string;
-  run: { invoice_number?: string | null; vendor_name?: string | null };
+  run: RunSummary;
   outcome: string | null;
 };
 export function OverviewInsights({
@@ -22,6 +26,9 @@ export function OverviewInsights({
   total?: number;
 }) {
   const reviews = useResource<{ tasks: Task[] }>("/reviews?status=OPEN", 3000);
+  const reviewDetails = useRunDetails(
+    (reviews.data?.tasks ?? []).slice(0, 3).map((task) => task.run),
+  );
   const email = useResource<{
     messages: {
       id: string;
@@ -122,18 +129,43 @@ export function OverviewInsights({
           <Skeleton label="Loading review queue" rows={2} />
         ) : reviews.data?.tasks.length ? (
           <ul className="priority-list">
-            {reviews.data.tasks.slice(0, 3).map((t) => (
-              <li key={t.id}>
-                <span className="priority-mark">!</span>
-                <div>
-                  <Link to={"/reviews/" + t.id}>
-                    {t.run.invoice_number ?? "Invoice details need checking"}
+            {reviews.data.tasks.slice(0, 3).map((t) => {
+              const total = amount(reviewDetails[t.run.id]);
+              return (
+                <li key={t.id} className="attention-invoice-row">
+                  <Link
+                    className="attention-invoice-link"
+                    to={"/reviews/" + t.id}
+                  >
+                    <InvoiceIdentity
+                      number={t.run.invoice_number}
+                      supplier={t.run.vendor_name ?? null}
+                      fallback="Invoice details need checking"
+                    />
                   </Link>
-                  {t.run.vendor_name && <p>{t.run.vendor_name}</p>}
-                </div>
-                <Status value={t.outcome ?? "NEEDS_REVIEW"} />
-              </li>
-            ))}
+                  <div className="attention-invoice-meta">
+                    {total && (
+                      <strong>
+                        {total.currency
+                          ? money(total.value, total.currency)
+                          : total.value}
+                      </strong>
+                    )}
+                    <Status value={t.outcome ?? t.run.status} />
+                  </div>
+                  <Link
+                    className="attention-open"
+                    to={"/reviews/" + t.id}
+                    aria-label={
+                      "Open invoice " +
+                      (t.run.invoice_number ?? "requiring review")
+                    }
+                  >
+                    Open →
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         ) : (
           <div className="all-clear">
@@ -237,13 +269,18 @@ export function BusinessActivity() {
                     ? "Invoice " + humanize(e.entity.outcome).toLowerCase()
                     : humanize(e.action)}
                 </strong>
-                <p>
-                  {e.entity?.invoice_number ??
-                    (typeof e.detail.number === "string"
-                      ? e.detail.number
-                      : actorLabel(e.actor))}
-                  {e.entity?.vendor && <> · {e.entity.vendor}</>}
-                </p>
+                <div className="activity-invoice-identity">
+                  {e.run_id ? (
+                    <InvoiceIdentity
+                      number={e.entity?.invoice_number}
+                      supplier={e.entity?.vendor ?? undefined}
+                    />
+                  ) : typeof e.detail.number === "string" ? (
+                    e.detail.number
+                  ) : (
+                    actorLabel(e.actor)
+                  )}
+                </div>
               </div>
               <time title={when(e.created_at)}>
                 {relativeTime(e.created_at)}

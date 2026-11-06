@@ -71,6 +71,43 @@ export default function WorkspaceSettings() {
       setBusy(false);
     }
   }
+  const cards = (items: Workspace[]) => (
+    <div className="workspace-cards">
+      {items.map((w) => (
+        <article className="panel workspace-card" key={w.id}>
+          <div className="workspace-avatar">
+            {workspaceLabel(w).slice(0, 2).toUpperCase()}
+          </div>
+          <div>
+            <h2>{workspaceLabel(w)}</h2>
+            <p>
+              {w.kind === "DEMO"
+                ? "Demo workspace · Sample company data"
+                : w.kind === "MY"
+                  ? "Your personal company workspace"
+                  : "Company workspace"}
+            </p>
+            <span className="tag">
+              {w.archived_at ? "Archived" : "Active"}
+              {w.id === active?.id ? " · Currently selected" : ""}
+            </span>
+          </div>
+          {w.role === "ADMIN" ? (
+            <div className="toolbar">
+              <button onClick={() => open(w, "rename")}>Rename</button>
+              <button
+                onClick={() => open(w, w.archived_at ? "restore" : "archive")}
+              >
+                {w.archived_at ? "Restore" : "Archive"}
+              </button>
+            </div>
+          ) : (
+            <Status value={w.role} />
+          )}
+        </article>
+      ))}
+    </div>
+  );
   return (
     <>
       <PageTitle
@@ -99,42 +136,21 @@ export default function WorkspaceSettings() {
       {catalog.loading ? (
         <Skeleton label="Loading workspace settings" />
       ) : (
-        <div className="workspace-cards">
-          {catalog.data?.workspaces.map((w) => (
-            <article className="panel workspace-card" key={w.id}>
-              <div className="workspace-avatar">
-                {workspaceLabel(w).slice(0, 2).toUpperCase()}
-              </div>
-              <div>
-                <h2>{workspaceLabel(w)}</h2>
-                <p>
-                  {w.kind === "DEMO"
-                    ? "Demo workspace · Sample company data"
-                    : w.kind === "MY"
-                      ? "Your personal company workspace"
-                      : "Company workspace"}
-                </p>
-                <span className="tag">
-                  {w.archived_at ? "Archived" : "Active"}
-                  {w.id === active?.id ? " · Currently selected" : ""}
-                </span>
-              </div>
-              {w.role === "ADMIN" ? (
-                <div className="toolbar">
-                  <button onClick={() => open(w, "rename")}>Rename</button>
-                  <button
-                    onClick={() =>
-                      open(w, w.archived_at ? "restore" : "archive")
-                    }
-                  >
-                    {w.archived_at ? "Restore" : "Archive"}
-                  </button>
-                </div>
-              ) : (
-                <Status value={w.role} />
-              )}
-            </article>
-          ))}
+        <div className="workspace-groups">
+          <section aria-label="Active workspaces">
+            <h2>Active workspaces</h2>
+            {cards(
+              (catalog.data?.workspaces ?? []).filter((w) => !w.archived_at),
+            )}
+          </section>
+          <section aria-label="Archived workspaces">
+            <h2>Archived workspaces</h2>
+            {catalog.data?.workspaces.some((w) => w.archived_at) ? (
+              cards(catalog.data.workspaces.filter((w) => !!w.archived_at))
+            ) : (
+              <p className="muted-text">No archived workspaces.</p>
+            )}
+          </section>
         </div>
       )}
       {active?.role === "ADMIN" && (
@@ -149,7 +165,16 @@ export default function WorkspaceSettings() {
           </Link>
         </section>
       )}
-      {active?.role === "ADMIN" && <EmailSettings />}
+      {active?.role === "ADMIN" && (
+        <details
+          className="panel settings-secondary"
+          id="email-settings"
+          open={window.location.hash === "#email-settings"}
+        >
+          <summary>Email intake configuration</summary>
+          <EmailSettings />
+        </details>
+      )}
       {target && (
         <Dialog
           title={
@@ -227,11 +252,7 @@ function EmailSettings() {
     connections: { id: string; email: string; status: string }[];
   }>("/email", 5000);
   return (
-    <section
-      className="panel email-settings"
-      id="email-settings"
-      aria-label="Email configuration"
-    >
+    <section className="panel email-settings" aria-label="Email configuration">
       <div className="panel-heading">
         <div>
           <h2>Email intake settings</h2>

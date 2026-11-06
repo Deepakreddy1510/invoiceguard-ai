@@ -5,8 +5,10 @@ export function WorkbenchTabs({
   value,
   onChange,
   tabs,
+  label = "Invoice detail sections",
   children,
 }: {
+  label?: string;
   value: string;
   onChange: (value: string) => void;
   tabs: { value: string; label: string }[];
@@ -15,11 +17,7 @@ export function WorkbenchTabs({
   const id = useId();
   return (
     <>
-      <div
-        className="workbench-tabs"
-        role="tablist"
-        aria-label="Invoice detail sections"
-      >
+      <div className="workbench-tabs" role="tablist" aria-label={label}>
         {tabs.map((tab, index) => (
           <button
             key={tab.value}

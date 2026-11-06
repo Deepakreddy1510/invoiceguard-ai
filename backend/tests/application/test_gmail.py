@@ -687,7 +687,10 @@ def test_intake_confirmation_selects_evidenced_po_without_bypassing_controls(mai
     assert execute(mailbox, identifier) is None
     with mailbox.factory() as session:
         po_id = session.scalar(
-            select(PurchaseOrder.id).where(PurchaseOrder.number == "PO-2026-001")
+            select(PurchaseOrder.id).where(
+                PurchaseOrder.number == "PO-2026-001",
+                PurchaseOrder.workspace_id == get_settings().local_workspace_id,
+            )
         )
     invalid = mailbox.client.post(
         f"/api/v1/email/attachments/{identifier}/review",
