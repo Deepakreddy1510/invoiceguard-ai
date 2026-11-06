@@ -241,3 +241,6 @@ frontend/playwright-report/
 *.pgpass
 *.dump
 *.backup
+
+# Task scratch and verification intermediates
+/work/

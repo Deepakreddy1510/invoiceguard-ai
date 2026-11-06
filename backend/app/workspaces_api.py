@@ -15,6 +15,7 @@ from app.workspace_service import (
     accessible,
     fresh_demo,
     provision_my,
+    provision_sample,
     workspace_kind,
 )
 
@@ -63,6 +64,13 @@ def bootstrap(session: DB, user: User):
     provision_my(session, user)
     session.commit()
     return listing(session, user)
+
+
+@router.post("/sample", status_code=201)
+def sample_workspace(session: DB, user: User):
+    workspace = provision_sample(session, user)
+    session.commit()
+    return {"workspace_id": str(workspace.id), **listing(session, user)}
 
 
 class FreshDemoInput(BaseModel):

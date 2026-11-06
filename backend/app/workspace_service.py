@@ -42,7 +42,10 @@ def accessible(session, user):
 def workspace_kind(workspace):
     return (
         "DEMO"
-        if workspace.id == EXPANDED_DEMO or workspace.name == "Synthetic AP Demo"
+        if workspace.id == EXPANDED_DEMO
+        or workspace.name == "Synthetic AP Demo"
+        or workspace.id
+        == uuid5(NAMESPACE_URL, "invoiceguard:asterfield-v1:" + (workspace.owner_subject or ""))
         else workspace.kind
     )
 
@@ -55,6 +58,9 @@ def provision_my(session, user):
         .on_conflict_do_nothing()
         .returning(Workspace.id)
     )
+    workspace = session.get(Workspace, workspace_id)
+    if workspace.owner_subject != user.subject:
+        raise ValueError("Workspace ownership conflict.")
     session.execute(
         insert(Membership)
         .values(workspace_id=workspace_id, subject=user.subject, role="ADMIN")
@@ -190,3 +196,57 @@ def fresh_demo(session, user, request_id: UUID):
         "queued_submissions": len(scenarios),
         "replayed": not bool(created),
     }
+
+
+def provision_sample(session, user):
+    """Isolated sample procurement only. Never copy another workspace or Gmail tokens."""
+    from scripts.install_asterfield_demo import COMPANY, catalogue
+
+    workspace_id = uuid5(NAMESPACE_URL, "invoiceguard:sample:" + user.subject)
+    created = session.scalar(
+        insert(Workspace)
+        .values(id=workspace_id, name=COMPANY, kind="DEMO", owner_subject=user.subject)
+        .on_conflict_do_nothing()
+        .returning(Workspace.id)
+    )
+    workspace = session.get(Workspace, workspace_id)
+    if workspace.owner_subject != user.subject or workspace.kind != "DEMO":
+        raise ValueError("Sample ownership conflict.")
+    session.execute(
+        insert(Membership)
+        .values(workspace_id=workspace_id, subject=user.subject, role="ADMIN")
+        .on_conflict_do_nothing(index_elements=["workspace_id", "subject"])
+    )
+    if not created:
+        return workspace
+    catalog = catalogue()
+    for vendor in catalog["vendors"]:
+        session.add(
+            Vendor(id=uuid5(workspace_id, vendor["code"]), workspace_id=workspace_id, **vendor)
+        )
+    session.flush()
+    for source in catalog["purchase_orders"]:
+        vendor = catalog["vendors"][source["vendor_index"]]
+        po = PurchaseOrder(
+            id=uuid5(workspace_id, source["number"]),
+            workspace_id=workspace_id,
+            vendor_id=uuid5(workspace_id, vendor["code"]),
+            **{
+                key: source[key]
+                for key in ["number", "currency", "authorized_gross", "billing_mode", "status"]
+            },
+            issued_on=date.fromisoformat(source["issued_on"]),
+            valid_until=date.fromisoformat(source["valid_until"]),
+        )
+        session.add(po)
+        session.flush()
+        for item in source["items"]:
+            session.add(PurchaseOrderItem(po_id=po.id, **item))
+    audit(
+        session,
+        workspace_id,
+        user.subject,
+        "SAMPLE_COMPANY_CREATED",
+        {"isolated": True, "invoices": 0},
+    )
+    return workspace

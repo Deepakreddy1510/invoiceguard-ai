@@ -20,3 +20,5 @@ frontend/playwright-report/
 **/*.pfx
 **/*.dump
 **/*.backup
+# Task scratch and browser artifacts are not application source.
+work/

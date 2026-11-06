@@ -65,7 +65,15 @@ function Shell() {
       <a className="skip-link" href="#main-content">
         Skip to content
       </a>
-      <aside className={"sidebar " + (open ? "is-open" : "")}>
+      <aside
+        onKeyDown={(e) => {
+          if (e.key === "Escape" && open) {
+            setOpen(false);
+            document.querySelector<HTMLButtonElement>(".nav-toggle")?.focus();
+          }
+        }}
+        className={"sidebar " + (open ? "is-open" : "")}
+      >
         <div className="sidebar-brandline">
           <NavLink to="/" className="brand" onClick={() => setOpen(false)}>
             <span className="logo-mark">IG</span>
@@ -92,26 +100,32 @@ function Shell() {
             <Icon name={open ? "close" : "menu"} />
           </button>
         </div>
-        {(!collapsed || compact) && <WorkspaceSelector />}
-        <nav id="workspace-navigation" aria-label="Main navigation">
-          {nav.map(({ to, label, icon }) => (
-            <NavLink
-              key={to}
-              to={to}
-              end={to === "/"}
-              onClick={() => setOpen(false)}
-              className={({ isActive }) =>
-                isActive ||
-                (to === "/process" && location.pathname.startsWith("/runs/"))
-                  ? "active"
-                  : ""
-              }
-            >
-              <Icon name={icon} />
-              <span className="nav-label">{label}</span>
-            </NavLink>
-          ))}
-        </nav>
+        <div className="sidebar-scroll">
+          {(!collapsed || compact) && <WorkspaceSelector />}
+          <nav
+            id="workspace-navigation"
+            aria-label="Main navigation"
+            tabIndex={0}
+          >
+            {nav.map(({ to, label, icon }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={to === "/"}
+                onClick={() => setOpen(false)}
+                className={({ isActive }) =>
+                  isActive ||
+                  (to === "/process" && location.pathname.startsWith("/runs/"))
+                    ? "active"
+                    : ""
+                }
+              >
+                <Icon name={icon} />
+                <span className="nav-label">{label}</span>
+              </NavLink>
+            ))}
+          </nav>
+        </div>
         <div className="sidebar-note">
           <span className="sidebar-note-mark">
             <Icon name="check" />

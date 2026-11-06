@@ -2,6 +2,7 @@
 
 from dataclasses import dataclass
 from functools import lru_cache
+from types import SimpleNamespace
 from typing import Annotated
 from uuid import UUID
 
@@ -76,6 +77,13 @@ def access(
         guard_mutation(session, result, request)
         return result
     subject = verified_subject(authorization)
+    # Bootstrap is the only route that accepts a verified identity without membership.
+    # Ignore workspace headers here; provisioning always derives ownership from the token.
+    if request.method == "POST" and request.url.path == "/api/v1/workspaces/bootstrap":
+        from app.workspace_service import provision_my
+
+        workspace = provision_my(session, SimpleNamespace(subject=subject))
+        return Access(subject, workspace.id, "ADMIN")
     query = select(Membership).where(Membership.subject == subject)
     if x_workspace_id:
         query = query.where(Membership.workspace_id == x_workspace_id)
@@ -94,6 +102,8 @@ def guard_mutation(session, user, request):
     if request.method not in ("GET", "HEAD", "OPTIONS") and not request.url.path.startswith(
         "/api/v1/workspaces"
     ):
+        if user.role not in ["REVIEWER", "ADMIN"]:
+            raise HTTPException(403, "Write access is required.")
         from app.audit import financial_lock
 
         financial_lock(session, user.workspace_id)

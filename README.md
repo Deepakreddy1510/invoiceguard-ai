@@ -138,3 +138,5 @@ Use a new report path. Reports include numerators, denominators, unsupported ext
 ## Limitations
 
 Fallback extraction is deliberately conservative and still sends many unfamiliar/ambiguous invoices to review. OCR can misread scans; evidence matching is not a guarantee of semantic correctness. English Tesseract is installed by default. Gemini and hosted Auth0 require live credentialed verification. Real AWS IAM/encryption, Render provisioning, public HTTPS and evaluator login cannot be claimed from local tests. Dashboard/review queries suit demonstration volume, not an unbounded enterprise ledger. No antivirus service, payment integrations, arbitrary accounting policies or real-world extraction benchmark is claimed. See [verification](docs/completion-verification.md) for measured results and remaining blockers.
+
+Customer authentication, OIDC setup, safe legacy workspace archival and Windows update instructions: [customer access guide](docs/customer-access.md).

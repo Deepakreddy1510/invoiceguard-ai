@@ -23,6 +23,14 @@ export function workspaceLabel(workspace: Pick<Workspace, "name" | "kind">) {
     ? "Demo Workspace"
     : name;
 }
+export function normalWorkspaces(workspaces: Workspace[]) {
+  const hasAsterfield = workspaces.some((w) => w.name.startsWith("Asterfield"));
+  return workspaces.filter(
+    (w) =>
+      !hasAsterfield ||
+      !["00000000-0000-0000-0000-000000000001"].includes(w.id),
+  );
+}
 type Catalog = {
   workspaces: Workspace[];
   default_workspace_id: string;
@@ -61,6 +69,11 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
           throw new Error(
             "No authorized workspace is available. Ask the administrator for an invitation.",
           );
+        result.workspaces = normalWorkspaces(result.workspaces);
+        if (
+          !result.workspaces.some((w) => w.id === result.default_workspace_id)
+        )
+          result.default_workspace_id = result.workspaces[0].id;
         let stored: string | null = null;
         try {
           stored = sessionStorage.getItem(
@@ -133,6 +146,29 @@ export function WorkspaceSelector() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [nonce, setNonce] = useState(crypto.randomUUID());
+  async function sample() {
+    setBusy(true);
+    setError("");
+    try {
+      const result = await request<Catalog & { workspace_id: string }>(
+        "/workspaces/sample",
+        { method: "POST" },
+      );
+      try {
+        sessionStorage.setItem(
+          "invoiceguard.workspace." + result.subject,
+          result.workspace_id,
+        );
+      } catch {
+        /* Storage is optional. */
+      }
+      reload();
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
   async function fresh() {
     setBusy(true);
     setError("");
@@ -174,6 +210,7 @@ export function WorkspaceSelector() {
         {workspaces.map((workspace, index) => (
           <option key={workspace.id} value={workspace.id}>
             {workspaceLabel(workspace)}
+            {workspace.name.startsWith("Asterfield") ? " · Sample company" : ""}
             {workspace.kind === "DEMO" &&
             !workspace.name.startsWith("Asterfield") &&
             workspaces.slice(0, index).some((w) => w.kind === "DEMO")
@@ -182,6 +219,18 @@ export function WorkspaceSelector() {
           </option>
         ))}
       </select>
+      {!workspaces.some((w) => w.name.startsWith("Asterfield")) && (
+        <div className="sample-offer">
+          <p>
+            Explore with your own Asterfield sample. Includes fictional
+            suppliers and POs; upload sample invoices to see decisions. Gmail
+            starts disconnected.
+          </p>
+          <button disabled={busy} onClick={() => void sample()}>
+            {busy ? "Creating…" : "Create sample company"}
+          </button>
+        </div>
+      )}
       <details className="workspace-actions">
         <summary>Workspace settings</summary>
         <div
@@ -205,13 +254,16 @@ export function WorkspaceSelector() {
         </div>
       </details>
       {active?.role === "ADMIN" && (
-        <button
-          type="button"
-          className="text-button"
-          onClick={() => setConfirm((v) => !v)}
-        >
-          Create fresh demo
-        </button>
+        <details>
+          <summary>More demo options</summary>
+          <button
+            type="button"
+            className="text-button"
+            onClick={() => setConfirm((v) => !v)}
+          >
+            Create fresh demo
+          </button>
+        </details>
       )}
       {confirm && (
         <div className="fresh-demo-confirm">

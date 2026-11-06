@@ -12,7 +12,7 @@ import {
   Skeleton,
 } from "./ui";
 import { when, relativeTime } from "./client";
-import { actorLabel } from "./business";
+
 type Task = {
   id: string;
   run: RunSummary;
@@ -230,16 +230,19 @@ type Activity = {
   actor: string;
   created_at: string;
   run_id: string | null;
+  href?: string;
   entity?: {
     invoice_number: string | null;
     vendor: string | null;
     outcome: string | null;
+    amount?: string | null;
+    currency?: string | null;
   };
   detail: Record<string, unknown>;
 };
 export function BusinessActivity() {
   const data = useResource<{ events: Activity[] }>(
-    "/audit-events?view=business&limit=6",
+    "/audit-events?view=recent&limit=5",
     5000,
   );
   return (
@@ -247,9 +250,9 @@ export function BusinessActivity() {
       <div className="panel-heading">
         <div>
           <p className="eyebrow">A CLEAR RECORD</p>
-          <h2>Recent activity</h2>
+          <h2>Recent Invoice Activity</h2>
         </div>
-        <Link to="/audit">View activity →</Link>
+        <Link to="/audit">View full history →</Link>
       </div>
       <Notice error={data.error} />
       {data.loading ? (
@@ -267,10 +270,14 @@ export function BusinessActivity() {
                 <strong>
                   {e.entity?.outcome && e.action.includes("DECISION")
                     ? "Invoice " + humanize(e.entity.outcome).toLowerCase()
-                    : humanize(e.action)}
+                    : e.action === "CORRECTION_SAVED"
+                      ? "Invoice corrected · revalidation queued"
+                      : e.action === "EMAIL_HANDOFF"
+                        ? "Invoice imported from Gmail"
+                        : humanize(e.action)}
                 </strong>
                 <div className="activity-invoice-identity">
-                  {e.run_id ? (
+                  {e.entity ? (
                     <InvoiceIdentity
                       number={e.entity?.invoice_number}
                       supplier={e.entity?.vendor ?? undefined}
@@ -278,14 +285,23 @@ export function BusinessActivity() {
                   ) : typeof e.detail.number === "string" ? (
                     e.detail.number
                   ) : (
-                    actorLabel(e.actor)
+                    "Business record"
                   )}
                 </div>
               </div>
-              <time title={when(e.created_at)}>
+              {e.entity?.amount && (
+                <span>
+                  {e.entity.currency
+                    ? money(e.entity.amount, e.entity.currency)
+                    : e.entity.amount}
+                </span>
+              )}
+              <time dateTime={e.created_at} title={when(e.created_at)}>
                 {relativeTime(e.created_at)}
               </time>
-              {e.run_id && <Link to={"/runs/" + e.run_id}>View invoice</Link>}
+              <Link to={e.href ?? (e.run_id ? "/runs/" + e.run_id : "/audit")}>
+                {e.run_id ? "View invoice" : "View record"}
+              </Link>
             </li>
           ))}
         </ol>

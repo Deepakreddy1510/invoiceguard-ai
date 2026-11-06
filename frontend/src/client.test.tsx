@@ -61,3 +61,24 @@ it("sends the authorized selection on every API request including PDF reads", as
   const init = fetcher.mock.calls[0] as unknown as [string, RequestInit];
   expect(new Headers(init[1].headers).get("X-Workspace-ID")).toBe("private");
 });
+
+it("invalidates a pending response on sign-out even without a workspace selection", async () => {
+  const { clearSession } = await import("./client");
+  let resolve!: (value: unknown) => void;
+  vi.stubGlobal(
+    "fetch",
+    vi.fn(async () => ({
+      ok: true,
+      json: () =>
+        new Promise((done) => {
+          resolve = done;
+        }),
+    })),
+  );
+  const old = request("/workspaces/bootstrap");
+  const result = expect(old).rejects.toHaveProperty("name", "AbortError");
+  await vi.waitFor(() => expect(resolve).toBeDefined());
+  clearSession();
+  resolve({ private: "old-user" });
+  await result;
+});

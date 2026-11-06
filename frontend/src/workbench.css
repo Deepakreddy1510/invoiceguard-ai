@@ -1237,3 +1237,118 @@ table td {
     max-width: none;
   }
 }
+
+/* A bounded sidebar with independent navigation scrolling, including short windows. */
+.sidebar {
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  min-height: 0;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+.sidebar-brandline {
+  flex: 0 0 auto;
+}
+.sidebar-scroll {
+  flex: 1 1 0;
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  scrollbar-gutter: stable;
+  touch-action: pan-y;
+  padding: 3px;
+  margin: 12px -3px 0;
+}
+.sidebar nav {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 3px;
+  margin-top: 8px;
+}
+.sidebar-scroll {
+  display: flex;
+  flex-direction: column;
+}
+.sidebar .workspace-selector {
+  flex: 0 0 auto;
+  padding: 6px 0 10px;
+}
+.sidebar .workspace-actions > div {
+  position: static;
+  margin-top: 6px;
+}
+.sidebar :focus-visible {
+  outline: 3px solid #eaa58e;
+  outline-offset: 2px;
+}
+.sample-offer {
+  color: #dbe3ef;
+  font-size: 11px;
+}
+.sample-offer button {
+  width: 100%;
+  font-size: 11px;
+}
+/* The outer region also scrolls if expanded workspace controls exceed the window. */
+@media (max-height: 600px) and (min-width: 769px) {
+  .sidebar {
+    padding-block: 12px;
+  }
+  .sidebar .workspace-selector {
+    max-height: 40dvh;
+    overflow-y: auto;
+  }
+}
+@media (max-width: 768px) {
+  .sidebar {
+    position: sticky;
+    z-index: 50;
+    height: auto;
+    max-height: 100dvh;
+    width: 100%;
+  }
+  .sidebar-scroll {
+    flex: 0 1 auto;
+    max-height: calc(100dvh - 80px);
+  }
+  .sidebar:not(.is-open) .sidebar-scroll {
+    display: none;
+  }
+  .sidebar.is-open nav {
+    flex: 0 0 auto;
+    overflow: visible;
+  }
+  .sidebar.is-open .sidebar-scroll {
+    overflow-y: auto;
+  }
+  .sidebar .workspace-selector {
+    max-height: none;
+  }
+  .nav-toggle {
+    color: #fff;
+  }
+}
+.business-feed ol {
+  margin: 0;
+  padding: 0 20px;
+}
+.business-feed li {
+  padding-block: 12px;
+}
+@media (min-width: 769px) {
+  .app-shell {
+    display: flex;
+  }
+  .sidebar:not(.is-open) nav {
+    display: flex;
+  }
+  .sidebar:not(.is-open) .workspace-selector {
+    display: block;
+  }
+  .nav-toggle {
+    display: none;
+  }
+}

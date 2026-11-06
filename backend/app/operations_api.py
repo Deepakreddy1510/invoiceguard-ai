@@ -1,6 +1,7 @@
 """Operational views derived only from persisted workspace-scoped records."""
 
 from datetime import datetime, timedelta, timezone
+from urllib.parse import quote
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException, Query
@@ -229,7 +230,7 @@ def audit_history(
     user: User,
     run_id: UUID | None = None,
     document_id: UUID | None = None,
-    view: str = Query("all", pattern="^(all|business)$"),
+    view: str = Query("all", pattern="^(all|business|recent)$"),
     search: str = Query("", max_length=160),
     actor: str = Query("", max_length=200),
     stage: str = Query("", max_length=100),
@@ -243,6 +244,28 @@ def audit_history(
         .join(InvoiceDocument)
         .where(InvoiceDocument.workspace_id == user.workspace_id)
     )
+    if view == "recent":
+        # Positive allowlist: operational events cannot displace business outcomes.
+        stage_query = stage_query.where(False)
+        query = query.where(
+            AuditEvent.action.in_(
+                [
+                    "DECISION_RECORDED",
+                    "CORRECTION_SAVED",
+                    "EMAIL_HANDOFF",
+                    "VENDOR_CREATED",
+                    "VENDOR_UPDATED",
+                    "VENDOR_DELETED",
+                    "PURCHASE_ORDER_CREATED",
+                    "PURCHASE_ORDER_UPDATED",
+                    "PURCHASE_ORDER_DELETED",
+                ]
+            )
+        )
+        query = query.where(
+            (AuditEvent.action != "EMAIL_HANDOFF")
+            | (AuditEvent.detail["outcome"].astext == "SUCCEEDED")
+        )
     if view == "business":
         # Filter persisted records before pagination; never delete the raw audit trail.
         stage_query = stage_query.where(RunEvent.outcome == "FAILED")
@@ -334,7 +357,7 @@ def audit_history(
     ]
     events.sort(key=lambda a: (a["created_at"], a["id"]), reverse=True)
     page = events[offset : offset + limit]
-    if view == "business":
+    if view in ["business", "recent"]:
         identifiers = {UUID(e["run_id"]) for e in page if e.get("run_id")}
         records = (
             session.execute(
@@ -371,4 +394,27 @@ def audit_history(
             }
         for item in page:
             item["entity"] = entities.get(item.get("run_id"))
+            detail = item["detail"]
+            action = item["action"]
+            item["href"] = "/runs/" + item["run_id"] if item.get("run_id") else "/process"
+            if action.startswith("VENDOR_"):
+                vendor = detail.get("vendor") or detail.get("after") or detail.get("before") or {}
+                item["entity"] = {
+                    "vendor": vendor.get("legal_name"),
+                    "invoice_number": vendor.get("code"),
+                }
+                item["href"] = "/vendors"
+            elif action.startswith("PURCHASE_ORDER_"):
+                data = detail.get("data") or detail.get("after") or detail
+                item["entity"] = {
+                    "invoice_number": data.get("number"),
+                    "amount": data.get("authorized_gross"),
+                    "currency": data.get("currency"),
+                }
+                number = data.get("number")
+                item["href"] = (
+                    "/purchase-orders?po=" + quote(number, safe="")
+                    if number
+                    else "/purchase-orders"
+                )
     return {"events": page}

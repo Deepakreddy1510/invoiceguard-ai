@@ -1,0 +1,140 @@
+.auth-page {
+  min-height: 100dvh;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: #fff;
+}
+.auth-story {
+  background: #17263e;
+  color: #e0e8f4;
+  padding: clamp(28px, 5vw, 80px);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  gap: 64px;
+}
+.auth-story .brand {
+  font-size: 24px;
+  padding: 0;
+}
+.auth-story h1 {
+  color: #fff;
+  font-size: clamp(32px, 4vw, 58px);
+  line-height: 1.12;
+  letter-spacing: -0.045em;
+  margin: 20px 0;
+}
+.auth-story > div > p {
+  max-width: 46ch;
+  color: #c4cede;
+  font-size: 17px;
+}
+.auth-story .eyebrow {
+  color: #eaa58e;
+  font-size: 11px;
+}
+.auth-story ul {
+  list-style: none;
+  padding: 0;
+  margin-top: 32px;
+}
+.auth-story li {
+  margin: 14px 0;
+}
+.auth-story li::before {
+  content: "✓";
+  color: #eaa58e;
+  margin-right: 14px;
+}
+.auth-entry {
+  padding: 40px clamp(24px, 5vw, 80px);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  gap: 48px;
+}
+.auth-card {
+  width: 100%;
+  max-width: 420px;
+}
+.auth-card h2 {
+  font-size: 34px;
+  letter-spacing: -0.035em;
+  margin: 10px 0;
+}
+.auth-card > p {
+  color: #536176;
+}
+.auth-tabs {
+  display: flex;
+  padding: 4px;
+  border-radius: 10px;
+  background: #f0f3f8;
+  margin: 28px 0;
+  gap: 4px;
+}
+.auth-tabs button {
+  flex: 1;
+  border: none;
+  background: transparent;
+  box-shadow: none;
+}
+.auth-tabs button[aria-pressed="true"] {
+  background: #fff;
+  box-shadow: 0 2px 5px #17243a12;
+}
+.auth-continue {
+  width: 100%;
+  margin: 12px 0;
+  min-height: 48px;
+}
+.auth-security {
+  border-top: 1px solid #e3e8ef;
+  padding-top: 24px;
+  margin-top: 28px;
+  font-size: 12px;
+}
+.auth-footnote {
+  font-size: 12px;
+  color: #536176;
+}
+.auth-story .auth-footnote {
+  color: #bac8dc;
+}
+.account-menu {
+  position: relative;
+  min-width: 0;
+}
+.account-menu summary {
+  cursor: pointer;
+  overflow-wrap: anywhere;
+}
+.account-menu > div {
+  position: absolute;
+  right: 0;
+  top: 100%;
+  z-index: 40;
+  width: min(300px, 85vw);
+  padding: 20px;
+  background: #fff;
+  border: 1px solid #cbd4e0;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px #17243a22;
+  overflow-wrap: anywhere;
+}
+@media (max-width: 768px) {
+  .auth-page {
+    grid-template-columns: 1fr;
+  }
+  .auth-story {
+    gap: 28px;
+  }
+  .auth-story ul,
+  .auth-story .auth-footnote {
+    display: none;
+  }
+  .auth-entry {
+    padding: 32px 24px;
+  }
+}

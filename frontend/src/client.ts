@@ -12,6 +12,14 @@ export function setActiveWorkspace(id: string | null) {
   for (const controller of pending) controller.abort();
   pending.clear();
 }
+export function clearSession() {
+  sessionSubject = null;
+  accessToken = null;
+  activeWorkspace = null;
+  workspaceEpoch += 1;
+  for (const controller of pending) controller.abort();
+  pending.clear();
+}
 export async function apiFetch(
   path: string,
   init?: RequestInit,
@@ -37,6 +45,8 @@ export async function apiFetch(
     });
     if (epoch !== workspaceEpoch)
       throw new DOMException("Workspace changed.", "AbortError");
+    if (response.status === 401 && accessToken)
+      window.dispatchEvent(new Event("invoiceguard:session-expired"));
     return response;
   } finally {
     pending.delete(controller);
@@ -130,4 +140,11 @@ export function utilization(part: string | undefined, total: string) {
     b = integer(total);
   if (b <= 0n) return null;
   return Math.min(100, Number((a * 10000n) / b) / 100);
+}
+
+let sessionSubject: string | null = null;
+export function setSessionSubject(subject: string) {
+  if (sessionSubject === subject) return;
+  clearSession();
+  sessionSubject = subject;
 }
