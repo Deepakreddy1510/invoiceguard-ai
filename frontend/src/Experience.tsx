@@ -1,5 +1,5 @@
 import { TechnicalScope } from "./TechnicalDetails";
-import { useEffect, useRef, type ReactNode } from "react";
+import { useLayoutEffect, useRef, type ReactNode } from "react";
 import { Icon } from "./icons";
 export function Help({
   title,
@@ -30,7 +30,7 @@ export function Dialog({
   wide?: boolean;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
+  useLayoutEffect(() => {
     const node = dialog.current;
     const previous = document.activeElement;
     node?.showModal();

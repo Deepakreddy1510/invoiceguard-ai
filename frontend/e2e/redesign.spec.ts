@@ -180,8 +180,14 @@ test("warm screens expose keyboard controls and have no detected WCAG A/AA viola
   await page
     .getByRole("button", { name: "Close purchase order details", exact: true })
     .click();
+  await expect(
+    page.getByRole("dialog", { name: "Purchase order details", exact: true }),
+  ).toHaveCount(0);
   await page.setViewportSize({ width: 390, height: 844 });
   await page.getByRole("button", { name: "Open navigation" }).focus();
+  await expect(
+    page.getByRole("button", { name: "Open navigation" }),
+  ).toBeFocused();
   await page.keyboard.press("Enter");
   await expect(
     page.getByRole("link", { name: "Overview", exact: true }),

@@ -66,7 +66,7 @@ Original coverage includes real review/correction/revalidation, cumulative overb
 
 Screenshots were actually inspected, not merely generated. Inspection found and corrected queue-heading padding, crowded branding, shrinking queue rows, verbose stage expansion the cramped inherited upload-form columns, and the still-vertical Activity layout. The final Activity view is a compact event table with contextual disclosure and server pagination. A stale PO success message and test navigation races were also fixed; tests now wait for the actual save/detail/close flow rather than clicking through a native modal.
 
-The first large-data fixture correctly triggered near-duplicate review because every document shared supplier/date/amount. Distinct fixture amounts fixed that test assumption; no financial rule was changed. An extension-based browser zoom experiment was unavailable on this Chromium build and was replaced with the verified built-in settings method. Earlier exploratory failures are not included as final passes.
+The first large-data fixture correctly triggered near-duplicate review because every document shared supplier/date/amount. Distinct fixture amounts fixed that test assumption; no financial rule was changed. An extension-based browser zoom experiment was unavailable on this Chromium build and was replaced with the verified built-in settings method. Earlier exploratory failures are not included as final passes. The first publication CI run passed 16 browser tests and exposed a mobile keyboard focus race: passive dialog cleanup could restore the old button after the menu was focused. Dialog opening/focus restoration now uses a layout effect, and the keyboard test explicitly checks modal removal and menu focus before Enter. This fixes focus timing without changing financial behavior or extending a timeout. The exact keyboard case also passed **3/3 repeated executions** (22.9 seconds) in a separate disposable environment.
 
 ## Before and after
 
@@ -135,6 +135,7 @@ frontend/public/licenses/pdfjs-NOTICE.txt
 frontend/src/App.tsx
 frontend/src/DocumentViewer.tsx
 frontend/src/EmailIntake.test.tsx
+frontend/src/Experience.tsx
 frontend/src/InvoiceWorkflow.test.tsx
 frontend/src/InvoiceWorkflow.tsx
 frontend/src/POEditor.tsx
