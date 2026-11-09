@@ -6,7 +6,7 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes("auth0")) return "authentication";
+          if (id.includes("supabase")) return "authentication";
           if (id.includes("react-router")) return "routing";
           if (id.includes("node_modules/react")) return "react";
         },

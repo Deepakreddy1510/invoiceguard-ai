@@ -15,11 +15,15 @@ class Settings(BaseSettings):
         "postgresql+psycopg://invoiceguard:local_demo_only@127.0.0.1:5432/invoiceguard"
     )
     app_environment: str = "local"
-    auth_mode: Literal["local", "oidc"] = "local"
+    auth_mode: Literal["local", "supabase"] = "local"
     local_workspace_id: UUID = DEMO_WORKSPACE_ID
-    oidc_issuer: str = ""
-    oidc_audience: str = ""
-    oidc_client_id: str = ""
+    supabase_url: str = ""
+    supabase_publishable_key: str = ""
+
+    @property
+    def supabase_issuer(self):
+        return self.supabase_url.rstrip("/") + "/auth/v1"
+
     frontend_origin: str = "http://localhost:5173"
     storage_dir: Path = Path("../.local/documents")
     storage_backend: Literal["local", "s3"] = "local"
@@ -48,15 +52,30 @@ class Settings(BaseSettings):
         return value
 
     def validate_runtime(self):
+        if self.supabase_publishable_key and not self.supabase_publishable_key.startswith(
+            "sb_publishable_"
+        ):
+            raise RuntimeError("SUPABASE_PUBLISHABLE_KEY must be a public publishable key.")
+        if self.auth_mode == "supabase":
+            from urllib.parse import urlparse
+
+            url = urlparse(self.supabase_url)
+            if (
+                url.scheme != "https"
+                or not url.hostname
+                or url.username
+                or url.query
+                or url.fragment
+                or url.path not in ("", "/")
+            ):
+                raise RuntimeError("SUPABASE_URL must be an HTTPS project origin.")
+            if not self.supabase_publishable_key.startswith("sb_publishable_"):
+                raise RuntimeError("SUPABASE_PUBLISHABLE_KEY must be a public publishable key.")
         if self.app_environment != "local":
-            if self.auth_mode != "oidc":
+            if self.auth_mode != "supabase":
                 raise RuntimeError(
                     "local-only authentication is forbidden in a hosted environment."
                 )
-            if not all(
-                [self.oidc_issuer.startswith("https://"), self.oidc_audience, self.oidc_client_id]
-            ):
-                raise RuntimeError("Hosted OIDC issuer, audience and client ID are required.")
             if self.storage_backend != "s3" or not self.s3_bucket:
                 raise RuntimeError("Hosted web and worker require shared private S3 storage.")
 

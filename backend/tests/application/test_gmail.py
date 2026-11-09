@@ -652,7 +652,13 @@ def test_workspace_email_and_admin_authorization(secure_client, gmail_env):
 
     client, factory, token = secure_client
     with factory.begin() as s:
-        s.add(Membership(workspace_id=DEMO_WORKSPACE_ID, subject="invited-user", role="VIEWER"))
+        s.add(
+            Membership(
+                workspace_id=DEMO_WORKSPACE_ID,
+                subject="d5b4404e-0ce1-5078-a73f-546f61f496cc",
+                role="VIEWER",
+            )
+        )
     assert client.get("/api/v1/email").status_code == 401
     assert client.get("/api/v1/email", headers=token()).status_code == 200
     assert client.post("/api/v1/email/oauth/start", headers=token()).status_code == 403

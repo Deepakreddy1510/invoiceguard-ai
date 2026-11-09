@@ -24,10 +24,9 @@ from app.models import (
 @pytest.fixture
 def secure_client(workflow_db, monkeypatch):
     key = rsa.generate_private_key(public_exponent=65537, key_size=2048)
-    monkeypatch.setenv("AUTH_MODE", "oidc")
-    monkeypatch.setenv("OIDC_ISSUER", "https://issuer.example/")
-    monkeypatch.setenv("OIDC_AUDIENCE", "invoiceguard-api")
-    monkeypatch.setenv("OIDC_CLIENT_ID", "public-client")
+    monkeypatch.setenv("AUTH_MODE", "supabase")
+    monkeypatch.setenv("SUPABASE_URL", "https://issuer.example")
+    monkeypatch.setenv("SUPABASE_PUBLISHABLE_KEY", "sb_publishable_test")
     get_settings.cache_clear()
     monkeypatch.setattr(
         "app.auth.jwks_client",
@@ -42,12 +41,14 @@ def secure_client(workflow_db, monkeypatch):
 
     app.dependency_overrides[get_session] = sessions
 
-    def token(subject="invited-user", **changes):
+    def token(subject="d5b4404e-0ce1-5078-a73f-546f61f496cc", **changes):
         now = datetime.now(timezone.utc)
         claims = {
             "sub": subject,
-            "iss": "https://issuer.example/",
-            "aud": "invoiceguard-api",
+            "iss": "https://issuer.example/auth/v1",
+            "aud": "authenticated",
+            "role": "authenticated",
+            "session_id": str(uuid4()),
             "iat": now,
             "exp": now + timedelta(minutes=5),
             **changes,
@@ -70,7 +71,11 @@ def test_authentication_and_membership_required(secure_client):
     assert client.get("/api/v1/vendors", headers=token()).status_code == 403
     with factory.begin() as session:
         session.add(
-            Membership(workspace_id=DEMO_WORKSPACE_ID, subject="invited-user", role="VIEWER")
+            Membership(
+                workspace_id=DEMO_WORKSPACE_ID,
+                subject="d5b4404e-0ce1-5078-a73f-546f61f496cc",
+                role="VIEWER",
+            )
         )
     assert client.get("/api/v1/vendors", headers=token()).status_code == 200
     assert client.get("/api/v1/vendors", headers=token(aud="wrong-audience")).status_code == 401
@@ -96,7 +101,13 @@ def test_cross_workspace_documents_reviews_audit_and_headers_denied(secure_clien
     client, factory, token = secure_client
     other = uuid4()
     with factory.begin() as s:
-        s.add(Membership(workspace_id=DEMO_WORKSPACE_ID, subject="invited-user", role="REVIEWER"))
+        s.add(
+            Membership(
+                workspace_id=DEMO_WORKSPACE_ID,
+                subject="d5b4404e-0ce1-5078-a73f-546f61f496cc",
+                role="REVIEWER",
+            )
+        )
         s.add(Workspace(id=other, name="Other evaluator workspace"))
         s.flush()
         vendor = Vendor(

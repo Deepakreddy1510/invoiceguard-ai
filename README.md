@@ -27,12 +27,12 @@ See [business UX, realistic sample data and safe Windows upgrade](docs/product-r
 - Strong vendor identifiers take precedence over shared names; contradictions remain review and suspended/inactive vendors are blocked. No filename-specific business decisions.
 - Deterministic currency, tax, item, quantity, status, date, duplicate and cumulative PO-balance rules. Monetary values cross APIs as decimal strings. USD/INR/EUR/GBP use two minor digits, JPY zero and KWD three, with ROUND_HALF_UP reconciliation.
 - Review comments, attributed field/item corrections, optimistic version checks, preserved prior decisions, full revalidation, holds, atomic reservation replacement and explicit rejection/release. Corrections cannot bypass controls.
-- OIDC/Auth0 Authorization Code + PKCE sign-in; RS256 signature/issuer/audience/expiry checks; server-managed workspace membership and VIEWER/REVIEWER/ADMIN permissions. Hosted startup refuses local authentication or local-only artifact storage.
+- Supabase email/password signup, confirmation and password recovery; ES256/RS256 signature/issuer/audience/expiry checks; server-managed workspace membership and VIEWER/REVIEWER/ADMIN permissions. Hosted startup refuses local authentication or local-only artifact storage.
 - Private S3 documents shared by independently restartable web/worker containers; same-origin compiled React frontend served by FastAPI. PostgreSQL is the queue and source of truth; no extra broker/service is needed.
 
 ```mermaid
 flowchart LR
-  UI[React browser] --> API[FastAPI + OIDC authorization]
+  UI[React browser] --> API[FastAPI + Supabase authorization]
   API --> PG[(PostgreSQL: queue, events, decisions, reservations)]
   API --> S3[(Private PDF storage)]
   W[Python worker] --> PG
@@ -87,7 +87,7 @@ Copy `.env.example` and supply private values through environment variables or y
 
 Local: `APP_ENVIRONMENT=local`, `AUTH_MODE=local`, `STORAGE_BACKEND=local`, `LOCAL_WORKSPACE_ID` selects the synthetic workspace. There is no sign-in in local mode.
 
-Hosted: `APP_ENVIRONMENT=production`, `AUTH_MODE=oidc`, `OIDC_ISSUER` (Auth0 HTTPS issuer ending `/`), `OIDC_AUDIENCE`, `OIDC_CLIENT_ID` (public SPA identifier), `STORAGE_BACKEND=s3`, `S3_BUCKET`, `AWS_DEFAULT_REGION` and restricted S3 credentials/identity. Optional `S3_ENDPOINT_URL` supports compatible storage; AWS itself needs no override. `GEMINI_API_KEY` is secret and optional; `GEMINI_MODEL` defaults to `gemini-2.5-flash`. Public runtime configuration exposes only OIDC public identifiers, never keys or database configuration.
+Hosted: `APP_ENVIRONMENT=production`, `AUTH_MODE=supabase`, `SUPABASE_URL` (HTTPS project origin), `SUPABASE_PUBLISHABLE_KEY` (public browser key), `STORAGE_BACKEND=s3`, `S3_BUCKET`, `AWS_DEFAULT_REGION` and restricted S3 credentials/identity. Optional `S3_ENDPOINT_URL` supports compatible storage; AWS itself needs no override. `GEMINI_API_KEY` is secret and optional; `GEMINI_MODEL` defaults to `gemini-2.5-flash`. Public runtime configuration exposes only Supabase public identifiers, never keys or database configuration.
 
 ## Tests and independent evaluation
 
@@ -131,12 +131,12 @@ Use a new report path. Reports include numerators, denominators, unsupported ext
 
 ## Hosting and evaluator access
 
-[deploy/render.yaml](deploy/render.yaml) prepares one Docker web service (React + API), one worker and private PostgreSQL. Documents live in a private S3 bucket. [Deployment instructions](deploy/README.md) specify Auth0 invitations, membership provisioning, restricted IAM, seeding and verification. The owner and evaluator receive separate sign-ins and server-selected synthetic workspaces; no shared password, API key or database access is needed.
+[deploy/render.yaml](deploy/render.yaml) prepares one Docker web service (React + API), one worker and private PostgreSQL. Documents live in a private S3 bucket. [Deployment instructions](deploy/README.md) specify Supabase setup, membership provisioning, restricted IAM, seeding and verification. The owner and evaluator receive separate sign-ins and server-selected synthetic workspaces; no shared password, API key or database access is needed.
 
-**No hosted deployment has been activated.** GitHub publication was authorized on 1 November 2026; see [publication verification](docs/publication-verification.md) for its actual status. Paid hosting requires a current price quote and separate explicit approval. Render/Auth0/AWS credentials and provider egress permission are not configured in this cloud task. After approval, the provider-assigned HTTPS address must be verified before being presented as a live website.
+**No hosted deployment has been activated.** GitHub publication was authorized on 1 November 2026; see [publication verification](docs/publication-verification.md) for its actual status. Paid hosting requires a current price quote and separate explicit approval. Render/Supabase/AWS credentials and provider egress permission are not configured in this cloud task. After approval, the provider-assigned HTTPS address must be verified before being presented as a live website.
 
 ## Limitations
 
-Fallback extraction is deliberately conservative and still sends many unfamiliar/ambiguous invoices to review. OCR can misread scans; evidence matching is not a guarantee of semantic correctness. English Tesseract is installed by default. Gemini and hosted Auth0 require live credentialed verification. Real AWS IAM/encryption, Render provisioning, public HTTPS and evaluator login cannot be claimed from local tests. Dashboard/review queries suit demonstration volume, not an unbounded enterprise ledger. No antivirus service, payment integrations, arbitrary accounting policies or real-world extraction benchmark is claimed. See [verification](docs/completion-verification.md) for measured results and remaining blockers.
+Fallback extraction is deliberately conservative and still sends many unfamiliar/ambiguous invoices to review. OCR can misread scans; evidence matching is not a guarantee of semantic correctness. English Tesseract is installed by default. Gemini and live Supabase require live credentialed verification. Real AWS IAM/encryption, Render provisioning, public HTTPS and evaluator login cannot be claimed from local tests. Dashboard/review queries suit demonstration volume, not an unbounded enterprise ledger. No antivirus service, payment integrations, arbitrary accounting policies or real-world extraction benchmark is claimed. See [verification](docs/completion-verification.md) for measured results and remaining blockers.
 
-Customer authentication, OIDC setup, safe legacy workspace archival and Windows update instructions: [customer access guide](docs/customer-access.md).
+Customer authentication, Supabase setup, safe legacy workspace archival and Windows update instructions: [customer access guide](docs/customer-access.md).

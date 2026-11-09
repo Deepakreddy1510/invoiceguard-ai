@@ -118,7 +118,13 @@ def test_archive_blocks_mutations_hides_selection_and_restores(workflow_db):
 def test_workspace_changes_require_target_administrator(secure_client, role):
     client, factory, token = secure_client
     with factory.begin() as session:
-        session.add(Membership(workspace_id=DEMO_WORKSPACE_ID, subject="invited-user", role=role))
+        session.add(
+            Membership(
+                workspace_id=DEMO_WORKSPACE_ID,
+                subject="d5b4404e-0ce1-5078-a73f-546f61f496cc",
+                role=role,
+            )
+        )
     target = {"id": str(DEMO_WORKSPACE_ID), "version": 1}
     for response in [
         rename(client, target, "Forbidden rename", token()),
@@ -134,17 +140,31 @@ def test_unrelated_admin_cannot_manage_another_workspace(secure_client):
     from uuid import uuid4
 
     with factory.begin() as session:
-        own = Workspace(id=uuid4(), name="Own finance workspace", owner_subject="invited-user")
+        own = Workspace(
+            id=uuid4(),
+            name="Own finance workspace",
+            owner_subject="d5b4404e-0ce1-5078-a73f-546f61f496cc",
+        )
         session.add(own)
         session.flush()
-        session.add(Membership(workspace_id=own.id, subject="invited-user", role="ADMIN"))
-        session.add(Membership(workspace_id=DEMO_WORKSPACE_ID, subject="other-admin", role="ADMIN"))
+        session.add(
+            Membership(
+                workspace_id=own.id, subject="d5b4404e-0ce1-5078-a73f-546f61f496cc", role="ADMIN"
+            )
+        )
+        session.add(
+            Membership(
+                workspace_id=DEMO_WORKSPACE_ID,
+                subject="576be62b-1415-5b65-bbd2-64e873cc31d6",
+                role="ADMIN",
+            )
+        )
     assert (
         rename(
             client,
             {"id": str(DEMO_WORKSPACE_ID), "version": 1},
             "Unauthorized",
-            token("invited-user"),
+            token("d5b4404e-0ce1-5078-a73f-546f61f496cc"),
         ).status_code
         == 403
     )

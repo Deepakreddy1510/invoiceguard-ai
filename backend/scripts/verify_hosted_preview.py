@@ -65,8 +65,8 @@ def main():
         if anonymous.get("/api/v1/health/ready").status_code != 200:
             raise RuntimeError("Application database is not ready.")
         config = anonymous.get("/api/v1/config")
-        if config.status_code != 200 or (not local and config.json()["auth_mode"] != "oidc"):
-            raise RuntimeError("Hosted OIDC configuration is missing.")
+        if config.status_code != 200 or (not local and config.json()["auth_mode"] != "supabase"):
+            raise RuntimeError("Hosted Supabase configuration is missing.")
         if not local:
             for path in ["/api/v1/dashboard", "/api/v1/reviews", "/api/v1/audit-events"]:
                 if anonymous.get(path).status_code != 401:

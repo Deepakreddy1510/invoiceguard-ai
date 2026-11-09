@@ -2,26 +2,27 @@ import { test, expect, chromium } from "@playwright/test";
 import AxeBuilder from "@axe-core/playwright";
 import { captureNativeWindow } from "./native-zoom";
 
-test("provider entry offers registration, recovery and PKCE redirect", async ({
+// Real app and Supabase SDK; provider responses are controlled, not live registration.
+test("Supabase signup, confirmation, login errors and recovery", async ({
   page,
 }, info) => {
   await page.route("**/api/v1/config", (r) =>
     r.fulfill({
       json: {
-        auth_mode: "oidc",
-        issuer: "https://invoiceguard-test.auth0.com/",
-        client_id: "public-test-client",
-        audience: "invoiceguard-api",
+        auth_mode: "supabase",
+        supabase_url: "https://invoiceguard-test.supabase.co",
+        supabase_publishable_key: "sb_publishable_test",
       },
     }),
   );
-  // Only the external provider is intercepted. This is not live tenant verification.
-  await page.route("https://invoiceguard-test.auth0.com/**", (r) =>
-    r.fulfill({
-      contentType: "text/html",
-      body: "<h1>Provider redirect captured for testing</h1>",
-    }),
-  );
+  await page.route("https://invoiceguard-test.supabase.co/auth/v1/**", (r) => {
+    if (r.request().url().includes("token"))
+      return r.fulfill({
+        status: 400,
+        json: { code: "invalid_credentials", msg: "Invalid login credentials" },
+      });
+    return r.fulfill({ json: {} });
+  });
   await page.goto("/");
   await expect(
     page.getByRole("heading", { name: "Welcome back" }),
@@ -34,8 +35,14 @@ test("provider entry offers registration, recovery and PKCE redirect", async ({
         .analyze()
     ).violations,
   ).toEqual([]);
-  await page.getByRole("button", { name: "Forgot password?" }).click();
-  await expect(page.getByRole("status")).toContainText("reset email");
+  await page.getByLabel("Email address").fill("new@example.invalid");
+  await page
+    .getByLabel("Password", { exact: true })
+    .fill("secure-password-123");
+  await page.getByRole("button", { name: "Sign in securely" }).click();
+  await expect(page.getByRole("alert")).toContainText(
+    "Invalid login credentials",
+  );
   await page
     .getByRole("button", { name: "Create account", exact: true })
     .click();
@@ -44,16 +51,11 @@ test("provider entry offers registration, recovery and PKCE redirect", async ({
     fullPage: true,
   });
   await page.getByRole("button", { name: "Create account securely" }).click();
-  await expect(page).toHaveURL(/invoiceguard-test.auth0.com\/authorize/);
-  const url = new URL(page.url());
-  for (const [key, value] of Object.entries({
-    response_type: "code",
-    code_challenge_method: "S256",
-    screen_hint: "signup",
-  }))
-    expect(url.searchParams.get(key)).toBe(value);
-  for (const key of ["code_challenge", "state", "nonce"])
-    expect(url.searchParams.get(key)).toBeTruthy();
+  await expect(page.getByRole("status")).toContainText("confirm your email");
+  await page.getByRole("button", { name: "Sign in", exact: true }).click();
+  await page.getByRole("button", { name: "Forgot password?" }).click();
+  await page.getByRole("button", { name: "Send reset email" }).click();
+  await expect(page.getByRole("status")).toContainText("password reset email");
 });
 
 test("sidebar access at native zoom and short window heights", async ({

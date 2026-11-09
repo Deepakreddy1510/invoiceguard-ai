@@ -138,3 +138,22 @@
     padding: 32px 24px;
   }
 }
+
+.auth-card form label {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0;
+  text-align: left;
+}
+.auth-card input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 12px;
+  border: 1px solid #b8c2d1;
+  border-radius: 8px;
+  font: inherit;
+}
+.auth-card .text-button {
+  display: block;
+  margin-top: 12px;
+}

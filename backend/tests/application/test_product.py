@@ -124,11 +124,20 @@ def test_private_workspaces_require_each_users_membership(secure_client):
         session.add_all(
             [
                 Membership(workspace_id=DEMO_WORKSPACE_ID, subject=subject, role="REVIEWER")
-                for subject in ["owner-a", "owner-b"]
+                for subject in [
+                    "f739bbd3-944a-5c78-b21d-49e0767f45a0",
+                    "51c05e63-c5be-5340-b726-4a933cecdee8",
+                ]
             ]
         )
-    a = {**token("owner-a"), **mine_with_token(client, token("owner-a"))}
-    b = {**token("owner-b"), **mine_with_token(client, token("owner-b"))}
+    a = {
+        **token("f739bbd3-944a-5c78-b21d-49e0767f45a0"),
+        **mine_with_token(client, token("f739bbd3-944a-5c78-b21d-49e0767f45a0")),
+    }
+    b = {
+        **token("51c05e63-c5be-5340-b726-4a933cecdee8"),
+        **mine_with_token(client, token("51c05e63-c5be-5340-b726-4a933cecdee8")),
+    }
     assert a["X-Workspace-ID"] != b["X-Workspace-ID"]
     created = client.post("/api/v1/vendors", headers=a, json=vendor_data())
     assert created.status_code == 201
@@ -136,7 +145,11 @@ def test_private_workspaces_require_each_users_membership(secure_client):
     assert client.get("/api/v1/vendors/" + created.json()["id"], headers=b).status_code == 404
     assert (
         client.get(
-            "/api/v1/vendors", headers={**token("owner-b"), "X-Workspace-ID": a["X-Workspace-ID"]}
+            "/api/v1/vendors",
+            headers={
+                **token("51c05e63-c5be-5340-b726-4a933cecdee8"),
+                "X-Workspace-ID": a["X-Workspace-ID"],
+            },
         ).status_code
         == 403
     )
@@ -647,7 +660,11 @@ def test_viewer_cannot_mutate_procurement_or_import_shared_demo(secure_client):
     client, factory, token = secure_client
     with factory.begin() as session:
         session.add(
-            Membership(workspace_id=DEMO_WORKSPACE_ID, subject="invited-user", role="VIEWER")
+            Membership(
+                workspace_id=DEMO_WORKSPACE_ID,
+                subject="d5b4404e-0ce1-5078-a73f-546f61f496cc",
+                role="VIEWER",
+            )
         )
     assert client.post("/api/v1/vendors", json=vendor_data()).status_code == 401
     assert client.post("/api/v1/vendors", headers=token(), json=vendor_data()).status_code == 403

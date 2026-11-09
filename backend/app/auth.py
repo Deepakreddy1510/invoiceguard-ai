@@ -1,4 +1,4 @@
-"""OIDC verification and server-controlled workspace authorization."""
+"""Supabase JWT verification and server-controlled workspace authorization."""
 
 from dataclasses import dataclass
 from functools import lru_cache
@@ -38,18 +38,24 @@ def verified_subject(authorization: str | None) -> str:
         )
     token = authorization[7:]
     try:
-        key = jwks_client(settings.oidc_issuer).get_signing_key_from_jwt(token).key
+        key = jwks_client(settings.supabase_issuer).get_signing_key_from_jwt(token).key
         claims = jwt.decode(
             token,
             key,
-            algorithms=["RS256"],
-            audience=settings.oidc_audience,
-            issuer=settings.oidc_issuer,
-            options={"require": ["exp", "iat", "sub", "iss", "aud"]},
+            algorithms=["ES256", "RS256"],
+            audience="authenticated",
+            issuer=settings.supabase_issuer,
+            options={"require": ["exp", "iat", "sub", "iss", "aud", "role", "session_id"]},
             leeway=15,
         )
         if not isinstance(claims["sub"], str) or not claims["sub"]:
             raise ValueError("Missing subject")
+        UUID(claims["sub"])
+        if not isinstance(claims["session_id"], str):
+            raise ValueError("Missing session identity")
+        UUID(claims["session_id"])
+        if claims["role"] != "authenticated" or claims.get("is_anonymous", False):
+            raise ValueError("An authenticated account is required")
         return claims["sub"]
     except (jwt.PyJWTError, ValueError, TypeError) as exc:
         raise HTTPException(
@@ -90,7 +96,8 @@ def access(
     memberships = session.scalars(query.order_by(Membership.created_at, Membership.id)).all()
     if not memberships:
         raise HTTPException(
-            403, "No access to this workspace. Ask the demo administrator for an invitation."
+            403,
+            "No access to this workspace. Select an authorized workspace or create your private workspace.",
         )
     membership = memberships[0]
     result = Access(subject, membership.workspace_id, membership.role)

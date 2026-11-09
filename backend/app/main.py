@@ -172,9 +172,10 @@ def public_config():
     s = get_settings()
     return {
         "auth_mode": s.auth_mode,
-        "issuer": s.oidc_issuer,
-        "audience": s.oidc_audience,
-        "client_id": s.oidc_client_id,
+        "supabase_url": s.supabase_url if s.auth_mode == "supabase" else "",
+        "supabase_publishable_key": (
+            s.supabase_publishable_key if s.auth_mode == "supabase" else ""
+        ),
         "synthetic_data": True,
     }
 

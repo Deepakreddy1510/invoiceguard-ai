@@ -10,7 +10,7 @@ RUN npm run build
 FROM python:3.12-slim-bookworm AS application
 ENV PYTHONDONTWRITEBYTECODE=1 PYTHONUNBUFFERED=1 UV_LINK_MODE=copy \
     PATH="/app/backend/.venv/bin:$PATH" \
-    APP_ENVIRONMENT=production AUTH_MODE=oidc STORAGE_DIR=/var/lib/invoiceguard
+    APP_ENVIRONMENT=production AUTH_MODE=supabase STORAGE_DIR=/var/lib/invoiceguard
 RUN --mount=type=secret,id=ca_bundle,target=/run/secrets/ca_bundle \
     if [ -f /run/secrets/ca_bundle ]; then apt-get -o Acquire::https::CaInfo=/run/secrets/ca_bundle update; else apt-get update; fi && \
     DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends tesseract-ocr tesseract-ocr-eng ca-certificates && rm -rf /var/lib/apt/lists/*

@@ -1,13 +1,16 @@
 import { createContext, useContext, useEffect, useState } from "react";
-import { Auth0Provider, useAuth0 } from "@auth0/auth0-react";
+import {
+  createClient,
+  type SupabaseClient,
+  type Session as SupabaseSession,
+} from "@supabase/supabase-js";
 import { clearSession, setAccessToken, setSessionSubject } from "./client";
 import { Dialog } from "./Experience";
 import "./auth.css";
 type PublicConfig = {
   auth_mode: string;
-  issuer: string;
-  client_id: string;
-  audience: string;
+  supabase_url: string;
+  supabase_publishable_key: string;
 };
 const Session = createContext<{
   enabled: boolean;
@@ -17,17 +20,28 @@ const Session = createContext<{
   logout?: () => void;
 }>({ enabled: false });
 
+type Action = "login" | "signup" | "forgot" | "reset" | "resend";
 export function AuthEntry({
   busy = false,
   error = "",
+  message = "",
+  recovery = false,
   onContinue,
+  onModeChange,
+  onCancelRecovery,
 }: {
   busy?: boolean;
   error?: string;
-  onContinue: (signup: boolean) => void;
+  message?: string;
+  recovery?: boolean;
+  onContinue: (action: Action, email: string, password: string) => void;
+  onModeChange?: () => void;
+  onCancelRecovery?: () => void;
 }) {
   const [signup, setSignup] = useState(false);
   const [reset, setReset] = useState(false);
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
   return (
     <main className="auth-page">
       <section className="auth-story" aria-label="InvoiceGuard introduction">
@@ -59,67 +73,132 @@ export function AuthEntry({
         <div className="auth-card">
           <p className="eyebrow">YOUR FINANCE WORKSPACE</p>
           <h2 id="auth-title">
-            {signup ? "Create your account" : "Welcome back"}
+            {recovery
+              ? "Set a new password"
+              : reset
+                ? "Reset your password"
+                : signup
+                  ? "Create your account"
+                  : "Welcome back"}
           </h2>
           <p>
             {signup
               ? "A private workspace for your team’s next chapter."
               : "Sign in to pick up where your team left off."}
           </p>
-          <div className="auth-tabs" aria-label="Account access">
-            <button
-              aria-pressed={!signup}
-              onClick={() => {
-                setSignup(false);
-                setReset(false);
-              }}
-            >
-              Sign in
-            </button>
-            <button
-              aria-pressed={signup}
-              onClick={() => {
-                setSignup(true);
-                setReset(false);
-              }}
-            >
-              Create account
-            </button>
-          </div>
+          {!recovery && (
+            <div className="auth-tabs" aria-label="Account access">
+              <button
+                aria-pressed={!signup}
+                onClick={() => {
+                  onModeChange?.();
+                  setSignup(false);
+                  setReset(false);
+                }}
+              >
+                Sign in
+              </button>
+              <button
+                aria-pressed={signup}
+                onClick={() => {
+                  onModeChange?.();
+                  setSignup(true);
+                  setReset(false);
+                }}
+              >
+                Create account
+              </button>
+            </div>
+          )}
           {error && (
             <div className="error-banner" role="alert">
               {error}
             </div>
           )}
-          <button
-            className="primary auth-continue"
-            disabled={busy}
-            onClick={() => onContinue(signup)}
+          {message && <p role="status">{message}</p>}
+          <form
+            onSubmit={(event) => {
+              event.preventDefault();
+              onContinue(
+                recovery
+                  ? "reset"
+                  : reset
+                    ? "forgot"
+                    : signup
+                      ? "signup"
+                      : "login",
+                email,
+                password,
+              );
+            }}
           >
-            {busy
-              ? "Opening secure sign-in…"
-              : signup
-                ? "Create account securely →"
-                : "Sign in securely →"}
-          </button>
-          {!signup && (
-            <button className="text-button" onClick={() => setReset(true)}>
-              Forgot password?
+            {!recovery && (
+              <label>
+                Email address
+                <input
+                  type="email"
+                  autoComplete="email"
+                  required
+                  value={email}
+                  onChange={(event) => setEmail(event.target.value)}
+                />
+              </label>
+            )}
+            {(!reset || recovery) && (
+              <label>
+                Password
+                <input
+                  type="password"
+                  required
+                  minLength={signup || recovery ? 8 : undefined}
+                  autoComplete={
+                    signup || recovery ? "new-password" : "current-password"
+                  }
+                  value={password}
+                  onChange={(event) => setPassword(event.target.value)}
+                />
+              </label>
+            )}
+            <button className="primary auth-continue" disabled={busy}>
+              {busy
+                ? "Please wait…"
+                : recovery
+                  ? "Save new password"
+                  : reset
+                    ? "Send reset email"
+                    : signup
+                      ? "Create account securely →"
+                      : "Sign in securely →"}
+            </button>
+          </form>
+          {recovery && (
+            <button className="text-button" onClick={onCancelRecovery}>
+              Back to sign in
             </button>
           )}
-          {reset && (
-            <p role="status">
-              Choose “Don’t remember your password?” on the secure sign-in page
-              to receive a reset email.{" "}
-              <button onClick={() => onContinue(false)}>
-                Open password recovery
-              </button>
-            </p>
+          {!signup && !recovery && (
+            <button
+              className="text-button"
+              onClick={() => {
+                onModeChange?.();
+                setReset(!reset);
+              }}
+            >
+              {reset ? "Back to sign in" : "Forgot password?"}
+            </button>
+          )}
+          {!recovery && (
+            <button
+              className="text-button"
+              disabled={busy || !email}
+              onClick={() => onContinue("resend", email, "")}
+            >
+              Resend verification email
+            </button>
           )}
           <p className="auth-security">
-            You’ll continue to our identity provider to enter your credentials
-            {signup ? " and verify your email" : ""}. InvoiceGuard never
-            receives your password.
+            Your credentials are sent securely to Supabase Auth. Confirm your
+            email before signing in.
           </p>
           {signup && (
             <p>
@@ -137,104 +216,198 @@ export function AuthEntry({
   );
 }
 
-function SignedIn({ children }: { children: React.ReactNode }) {
-  const auth = useAuth0();
-  const [expired, setExpired] = useState(false);
-  const [leaving, setLeaving] = useState(false);
-  const [redirecting, setRedirecting] = useState(false);
+function SignedIn({
+  client,
+  children,
+}: {
+  client: SupabaseClient;
+  children: React.ReactNode;
+}) {
+  const [session, setSession] = useState<SupabaseSession | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
+  const [recovery, setRecovery] = useState(
+    new URLSearchParams(window.location.search).get("auth") === "recovery",
+  );
   useEffect(() => {
+    let live = true;
+    let authRevision = 0;
+    const { data } = client.auth.onAuthStateChange((event, next) => {
+      if (!live) return;
+      authRevision += 1;
+      if (event === "PASSWORD_RECOVERY") setRecovery(true);
+      if (next) setSessionSubject(next.user.id);
+      else clearSession();
+      setSession(next);
+      setLoading(false);
+    });
+    const initialRevision = authRevision;
+    void client.auth
+      .getSession()
+      .then(({ data, error }) => {
+        if (!live || authRevision !== initialRevision) return;
+        if (error)
+          setError("Could not restore your session. Please sign in again.");
+        setSession(data.session);
+        setLoading(false);
+      })
+      .catch(() => {
+        if (live) {
+          setError("Could not reach sign-in. Check your connection.");
+          setLoading(false);
+        }
+      });
     const expire = () => {
       clearSession();
-      setExpired(true);
+      setSession(null);
+      setError("Your session has expired. Sign in again to continue.");
+      void client.auth.signOut({ scope: "local" });
     };
     window.addEventListener("invoiceguard:session-expired", expire);
     return () => {
+      live = false;
+      data.subscription.unsubscribe();
       window.removeEventListener("invoiceguard:session-expired", expire);
       clearSession();
     };
-  }, []);
-  async function login(signup: boolean) {
-    setRedirecting(true);
+  }, [client]);
+  async function perform(action: Action, email: string, password: string) {
+    setBusy(true);
     setError("");
-    clearSession();
+    setMessage("");
+    const redirect = window.location.origin + "/";
     try {
-      await auth.loginWithRedirect({
-        appState: {
-          returnTo: window.location.pathname + window.location.search,
-        },
-        authorizationParams: {
-          screen_hint: signup ? "signup" : "login",
-          ...(expired ? { prompt: "login" } : {}),
-        },
-      });
-    } catch {
+      let result;
+      if (action === "signup")
+        result = await client.auth.signUp({
+          email,
+          password,
+          options: { emailRedirectTo: redirect },
+        });
+      else if (action === "forgot")
+        result = await client.auth.resetPasswordForEmail(email, {
+          redirectTo: redirect + "?auth=recovery",
+        });
+      else if (action === "reset") {
+        result = await client.auth.updateUser({ password });
+        if (!result.error) {
+          const signedOut = await client.auth.signOut({ scope: "local" });
+          if (signedOut.error) throw signedOut.error;
+          clearSession();
+          setSession(null);
+          setRecovery(false);
+          window.history.replaceState({}, "", "/");
+        }
+      } else if (action === "resend")
+        result = await client.auth.resend({
+          type: "signup",
+          email,
+          options: { emailRedirectTo: redirect },
+        });
+      else result = await client.auth.signInWithPassword({ email, password });
+      if (result.error) throw result.error;
+      if (action === "signup" || action === "resend")
+        setMessage(
+          "Check your inbox to confirm your email. If the account already exists, sign in or reset your password.",
+        );
+      if (action === "forgot")
+        setMessage(
+          "If an account exists, a password reset email is on its way.",
+        );
+      if (action === "reset")
+        setMessage("Password updated. Sign in with your new password.");
+    } catch (cause) {
       setError(
-        "Secure sign-in could not be opened. Check your connection and try again.",
+        cause instanceof Error
+          ? cause.message
+          : "Authentication is unavailable. Please try again.",
       );
-      setRedirecting(false);
+    } finally {
+      setBusy(false);
     }
   }
-  if (auth.isLoading)
+  if (loading)
     return (
       <div className="startup" role="status">
         Restoring your secure session…
       </div>
     );
-  if (!auth.isAuthenticated || auth.error || expired || leaving) {
-    setAccessToken(null);
+  if (!session || recovery)
     return (
       <AuthEntry
-        busy={redirecting || leaving}
-        error={
-          error ||
-          (expired
-            ? "Your session has expired. Sign in again to continue."
-            : auth.error
-              ? "Sign-in was not completed. Please try again or contact your account administrator."
-              : "")
-        }
-        onContinue={(signup) => void login(signup)}
+        busy={busy}
+        error={error}
+        message={message}
+        recovery={recovery}
+        onContinue={(...args) => void perform(...args)}
+        onModeChange={() => {
+          setError("");
+          setMessage("");
+        }}
+        onCancelRecovery={() => {
+          clearSession();
+          setSession(null);
+          setRecovery(false);
+          setError("");
+          setMessage("");
+          window.history.replaceState({}, "", "/");
+          void client.auth.signOut({ scope: "local" });
+        }}
       />
     );
-  }
-  setSessionSubject(auth.user?.sub ?? "authenticated");
-  // Install before protected children issue their initial API requests.
+  setSessionSubject(session.user.id);
   setAccessToken(async () => {
-    try {
-      const token = await auth.getAccessTokenSilently();
-      if (!token) throw new Error("Missing token");
-      return token;
-    } catch {
+    const { data, error } = await client.auth.getSession();
+    if (error || !data.session) {
       window.dispatchEvent(new Event("invoiceguard:session-expired"));
-      throw new Error("Your session has expired. Sign in again.");
+      throw new Error("Your session has expired.");
     }
+    return data.session.access_token;
   });
   return (
     <Session.Provider
       value={{
         enabled: true,
-        email: auth.user?.email,
-        name: auth.user?.name,
-        verified: auth.user?.email_verified,
+        email: session.user.email,
+        verified: !!session.user.email_confirmed_at,
         logout: () => {
           clearSession();
-          setLeaving(true);
-          void auth
-            .logout({ logoutParams: { returnTo: window.location.origin } })
-            .catch(() => {
-              setLeaving(false);
-              setExpired(true);
+          setSession(null);
+          void client.auth.signOut().then(({ error }) => {
+            if (error) {
+              void client.auth.signOut({ scope: "local" });
               setError(
-                "Sign-out could not reach the identity provider. Your local workspace has been closed. Retry sign-in to continue.",
+                "Signed out on this device. The server could not revoke other sessions.",
               );
-            });
+            }
+          });
         },
       }}
     >
-      <div key={auth.user?.sub}>{children}</div>
+      <div key={session.user.id}>{children}</div>
     </Session.Provider>
   );
+}
+function SupabaseAuthentication({
+  config,
+  children,
+}: {
+  config: PublicConfig;
+  children: React.ReactNode;
+}) {
+  const [client] = useState(() =>
+    createClient(config.supabase_url, config.supabase_publishable_key, {
+      auth: {
+        persistSession: true,
+        autoRefreshToken: true,
+        detectSessionInUrl: true,
+        flowType: "pkce",
+      },
+    }),
+  );
+  return <SignedIn client={client}>{children}</SignedIn>;
 }
 export function Authentication({
   config,
@@ -243,41 +416,20 @@ export function Authentication({
   config: PublicConfig;
   children: React.ReactNode;
 }) {
-  if (config.auth_mode !== "oidc") return <>{children}</>;
-  if (!config.issuer || !config.client_id || !config.audience)
+  if (config.auth_mode === "local") return <>{children}</>;
+  if (
+    config.auth_mode !== "supabase" ||
+    !config.supabase_url ||
+    !config.supabase_publishable_key
+  )
     return (
       <div className="startup" role="alert">
         Secure sign-in is not configured. Ask your administrator to configure
-        the OIDC issuer, audience and client ID.
+        Supabase.
       </div>
     );
   return (
-    <Auth0Provider
-      domain={new URL(config.issuer).host}
-      clientId={config.client_id}
-      cacheLocation="memory"
-      useRefreshTokens
-      useRefreshTokensFallback
-      authorizationParams={{
-        audience: config.audience,
-        redirect_uri: window.location.origin,
-        scope: "openid profile email offline_access",
-      }}
-      onRedirectCallback={(state) => {
-        const path = state?.returnTo;
-        window.history.replaceState(
-          {},
-          document.title,
-          typeof path === "string" &&
-            path.startsWith("/") &&
-            !path.startsWith("//")
-            ? path
-            : "/",
-        );
-      }}
-    >
-      <SignedIn>{children}</SignedIn>
-    </Auth0Provider>
+    <SupabaseAuthentication config={config}>{children}</SupabaseAuthentication>
   );
 }
 export function AccountControl() {
