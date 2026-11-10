@@ -51,7 +51,7 @@ beforeEach(() => {
       api.status = "COMPLETE";
       return {};
     }
-    if (path === "/workspaces/sample") {
+    if (path === "/workspaces/sample-initialization/start") {
       api.status = "PROCESSING";
       return {};
     }
@@ -114,9 +114,12 @@ it("offers explicit backfill for an old sample without an installation", async (
     await screen.findByRole("button", { name: "Initialize sample invoices" }),
   );
   await waitFor(() =>
-    expect(api.request).toHaveBeenCalledWith("/workspaces/sample", {
-      method: "POST",
-    }),
+    expect(api.request).toHaveBeenCalledWith(
+      "/workspaces/sample-initialization/start",
+      {
+        method: "POST",
+      },
+    ),
   );
   expect(await screen.findByText(/4 of 21/)).toHaveTextContent("not complete");
 });
@@ -129,7 +132,7 @@ it("dismisses completed progress while retaining an unobtrusive sample label", a
   expect(screen.queryByText(/Sample invoices ready/)).toBeNull();
   expect(screen.getByText("Sample data · Fictional company")).toBeVisible();
   expect(api.request).not.toHaveBeenCalledWith(
-    "/workspaces/sample",
+    "/workspaces/sample-initialization/start",
     expect.anything(),
   );
 });
@@ -185,4 +188,36 @@ it("asks for the company name and workspace type before creating", async () => {
       }),
     ),
   );
+});
+
+it("offers a named fresh sample after a history conflict without resetting the original", async () => {
+  api.status = null;
+  const original = api.request.getMockImplementation()!;
+  api.request.mockImplementation(async (path: string, ...args: unknown[]) => {
+    if (path === "/workspaces/sample-initialization/start")
+      throw new Error(
+        "This sample already has invoice history. Existing records will not be reprocessed.",
+      );
+    return original(path, ...args);
+  });
+  app();
+  fireEvent.click(
+    await screen.findByRole("button", { name: "Initialize sample invoices" }),
+  );
+  fireEvent.click(
+    await screen.findByRole("button", {
+      name: "Create Fresh Sample Workspace",
+    }),
+  );
+  expect(
+    await screen.findByRole("dialog", { name: "Create Workspace" }),
+  ).toBeVisible();
+  expect(screen.getByLabelText("Workspace type")).toHaveValue("SAMPLE");
+  expect(screen.getByLabelText("Workspace name")).toHaveValue("");
+  expect(
+    api.request.mock.calls.some(
+      ([path]) =>
+        String(path).includes("archive") || String(path).includes("delete"),
+    ),
+  ).toBe(false);
 });

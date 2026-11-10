@@ -127,7 +127,13 @@ def candidate(pages, field, item=False):
                 match = pattern.match(segment.strip())
                 if match and not re.search(r"\b(?:" + all_labels + r")\s*:", match[1], re.I):
                     value = fact(field, match[1], page["page"], segment.strip())
-                    if value["value"] is not None:
+                    # An explicit multi-PO reference is conflicting evidence, not
+                    # an absent field. Keep it so fallback and Gemini verification
+                    # cannot silently select a different, single reference.
+                    ambiguous_po = field == "po_number" and re.search(
+                        r"\s(?:/|or|and)\s", match[1], re.I
+                    )
+                    if value["value"] is not None or ambiguous_po:
                         found.append(value)
     return found
 

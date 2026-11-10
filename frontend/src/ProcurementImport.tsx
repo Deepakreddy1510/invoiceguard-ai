@@ -109,6 +109,52 @@ export default function ProcurementImport({
           Enter tax rates as fractions: 0.18 means 18%. Errors identify the row
           to correct; no partial import is saved.
         </p>
+        <dl className="import-columns">
+          {kind === "vendors" ? (
+            <>
+              <dt>legal_name / code</dt>
+              <dd>
+                Supplier legal name and your unique internal supplier code.
+              </dd>
+              <dt>tax_id / status</dt>
+              <dd>
+                Tax identifier when known. Status must be APPROVED, SUSPENDED or
+                INACTIVE; approval requires your own supplier checks.
+              </dd>
+            </>
+          ) : (
+            <>
+              <dt>number / vendor_code / currency</dt>
+              <dd>
+                Your unique PO reference, an existing supplier code and the
+                order currency (for example INR or USD).
+              </dd>
+              <dt>status / description</dt>
+              <dd>
+                Use OPEN for an order that can accept invoices; CLOSED or
+                CANCELLED stops new authorization. Description is the readable
+                name of an item or service.
+              </dd>
+              <dt>issued_on / valid_until / billing_mode</dt>
+              <dd>
+                Dates use YYYY-MM-DD. ITEMIZED checks saved line quantities;
+                AMOUNT_BASED controls a budget. Leave item columns blank for an
+                amount-based order without itemized lines.
+              </dd>
+              <dt>sku / quantity / unit_price / tax_rate / authorized_gross</dt>
+              <dd>
+                Item code, authorized units, price before tax, fractional tax
+                rate (0.18 = 18%), and the total spending limit including tax.
+                Keep repeated PO header values consistent across its lines.
+              </dd>
+            </>
+          )}
+        </dl>
+        <p>
+          CSV opens in Excel or LibreOffice. Save as UTF-8 CSV before uploading.
+          XLSX files, supplier documents and purchase order PDFs are not
+          supported by this importer.
+        </p>
       </Help>
       <button type="button" onClick={template}>
         Download CSV template

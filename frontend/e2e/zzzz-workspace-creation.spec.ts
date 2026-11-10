@@ -187,6 +187,7 @@ test("workspace form keeps normal, hover, invalid and disabled states accessible
   const normalBorder = await input.evaluate(
     (el) => getComputedStyle(el).borderTopColor,
   );
+  await input.blur();
   await input.hover();
   expect(await input.evaluate((el) => getComputedStyle(el).outlineStyle)).toBe(
     "none",

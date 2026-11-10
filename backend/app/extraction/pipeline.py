@@ -63,4 +63,8 @@ def structure(pages: list[dict], document_id: str, mode="AUTO") -> dict:
         "prompt_version": PROMPT_VERSION if source == "GEMINI" else None,
         "fallback_reason": reason,
         "requested_mode": mode,
+        "attempted_provider": "GEMINI" if mode != "FALLBACK" and settings.gemini_api_key else None,
+        "attempted_model": settings.gemini_model
+        if mode != "FALLBACK" and settings.gemini_api_key
+        else None,
     }

@@ -101,6 +101,8 @@ type Connection = {
 type Overview = {
   available: boolean;
   email_classifier?: string;
+  gmail_ai_requested?: boolean;
+  gmail_ai_available?: boolean;
   configuration_message: string | null;
   can_manage: boolean;
   can_review: boolean;
@@ -679,7 +681,9 @@ export default function EmailIntake() {
           <p>
             {list.data?.email_classifier === "GEMINI"
               ? "AI-assisted email reading is enabled by your administrator. Relevant text may be sent to Gemini; financial checks remain separate."
-              : "Standard email reading is enabled. Email content is not sent to an AI service."}
+              : list.data?.gmail_ai_requested
+                ? "Gmail AI is requested, but Gemini is not configured. Standard email reading is used; email content is not sent to an AI service."
+                : "Standard email reading is enabled. Email content is not sent to an AI service."}
           </p>
           <p>
             <a href="/settings#email-settings">

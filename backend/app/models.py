@@ -119,6 +119,7 @@ class InvoiceDocument(Base):
     __table_args__ = (UniqueConstraint("workspace_id", "sha256"),)
     id: Mapped[UUID] = mapped_column(primary_key=True, default=uuid4)
     workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"))
+    archived_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True))
     sha256: Mapped[str] = mapped_column(String(64))
     storage_key: Mapped[str] = mapped_column(String(80), unique=True)
     byte_size: Mapped[int]

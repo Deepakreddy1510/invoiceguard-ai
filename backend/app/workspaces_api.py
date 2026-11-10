@@ -263,3 +263,15 @@ def resume_sample_initialization(session: DB, user: User):
     resume(session, session.get(Workspace, user.workspace_id), user)
     session.commit()
     return sample_initialization(session, user)
+
+
+@router.post("/sample-initialization/start")
+def start_selected_sample_initialization(session: DB, user: User):
+    from app.sample_service import start
+
+    if user.role != "ADMIN":
+        raise HTTPException(403, "Workspace administrator access is required.")
+    workspace = session.get(Workspace, user.workspace_id)
+    start(session, workspace, user)
+    session.commit()
+    return sample_initialization(session, user)

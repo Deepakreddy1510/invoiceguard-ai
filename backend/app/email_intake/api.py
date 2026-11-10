@@ -629,6 +629,10 @@ def overview(
     )
     return {
         "available": google.configured(),
+        "gmail_ai_requested": get_settings().gmail_use_gemini,
+        "gmail_ai_available": bool(
+            get_settings().gmail_use_gemini and get_settings().gemini_api_key
+        ),
         "email_classifier": "GEMINI"
         if get_settings().gmail_use_gemini and get_settings().gemini_api_key
         else "FALLBACK",

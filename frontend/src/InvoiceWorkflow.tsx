@@ -41,6 +41,8 @@ export default function InvoiceWorkflow({
   const watched = useRef(new Set<string>());
   const [offset, setOffset] = useState(0);
   const [filter, setFilter] = useState("");
+  const [visibility, setVisibility] = useState("active");
+  const [archiveConfirm, setArchiveConfirm] = useState(false);
   const [search, setSearch] = useState("");
   const [uploadOpen, setUploadOpen] = useState(false);
   const [mobileDetail, setMobileDetail] = useState(
@@ -48,6 +50,7 @@ export default function InvoiceWorkflow({
   );
   const [mode, setMode] = useState("AUTO");
   const capabilities = useResource<{
+    can_manage_procurement: boolean;
     can_select_extraction_mode: boolean;
     gemini_configured: boolean;
     vendor_count: number;
@@ -56,9 +59,9 @@ export default function InvoiceWorkflow({
   const [file, setFile] = useState<File | null>(null);
   const [fileError, setFileError] = useState("");
   const [error, setError] = useState("");
-  const [operation, setOperation] = useState<"upload" | "retry" | "review">(
-    "upload",
-  );
+  const [operation, setOperation] = useState<
+    "upload" | "retry" | "review" | "organize"
+  >("upload");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
   const [drag, setDrag] = useState(false);
@@ -67,7 +70,7 @@ export default function InvoiceWorkflow({
   const runPanel = useRef<HTMLElement>(null);
   const focusRun = useRef<string | null>(null);
   const history = useResource<{ runs: RunSummary[] }>(
-    `/runs?offset=${offset}&limit=20&search=${encodeURIComponent(search)}${filter ? "&outcome=" + filter : ""}`,
+    `/runs?offset=${offset}&limit=20&visibility=${visibility}&search=${encodeURIComponent(search)}${filter ? "&outcome=" + filter : ""}`,
     1500,
   );
   const detail = useResource<RunDetail>(
@@ -216,6 +219,31 @@ export default function InvoiceWorkflow({
       setBusy(false);
     }
   }
+  async function organize() {
+    if (!detail.data || busy) return;
+    setOperation("organize");
+    setBusy(true);
+    setError("");
+    try {
+      await request("/documents/" + detail.data.document_id + "/visibility", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ archived: !detail.data.archived_at }),
+      });
+      setArchiveConfirm(false);
+      setMessage(
+        detail.data.archived_at
+          ? "Invoice restored to the active queue."
+          : "Invoice archived from the queue. Its PDF, decisions and reserved capacity are retained.",
+      );
+      history.reload();
+      detail.reload();
+    } catch (cause) {
+      setError((cause as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
   async function review() {
     setOperation("review");
     if (!selected || busy) return;
@@ -308,7 +336,9 @@ export default function InvoiceWorkflow({
               </select>
               <p className="footnote">
                 {mode === "AUTO"
-                  ? "Uses AI when available, with standard extraction as a backup."
+                  ? capabilities.data?.gemini_configured
+                    ? "Uses Gemini when available, with standard extraction as a backup. The actual method is recorded on each invoice."
+                    : "Uses standard extraction. Gemini is not configured. The same financial checks apply."
                   : mode === "GEMINI"
                     ? "Uses Gemini-assisted extraction. If it cannot complete, processing stops and the failure is recorded."
                     : "Uses built-in document reading, including scanned PDFs. The same supplier, order and financial checks always apply."}
@@ -355,7 +385,9 @@ export default function InvoiceWorkflow({
                   <strong>
                     {file ? "Choose a different PDF" : "Drop your invoice here"}
                   </strong>
-                  <span id="upload-help">or click to browse your files</span>
+                  <span id="upload-help">
+                    Upload an invoice PDF. Scanned invoices are supported.
+                  </span>
                 </span>
                 <span className="file-format">PDF</span>
               </button>
@@ -438,7 +470,9 @@ export default function InvoiceWorkflow({
               ? () => void upload()
               : operation === "retry"
                 ? retry
-                : review
+                : operation === "organize"
+                  ? organize
+                  : review
           }
         />
       )}
@@ -455,6 +489,21 @@ export default function InvoiceWorkflow({
             Runs include retries and duplicate assessments, counted separately
             from unique invoices.
           </p>
+          <label className="queue-visibility">
+            Show invoices
+            <select
+              aria-label="Queue visibility"
+              value={visibility}
+              onChange={(event) => {
+                setVisibility(event.target.value);
+                setOffset(0);
+              }}
+            >
+              <option value="active">Active queue</option>
+              <option value="archived">Archived invoices</option>
+              <option value="all">All invoices</option>
+            </select>
+          </label>
           <label className="search-field">
             <span className="sr-only">Search invoice history</span>
             <input
@@ -592,6 +641,49 @@ export default function InvoiceWorkflow({
             ← Back to invoice queue
           </button>
           <Notice error={detail.error} onRetry={detail.reload} />
+          {detail.data && capabilities.data?.can_manage_procurement && (
+            <div className="queue-organization">
+              <button
+                type="button"
+                disabled={busy}
+                onClick={() => setArchiveConfirm(true)}
+              >
+                {detail.data.archived_at
+                  ? "Restore invoice to queue"
+                  : "Archive invoice from queue"}
+              </button>
+              {detail.data.archived_at && (
+                <span className="tag">Archived from queue</span>
+              )}
+            </div>
+          )}
+          {archiveConfirm && (
+            <Dialog
+              title="Organize invoice queue"
+              onClose={() => !busy && setArchiveConfirm(false)}
+            >
+              <p>
+                Archiving only hides this document and its processing attempts
+                from the active queue. The original PDF, decisions, reviews,
+                duplicate checks and reserved or settled capacity stay intact.
+                Dashboard totals still include archived invoices.
+              </p>
+              <p>
+                Use Archived invoices to find it again. To dispute an invoice,
+                use source review; archiving does not reverse a financial
+                decision.
+              </p>
+              <Notice error={error} />
+              <button disabled={busy} onClick={() => void organize()}>
+                {detail.data?.archived_at
+                  ? "Confirm restore"
+                  : "Confirm archive"}
+              </button>
+              <button disabled={busy} onClick={() => setArchiveConfirm(false)}>
+                Cancel
+              </button>
+            </Dialog>
+          )}
           {detail.data ? (
             <RunDetails
               key={detail.data.id}

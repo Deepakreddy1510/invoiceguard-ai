@@ -263,7 +263,7 @@ export default function POEditor({
                 </select>
               </label>
               <label>
-                Authorized gross
+                Authorized total (including tax)
                 <input
                   inputMode="decimal"
                   aria-label="Authorized gross"
@@ -273,6 +273,41 @@ export default function POEditor({
                 />
               </label>
             </div>
+            <details className="help-note" open={!initial}>
+              <summary>How to fill in this purchase order</summary>
+              <dl className="import-columns">
+                <dt>Supplier and PO number</dt>
+                <dd>
+                  Choose a saved supplier. Use the order reference your supplier
+                  will put on invoices; each PO number must be unique in this
+                  workspace.
+                </dd>
+                <dt>Currency and dates</dt>
+                <dd>
+                  Use the order currency. Issue date is when the order starts;
+                  valid-until is the last date invoices can be accepted under
+                  this order.
+                </dd>
+                <dt>Line items</dt>
+                <dd>
+                  SKU is your item or service code. Quantity is how many units
+                  you authorize; unit price is the price before tax for one
+                  unit. Enter tax rates as fractions: 0.18 means 18%.
+                </dd>
+                <dt>Authorized total</dt>
+                <dd>
+                  The maximum spend including tax. Use the calculated total for
+                  itemized orders; saving validates it on the server.
+                </dd>
+                <dt>Billing mode</dt>
+                <dd>
+                  Itemized checks quantities, unit prices and tax against each
+                  saved line. Amount-based controls a service or bundled budget
+                  without inventing quantities. Both enforce the remaining order
+                  capacity across invoices.
+                </dd>
+              </dl>
+            </details>
             <h3>Line items</h3>
             {form.billing_mode === "AMOUNT_BASED" && !form.items.length && (
               <p className="footnote">

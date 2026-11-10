@@ -37,6 +37,7 @@ export type RunSummary = {
   fallback_reason?: string | null;
   id: string;
   document_id: string;
+  archived_at?: string | null;
   parent_run_id: string | null;
   status: string;
   attempt: number;
@@ -49,8 +50,8 @@ export type RunSummary = {
 };
 export type Extraction = {
   model?: string | null;
-  attempted_provider?: string;
-  attempted_model?: string;
+  attempted_provider?: string | null;
+  attempted_model?: string | null;
   requested_mode?: string;
   provider: string;
   fallback_reason: string | null;

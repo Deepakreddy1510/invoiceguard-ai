@@ -168,7 +168,7 @@ export default function Vendors() {
               <fieldset disabled={busy}>
                 <div className="field-grid">
                   <label>
-                    Legal vendor name
+                    Supplier legal name
                     <input
                       aria-label="Legal vendor name"
                       required
@@ -180,9 +180,13 @@ export default function Vendors() {
                         setValues((v) => ({ ...v, legal_name: e.target.value }))
                       }
                     />
+                    <small>
+                      Use the legal name, internal supplier code and tax
+                      identifier from verified supplier records.
+                    </small>
                   </label>
                   <label>
-                    Vendor code
+                    Supplier code
                     <input
                       aria-label="Vendor code"
                       required
@@ -207,7 +211,7 @@ export default function Vendors() {
                     />
                   </label>
                   <label>
-                    Status
+                    Approval status
                     <select
                       aria-label="Vendor status"
                       value={values.status}
@@ -223,6 +227,12 @@ export default function Vendors() {
                     </select>
                   </label>
                 </div>
+                <p className="field-guidance">
+                  Approval is your company’s authorization to transact with this
+                  supplier. Choose Approved only after your own checks;
+                  documents never approve a supplier automatically. Missing or
+                  duplicate codes must be corrected before saving.
+                </p>
                 <div className="toolbar">
                   <button className="primary" type="submit">
                     Save vendor

@@ -571,10 +571,40 @@ export default function RunDetails({
             <strong>{fact(run, "po_number")!.value}</strong>
           </span>
         )}
-        {run.extraction?.provider && (
+        <span>
+          <small>Document reading</small>
+          <strong>
+            {run.pages?.length
+              ? [
+                  ...new Set(
+                    run.pages.map((page) =>
+                      page.method === "OCR"
+                        ? "OCR"
+                        : page.method === "PDF_TEXT"
+                          ? "Digital PDF text"
+                          : "Reading method not recorded",
+                    ),
+                  ),
+                ].join(" + ")
+              : "Not recorded yet"}
+          </strong>
+        </span>
+        {run.extraction && (
           <span>
-            <small>Document reading</small>
-            <strong>{humanize(run.extraction.provider)}</strong>
+            <small>Extraction provider</small>
+            <strong>
+              {run.extraction.provider === "GEMINI"
+                ? "Gemini"
+                : run.extraction.provider === "FALLBACK"
+                  ? "Standard"
+                  : "No completed extraction"}
+            </strong>
+          </span>
+        )}
+        {run.extraction?.provider === "GEMINI" && run.extraction.model && (
+          <span>
+            <small>Model used</small>
+            <strong>{run.extraction.model}</strong>
           </span>
         )}
       </div>
@@ -589,6 +619,17 @@ export default function RunDetails({
         ]}
       >
         <div hidden={tab !== "overview"} className="invoice-overview">
+          <p className="reading-explanation">
+            AI helps read invoice details when Gemini is used. Financial
+            decisions are made using your company’s saved purchase orders and
+            validation rules.
+          </p>
+          {run.extraction?.fallback_reason && (
+            <p className="reading-explanation">
+              <strong>Why standard extraction was used:</strong>{" "}
+              {run.extraction.fallback_reason}
+            </p>
+          )}
           {run.decision ? (
             <section
               className={
@@ -679,6 +720,12 @@ export default function RunDetails({
                 <div>
                   <dt>Model used</dt>
                   <dd>{String(run.extraction.model)}</dd>
+                </div>
+              )}
+              {run.extraction?.fallback_reason && (
+                <div>
+                  <dt>Recorded fallback reason</dt>
+                  <dd>{run.extraction.fallback_reason}</dd>
                 </div>
               )}
               {run.extraction?.attempted_provider && (

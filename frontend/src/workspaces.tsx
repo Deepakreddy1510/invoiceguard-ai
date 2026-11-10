@@ -7,6 +7,7 @@ import {
 } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { request, setActiveWorkspace } from "./client";
+import { Dialog } from "./Experience";
 import { Notice, Skeleton } from "./ui";
 export type Workspace = {
   id: string;
@@ -40,6 +41,7 @@ type Context = {
   choose: (id: string) => void;
   reload: () => void;
   created: (catalog: Catalog, id: string) => void;
+  openCreation: (type?: "EMPTY" | "SAMPLE") => void;
 };
 const Workspaces = createContext<Context>({
   active: null,
@@ -47,6 +49,7 @@ const Workspaces = createContext<Context>({
   choose: () => {},
   reload: () => {},
   created: () => {},
+  openCreation: () => {},
 });
 export const useWorkspace = () => useContext(Workspaces);
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
@@ -55,6 +58,9 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   const [selected, setSelected] = useState<string | null>(null);
   const [error, setError] = useState("");
   const [retry, setRetry] = useState(0);
+  const [creationType, setCreationType] = useState<"EMPTY" | "SAMPLE" | null>(
+    null,
+  );
   useEffect(() => {
     const controller = new AbortController();
     setError("");
@@ -131,6 +137,7 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         active,
         workspaces: catalog!.workspaces,
         choose,
+        openCreation: (type = "EMPTY") => setCreationType(type),
         reload: () => setRetry((v) => v + 1),
         created: (result, id) => {
           setCatalog(result);
@@ -143,50 +150,17 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
       <div className="workspace-frame" key={active.id}>
         {children}
       </div>
+      {creationType && (
+        <WorkspaceCreation
+          initialType={creationType}
+          onClose={() => setCreationType(null)}
+        />
+      )}
     </Workspaces.Provider>
   );
 }
 export function WorkspaceSelector() {
-  const { active, workspaces, choose, created } = useWorkspace();
-  const [confirm, setConfirm] = useState(false);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState("");
-  const [nonce, setNonce] = useState(crypto.randomUUID());
-  const [name, setName] = useState("");
-  const [workspaceType, setWorkspaceType] = useState("EMPTY");
-  async function create() {
-    setBusy(true);
-    setError("");
-    try {
-      const result = await request<Catalog & { workspace_id: string }>(
-        "/workspaces",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            request_id: nonce,
-            name: name.trim(),
-            workspace_type: workspaceType,
-          }),
-        },
-      );
-      try {
-        sessionStorage.setItem(
-          "invoiceguard.workspace." + result.subject,
-          result.workspace_id,
-        );
-      } catch {
-        /* Storage is optional. */
-      }
-      setConfirm(false);
-      setNonce(crypto.randomUUID());
-      created(result, result.workspace_id);
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
+  const { active, workspaces, choose, openCreation } = useWorkspace();
   return (
     <div className="workspace-selector">
       <label htmlFor="workspace-picker">WORKSPACE</label>
@@ -208,7 +182,7 @@ export function WorkspaceSelector() {
           </option>
         ))}
       </select>
-      <button type="button" onClick={() => setConfirm(true)}>
+      <button type="button" onClick={() => openCreation()}>
         Create Workspace
       </button>
       <details className="workspace-actions">
@@ -233,57 +207,107 @@ export function WorkspaceSelector() {
           )}
         </div>
       </details>
-      {confirm && (
-        <form
-          className="fresh-demo-confirm"
-          aria-label="Create Workspace"
-          onSubmit={(event) => {
-            event.preventDefault();
-            void create();
-          }}
-        >
-          <label htmlFor="new-workspace-name">Workspace name</label>
-          <input
-            id="new-workspace-name"
-            required
-            maxLength={160}
-            value={name}
-            disabled={busy}
-            onChange={(event) => setName(event.target.value)}
-          />
-          <label htmlFor="new-workspace-type">Workspace type</label>
-          <select
-            id="new-workspace-type"
-            value={workspaceType}
-            disabled={busy}
-            onChange={(event) => setWorkspaceType(event.target.value)}
-          >
-            <option value="EMPTY">Empty workspace</option>
-            <option value="SAMPLE">Sample workspace</option>
-          </select>
-          <p>
-            {workspaceType === "EMPTY"
-              ? "Private company workspace with no vendors, purchase orders, invoices or commitments. Gmail starts disconnected. Add your own records when ready."
-              : "Fictional suppliers and purchase orders, with 21 original sample PDFs queued for the worker. Includes Validated, Needs Review and Blocked examples. Gmail starts disconnected."}
-          </p>
-          <p>
-            Existing history is preserved. Duplicate names are allowed; each
-            workspace has its own identity.
-          </p>
-          <button type="submit" disabled={busy || !name.trim()}>
-            {busy ? "Creating…" : "Confirm creation"}
-          </button>
-          <button
-            type="button"
-            disabled={busy}
-            onClick={() => setConfirm(false)}
-          >
-            Cancel
-          </button>
-        </form>
-      )}
-      <Notice error={error} />
     </div>
+  );
+}
+
+function WorkspaceCreation({
+  initialType,
+  onClose,
+}: {
+  initialType: "EMPTY" | "SAMPLE";
+  onClose: () => void;
+}) {
+  const { created } = useWorkspace();
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState("");
+  const [nonce, setNonce] = useState(crypto.randomUUID());
+  const [name, setName] = useState("");
+  const [workspaceType, setWorkspaceType] = useState<string>(initialType);
+  async function create() {
+    setBusy(true);
+    setError("");
+    try {
+      const result = await request<Catalog & { workspace_id: string }>(
+        "/workspaces",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            request_id: nonce,
+            name: name.trim(),
+            workspace_type: workspaceType,
+          }),
+        },
+      );
+      try {
+        sessionStorage.setItem(
+          "invoiceguard.workspace." + result.subject,
+          result.workspace_id,
+        );
+      } catch {
+        /* Storage is optional. */
+      }
+      onClose();
+      setNonce(crypto.randomUUID());
+      created(result, result.workspace_id);
+    } catch (e) {
+      setError((e as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  return (
+    <Dialog title="Create Workspace" onClose={() => !busy && onClose()}>
+      <p>
+        Name your workspace and choose whether to start empty or explore
+        fictional sample invoices.
+      </p>
+      <Notice error={error} />
+      <form
+        className="workspace-create-form"
+        aria-label="Create Workspace"
+        onSubmit={(event) => {
+          event.preventDefault();
+          void create();
+        }}
+      >
+        <label htmlFor="new-workspace-name">Workspace name</label>
+        <input
+          id="new-workspace-name"
+          required
+          maxLength={160}
+          value={name}
+          disabled={busy}
+          onChange={(event) => setName(event.target.value)}
+        />
+        <label htmlFor="new-workspace-type">Workspace type</label>
+        <select
+          id="new-workspace-type"
+          value={workspaceType}
+          disabled={busy}
+          onChange={(event) => setWorkspaceType(event.target.value)}
+        >
+          <option value="EMPTY">Empty workspace</option>
+          <option value="SAMPLE">Sample workspace</option>
+        </select>
+        <p>
+          {workspaceType === "EMPTY"
+            ? "Private company workspace with no vendors, purchase orders, invoices or commitments. Gmail starts disconnected. Add your own records when ready."
+            : "Fictional suppliers and purchase orders, with 21 original sample PDFs queued for the worker. Includes Validated, Needs Review and Blocked examples. Gmail starts disconnected."}
+        </p>
+        <p>
+          Existing history is preserved. Duplicate names are allowed; each
+          workspace has its own identity.
+        </p>
+        <button type="submit" disabled={busy || !name.trim()}>
+          {busy ? "Creating…" : "Confirm creation"}
+        </button>
+        <button type="button" disabled={busy} onClick={onClose}>
+          Cancel
+        </button>
+      </form>
+    </Dialog>
   );
 }
 
@@ -296,7 +320,7 @@ type Initialization = {
   run_ids?: string[];
 };
 export function SampleInitialization() {
-  const { active } = useWorkspace();
+  const { active, openCreation } = useWorkspace();
   const [data, setData] = useState<{
     eligible: boolean;
     initialization: Initialization | null;
@@ -348,7 +372,7 @@ export function SampleInitialization() {
       await request(
         resume
           ? "/workspaces/sample-initialization/resume"
-          : "/workspaces/sample",
+          : "/workspaces/sample-initialization/start",
         { method: "POST" },
       );
       setRevision((value) => value + 1);
@@ -463,6 +487,19 @@ export function SampleInitialization() {
       {error && (
         <>
           <p role="alert">{error}</p>
+          {active?.role === "ADMIN" &&
+            /history|procurement.*changed|Gmail|mailbox/i.test(error) && (
+              <div className="notice">
+                <p>
+                  Existing invoice or email history must stay in this workspace.
+                  Start the fixed 21-invoice scenario in a separate, clean
+                  sample instead.
+                </p>
+                <button onClick={() => openCreation("SAMPLE")}>
+                  Create Fresh Sample Workspace
+                </button>
+              </div>
+            )}
           <button onClick={() => setRevision((value) => value + 1)}>
             Retry status
           </button>

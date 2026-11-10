@@ -156,3 +156,69 @@ it("summarizes a real completed blocked sample without animating immutable start
   );
   expect(screen.getAllByText(/Historical start/).length).toBeGreaterThan(0);
 });
+
+it("shows actual OCR, standard extraction and fallback rather than an AI success", () => {
+  const run: RunDetail = {
+    ...(completedSample as RunDetail),
+    pages: [{ page: 1, text: "Scanned invoice", method: "OCR" }],
+    extraction: {
+      provider: "FALLBACK",
+      model: null,
+      fallback_reason: "Gemini request failed; conservative extraction used.",
+      fields: {},
+    },
+  };
+  render(
+    <RunDetails
+      run={run}
+      busy={false}
+      onRetry={() => {}}
+      onSelect={() => {}}
+      onReview={() => {}}
+    />,
+  );
+  expect(document.querySelector(".invoice-identity-strip")).toHaveTextContent(
+    "OCR",
+  );
+  expect(document.querySelector(".invoice-identity-strip")).toHaveTextContent(
+    "Standard",
+  );
+  expect(
+    document.querySelector(".invoice-identity-strip"),
+  ).not.toHaveTextContent("Gemini");
+  expect(screen.getAllByText(/Gemini request failed/).length).toBeGreaterThan(
+    0,
+  );
+  expect(
+    screen.getByText(/Financial decisions are made using your company/),
+  ).toBeVisible();
+});
+
+it("shows the actual Gemini model only when Gemini produced extraction", () => {
+  const run: RunDetail = {
+    ...(completedSample as RunDetail),
+    pages: [{ page: 1, text: "Digital invoice", method: "PDF_TEXT" }],
+    extraction: {
+      provider: "GEMINI",
+      model: "gemini-test-model",
+      fallback_reason: null,
+      fields: {},
+    },
+  };
+  render(
+    <RunDetails
+      run={run}
+      busy={false}
+      onRetry={() => {}}
+      onSelect={() => {}}
+      onReview={() => {}}
+    />,
+  );
+  expect(document.querySelector(".invoice-identity-strip")).toHaveTextContent(
+    "Digital PDF text",
+  );
+  expect(document.querySelector(".invoice-identity-strip")).toHaveTextContent(
+    "gemini-test-model",
+  );
+  expect(screen.queryByText(/Why standard extraction was used/)).toBeNull();
+});

@@ -1,9 +1,11 @@
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import Annotated, Literal
 from uuid import UUID
 
 from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query, UploadFile
 from fastapi.responses import FileResponse, StreamingResponse
+from pydantic import BaseModel, ConfigDict
 from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 
@@ -46,6 +48,7 @@ def run_view(session, run, decision=_UNSET):
     return {
         "id": str(run.id),
         "document_id": str(run.document_id),
+        "archived_at": session.get(InvoiceDocument, run.document_id).archived_at,
         "parent_run_id": str(run.parent_run_id) if run.parent_run_id else None,
         "status": run.status,
         "attempt": run.attempt,
@@ -145,6 +148,7 @@ def history(
     limit: Annotated[int, Query(ge=1, le=100)] = 30,
     search: Annotated[str | None, Query(max_length=160)] = None,
     outcome: Literal["VALIDATED", "NEEDS_REVIEW", "BLOCKED"] | None = None,
+    visibility: Literal["active", "archived", "all"] = "active",
 ):
     workspace_id = user.workspace_id
     query = (
@@ -153,6 +157,12 @@ def history(
         .outerjoin(Decision)
         .where(InvoiceDocument.workspace_id == workspace_id)
     )
+    if visibility != "all":
+        query = query.where(
+            InvoiceDocument.archived_at.is_(None)
+            if visibility == "active"
+            else InvoiceDocument.archived_at.is_not(None)
+        )
     if search:
         term = "%" + search.replace("\\", "\\\\").replace("%", "\\%").replace("_", "\\_") + "%"
         query = query.where(
@@ -326,5 +336,35 @@ def retain_document(document_id: UUID, session: DB, user: Reviewer):
         raise HTTPException(404, "Document not found.")
     raise HTTPException(
         409,
-        "Uploads are audited from ingestion and cannot be silently deleted. Use source review and explicit rejection/release; settled capacity cannot be released by deletion.",
+        "Invoices retain their original PDFs and financial history. Archive the invoice to hide it from the active queue. Archiving does not release reserved or settled capacity.",
     )
+
+
+class QueueVisibility(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    archived: bool
+
+
+@router.post("/documents/{document_id}/visibility")
+def organize_document(document_id: UUID, payload: QueueVisibility, session: DB, user: Reviewer):
+    """Queue organization only. Financial identity, reservations and evidence stay intact."""
+    financial_lock(session, user.workspace_id)
+    document = session.scalar(
+        select(InvoiceDocument)
+        .where(InvoiceDocument.id == document_id, InvoiceDocument.workspace_id == user.workspace_id)
+        .with_for_update()
+    )
+    if not document:
+        raise HTTPException(404, "Document not found in this workspace.")
+    if bool(document.archived_at) != payload.archived:
+        document.archived_at = datetime.now(timezone.utc) if payload.archived else None
+        audit(
+            session,
+            user.workspace_id,
+            user.subject,
+            "INVOICE_QUEUE_ARCHIVED" if payload.archived else "INVOICE_QUEUE_RESTORED",
+            {"visibility_only": True, "financial_history_retained": True},
+            document.id,
+        )
+        session.commit()
+    return {"document_id": str(document.id), "archived_at": document.archived_at}
