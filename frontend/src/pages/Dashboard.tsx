@@ -107,8 +107,8 @@ export default function Dashboard() {
           filtered.reload();
         }}
       />
-      {me.data?.workspace_kind === "MY" &&
-        (me.data.vendor_count === 0 || me.data.po_count === 0) && (
+      {["MY", "CUSTOM"].includes(me.data?.workspace_kind ?? "") &&
+        (me.data?.vendor_count === 0 || me.data?.po_count === 0) && (
           <div className="notice">
             <strong>Make this workspace your own.</strong>
             <p>

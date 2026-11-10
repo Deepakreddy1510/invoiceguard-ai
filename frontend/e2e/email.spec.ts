@@ -155,7 +155,7 @@ test("provider-mocked Gmail handoff uses real PostgreSQL, PDF worker, decisions 
   await page.getByRole("button", { name: "Close email detail" }).click();
   await page
     .getByLabel("Workspace", { exact: true })
-    .selectOption({ label: "Demo Workspace" });
+    .selectOption({ label: "Demo Workspace · Fictional sample" });
   await page.getByRole("link", { name: "Email Intake", exact: true }).click();
   await expect(
     page.getByText("provider-contract@example.invalid", { exact: true }),

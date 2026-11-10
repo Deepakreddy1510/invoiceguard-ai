@@ -201,7 +201,7 @@ test("private workspace procurement, actual PDFs, commitments and retained histo
   ).toBeVisible();
   await page
     .getByLabel("Workspace", { exact: true })
-    .selectOption({ label: "Demo Workspace" });
+    .selectOption({ label: "Demo Workspace · Fictional sample" });
   await page.getByRole("link", { name: "Vendors", exact: true }).click();
   await expect(page.getByText("SYN-001", { exact: true })).toBeVisible();
   await expect(page.getByText("BROWSER-OWN", { exact: true })).toHaveCount(0);

@@ -1,8 +1,10 @@
+import unicodedata
 from datetime import datetime, timezone
+from typing import Literal
 from uuid import UUID
 
 from fastapi import APIRouter, HTTPException
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field, field_validator
 from sqlalchemy import select, text
 
 from app.audit import audit, financial_lock
@@ -74,6 +76,33 @@ def sample_workspace(session: DB, user: User):
     start(session, workspace, user)
     session.commit()
     return {"workspace_id": str(workspace.id), **listing(session, user)}
+
+
+class CreateWorkspaceInput(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    request_id: UUID
+    name: str = Field(min_length=1, max_length=160)
+    workspace_type: Literal["EMPTY", "SAMPLE"]
+
+    @field_validator("name")
+    @classmethod
+    def visible_name(cls, value):
+        value = value.strip()
+        if not value or any(unicodedata.category(c).startswith("C") for c in value):
+            raise ValueError("Enter a workspace name using visible characters.")
+        return value
+
+
+@router.post("", status_code=201)
+def create_workspace(payload: CreateWorkspaceInput, session: DB, user: User):
+    if user.role != "ADMIN":
+        raise HTTPException(403, "Workspace administrator access is required.")
+    from app.workspace_service import create_workspace as create
+
+    identifier, replayed = create(
+        session, user, payload.request_id, payload.name, payload.workspace_type
+    )
+    return {"workspace_id": str(identifier), "replayed": replayed, **listing(session, user)}
 
 
 class FreshDemoInput(BaseModel):
@@ -216,9 +245,9 @@ def restore_workspace(identifier: UUID, payload: WorkspaceChange, session: DB, u
 
 @router.get("/sample-initialization")
 def sample_initialization(session: DB, user: User):
-    from app.sample_service import progress, sample_id
+    from app.sample_service import is_owned_sample, progress
 
-    own = user.workspace_id == sample_id(user.subject)
+    own = is_owned_sample(session, session.get(Workspace, user.workspace_id), user.subject)
     return {
         "eligible": own,
         "initialization": progress(session, user.workspace_id) if own else None,

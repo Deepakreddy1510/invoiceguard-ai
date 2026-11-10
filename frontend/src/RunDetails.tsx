@@ -340,18 +340,51 @@ function FinancialOutput({ run }: { run: RunDetail }) {
     </>
   );
 }
-function Stage({ name, run }: { name: string; run: RunDetail }) {
+export function stageState(run: RunDetail, name: string) {
   const events = run.events.filter(
-    (e) =>
-      (e.stage === name ||
-        (name === "supplier_po" && e.stage === "validation")) &&
-      (e.attempt === run.attempt || (name === "ingestion" && e.attempt === 0)),
+    (event) =>
+      event.stage === name &&
+      (event.attempt === run.attempt ||
+        (name === "ingestion" && event.attempt === 0)),
   );
-  const last = events.at(-1);
+  const last = [...events].sort((a, b) => a.id - b.id).at(-1);
+  // A terminal run never proves an unfinished stage succeeded.
   const state =
-    name === "supplier_po" && last?.outcome === "SUCCEEDED" && !run.decision
-      ? "RUNNING"
+    last?.outcome === "RUNNING" && run.status !== "RUNNING"
+      ? "INCOMPLETE"
       : (last?.outcome ?? "PENDING");
+  return { events, last, state };
+}
+function EventTimeline({ run }: { run: RunDetail }) {
+  return (
+    <details className="operational-events">
+      <summary>
+        Immutable execution timeline ({run.events.length} events)
+      </summary>
+      <ol>
+        {run.events.map((event) => (
+          <li key={event.id}>
+            <strong>
+              {humanize(event.stage)} ·{" "}
+              {event.outcome === "RUNNING"
+                ? "Historical start (RUNNING)"
+                : humanize(event.outcome)}
+            </strong>
+            <p>{event.detail}</p>
+            <time dateTime={event.created_at}>{when(event.created_at)}</time> ·
+            attempt {event.attempt} · event {event.id}
+          </li>
+        ))}
+      </ol>
+    </details>
+  );
+}
+
+function Stage({ name, run }: { name: string; run: RunDetail }) {
+  const { events, last, state } = stageState(
+    run,
+    name === "supplier_po" ? "validation" : name,
+  );
   const [open, setOpen] = useState(state === "RUNNING" || state === "FAILED");
   useEffect(() => {
     if (state === "RUNNING" || state === "FAILED") setOpen(true);
@@ -457,9 +490,7 @@ export default function RunDetails({
         : pipeline
             .flatMap((stage) =>
               stage === "text_extraction" &&
-              run.events.some(
-                (e) => e.stage === "ocr" && e.outcome !== "SKIPPED",
-              )
+              run.events.some((e) => e.stage === "ocr")
                 ? [stage, "ocr"]
                 : [stage],
             )
@@ -728,8 +759,12 @@ export default function RunDetails({
             </div>
           )}
           <div className="section-heading">
-            <h3>Live processing stages</h3>
-            <span>Updates as your invoice is processed</span>
+            <h3>
+              {isTerminal(run)
+                ? "Recorded processing stages"
+                : "Live processing stages"}
+            </h3>
+            <span>Latest recorded state for attempt {run.attempt}</span>
           </div>
           <ol className="timeline" aria-label="Actual execution stages">
             {stages.map((stage) => (
@@ -743,27 +778,7 @@ export default function RunDetails({
             </details>
           )}
           <TechnicalDetails label="Persisted execution events">
-            {run.events.length > 0 && (
-              <details className="operational-events">
-                <summary>
-                  All persisted execution events ({run.events.length})
-                </summary>
-                <ol>
-                  {run.events.map((event) => (
-                    <li key={event.id}>
-                      <strong>
-                        {humanize(event.stage)} · {humanize(event.outcome)}
-                      </strong>
-                      <p>{event.detail}</p>
-                      <time dateTime={event.created_at}>
-                        {when(event.created_at)}
-                      </time>{" "}
-                      · attempt {event.attempt}
-                    </li>
-                  ))}
-                </ol>
-              </details>
-            )}
+            <EventTimeline run={run} />
           </TechnicalDetails>
           {!run.decision && (
             <div className="decision-awaiting">
@@ -796,24 +811,40 @@ export default function RunDetails({
           <section aria-label="Invoice activity">
             <h3>Recorded processing activity</h3>
             <p className="footnote">
-              Actual events for this run. Earlier revisions remain in their
-              original processing record.
+              Latest recorded stage states for attempt {run.attempt}. Earlier
+              attempts and revisions remain in the immutable timeline and their
+              original processing records.
             </p>
             <ol className="business-execution">
-              {run.events.map((event) => (
-                <li key={event.id}>
-                  <div>
-                    <strong>
-                      {stageNames[event.stage] ?? humanize(event.stage)}
-                    </strong>
-                    <Status value={event.outcome} />
-                  </div>
-                  <time dateTime={event.created_at}>
-                    {when(event.created_at)}
-                  </time>
-                </li>
-              ))}
+              {[
+                ...new Set(
+                  run.events
+                    .filter((event) => event.stage !== "worker")
+                    .map((event) => event.stage),
+                ),
+              ].map((stage) => {
+                const { last, state } = stageState(run, stage);
+                return (
+                  <li key={stage}>
+                    <div>
+                      <strong>{stageNames[stage] ?? humanize(stage)}</strong>
+                      <Status value={state} />
+                    </div>
+                    {last ? (
+                      <>
+                        <time dateTime={last.created_at}>
+                          {when(last.created_at)}
+                        </time>{" "}
+                        · attempt {last.attempt}
+                      </>
+                    ) : (
+                      <span>No event in attempt {run.attempt}</span>
+                    )}
+                  </li>
+                );
+              })}
             </ol>
+            <EventTimeline run={run} />
             {run.parent_run_id && (
               <button
                 className="text-button"

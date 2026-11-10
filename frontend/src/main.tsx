@@ -30,3 +30,4 @@ async function start() {
   }
 }
 void start();
+import "./focus.css";

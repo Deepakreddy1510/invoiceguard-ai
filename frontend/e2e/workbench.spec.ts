@@ -72,8 +72,17 @@ test("real paginated invoice workbench, private PDF controls, outcomes, tabs and
     })
   ).json();
   await expect(page.locator(".business-execution > li")).toHaveCount(
-    actual.events.length,
+    new Set(
+      actual.events
+        .filter((event: { stage: string }) => event.stage !== "worker")
+        .map((event: { stage: string }) => event.stage),
+    ).size,
   );
+  await expect(
+    page
+      .getByRole("region", { name: "Invoice activity" })
+      .locator(".operational-events > ol > li"),
+  ).toHaveCount(actual.events.length);
   await page
     .getByRole("button", { name: "Collapse navigation", exact: true })
     .click();

@@ -116,12 +116,22 @@ test("sidebar access at native zoom and short window heights", async ({
           await expect
             .poll(() => page.evaluate(() => devicePixelRatio))
             .toBeCloseTo(zoom);
-          const toggle = page.getByRole("button", {
-            name: "Open navigation",
-            exact: true,
+          // Native zoom applies viewport/media-query changes across animation frames.
+          // Wait for layout before deciding whether the responsive menu needs opening.
+          await page.evaluate(async () => {
+            await document.fonts.ready;
+            await new Promise((resolve) =>
+              requestAnimationFrame(() => requestAnimationFrame(resolve)),
+            );
           });
-          if (await toggle.isVisible()) await toggle.click();
-          const nav = page.getByRole("navigation", { name: "Main navigation" });
+          const nav = page.getByRole("navigation", {
+            name: "Main navigation",
+            includeHidden: true,
+          });
+          if (!(await nav.isVisible())) {
+            await page.locator(".nav-toggle").click();
+          }
+          await expect(nav).toBeVisible();
           await nav.focus();
           await page.keyboard.press("End");
           await page.locator(".sidebar-scroll").hover();

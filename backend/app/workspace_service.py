@@ -43,7 +43,7 @@ def workspace_kind(workspace):
     return (
         "DEMO"
         if workspace.id == EXPANDED_DEMO
-        or workspace.name == "Synthetic AP Demo"
+        or (workspace.owner_subject is None and workspace.name == "Synthetic AP Demo")
         or workspace.id
         == uuid5(NAMESPACE_URL, "invoiceguard:asterfield-v1:" + (workspace.owner_subject or ""))
         else workspace.kind
@@ -198,14 +198,14 @@ def fresh_demo(session, user, request_id: UUID):
     }
 
 
-def provision_sample(session, user):
+def provision_sample(session, user, workspace_id=None, name=None):
     """Isolated sample procurement only. Never copy another workspace or Gmail tokens."""
     from scripts.install_asterfield_demo import COMPANY, catalogue
 
-    workspace_id = uuid5(NAMESPACE_URL, "invoiceguard:sample:" + user.subject)
+    workspace_id = workspace_id or uuid5(NAMESPACE_URL, "invoiceguard:sample:" + user.subject)
     created = session.scalar(
         insert(Workspace)
-        .values(id=workspace_id, name=COMPANY, kind="DEMO", owner_subject=user.subject)
+        .values(id=workspace_id, name=name or COMPANY, kind="DEMO", owner_subject=user.subject)
         .on_conflict_do_nothing()
         .returning(Workspace.id)
     )
@@ -250,3 +250,45 @@ def provision_sample(session, user):
         {"isolated": True, "invoices": 0},
     )
     return workspace
+
+
+def create_workspace(session, user, request_id, name, workspace_type):
+    """One transaction and user-scoped ID serialize retries without copying tenant data."""
+    from fastapi import HTTPException
+
+    from app.models import AuditEvent
+    from app.sample_service import start
+
+    workspace_id = uuid5(NAMESPACE_URL, f"invoiceguard:create:{user.subject}:{request_id}")
+    financial_lock_key = "workspace-create:" + str(workspace_id)
+    from sqlalchemy import text
+
+    session.execute(
+        text("SELECT pg_advisory_xact_lock(hashtextextended(:key,0))"), {"key": financial_lock_key}
+    )
+    existing = session.get(Workspace, workspace_id)
+    detail = {"name": name, "type": workspace_type}
+    if existing:
+        receipt = session.scalar(
+            select(AuditEvent).where(
+                AuditEvent.workspace_id == workspace_id,
+                AuditEvent.actor == user.subject,
+                AuditEvent.action == "WORKSPACE_CREATED",
+            )
+        )
+        if existing.owner_subject != user.subject or not receipt or receipt.detail != detail:
+            raise HTTPException(
+                409, "This creation request was already used with different details."
+            )
+        return workspace_id, True
+    if workspace_type == "SAMPLE":
+        workspace = provision_sample(session, user, workspace_id, name)
+        start(session, workspace, user)
+    else:
+        workspace = Workspace(id=workspace_id, name=name, kind="CUSTOM", owner_subject=user.subject)
+        session.add(workspace)
+        session.flush()
+        session.add(Membership(workspace_id=workspace_id, subject=user.subject, role="ADMIN"))
+    audit(session, workspace_id, user.subject, "WORKSPACE_CREATED", detail)
+    session.commit()
+    return workspace_id, False

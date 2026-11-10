@@ -1,0 +1,96 @@
+{
+  "id": "7770b239-23d8-4348-9d04-f683bc8c8639",
+  "document_id": "f4f75f70-7701-461b-9512-732d16911935",
+  "parent_run_id": null,
+  "status": "SUCCEEDED",
+  "attempt": 1,
+  "outcome": "BLOCKED",
+  "created_at": "2026-11-10T19:10:49.718663+00:00",
+  "finished_at": "2026-11-10T19:10:50.090166+00:00",
+  "error": null,
+  "events": [
+    {
+      "id": 531,
+      "stage": "ingestion",
+      "outcome": "SUCCEEDED",
+      "attempt": 0,
+      "detail": "PDF verified: 1 page(s), 5008 bytes.",
+      "created_at": "2026-11-10T19:10:49.718663+00:00"
+    },
+    {
+      "id": 532,
+      "stage": "worker",
+      "outcome": "RUNNING",
+      "attempt": 1,
+      "detail": "Worker claimed durable run.",
+      "created_at": "2026-11-10T19:10:49.861435+00:00"
+    },
+    {
+      "id": 533,
+      "stage": "text_extraction",
+      "outcome": "RUNNING",
+      "attempt": 1,
+      "detail": "Reading actual PDF pages; image pages use Tesseract.",
+      "created_at": "2026-11-10T19:10:49.864610+00:00"
+    },
+    {
+      "id": 534,
+      "stage": "text_extraction",
+      "outcome": "SUCCEEDED",
+      "attempt": 1,
+      "detail": "Read 1 page(s).",
+      "created_at": "2026-11-10T19:10:49.996770+00:00"
+    },
+    {
+      "id": 535,
+      "stage": "ocr",
+      "outcome": "SKIPPED",
+      "attempt": 1,
+      "detail": "No scanned pages required OCR.",
+      "created_at": "2026-11-10T19:10:50.001073+00:00"
+    },
+    {
+      "id": 536,
+      "stage": "field_extraction",
+      "outcome": "RUNNING",
+      "attempt": 1,
+      "detail": "Structuring invoice facts and checking source evidence.",
+      "created_at": "2026-11-10T19:10:50.005654+00:00"
+    },
+    {
+      "id": 537,
+      "stage": "field_extraction",
+      "outcome": "SUCCEEDED",
+      "attempt": 1,
+      "detail": "FALLBACK: Rule-based extraction explicitly requested.",
+      "created_at": "2026-11-10T19:10:50.074083+00:00"
+    },
+    {
+      "id": 538,
+      "stage": "validation",
+      "outcome": "RUNNING",
+      "attempt": 1,
+      "detail": "Evaluating every financial control against current locked PO capacity.",
+      "created_at": "2026-11-10T19:10:50.079976+00:00"
+    },
+    {
+      "id": 539,
+      "stage": "validation",
+      "outcome": "SUCCEEDED",
+      "attempt": 1,
+      "detail": "Deterministic evaluation complete: BLOCKED.",
+      "created_at": "2026-11-10T19:10:50.090087+00:00"
+    },
+    {
+      "id": 540,
+      "stage": "decision",
+      "outcome": "SUCCEEDED",
+      "attempt": 1,
+      "detail": "BLOCKED. Validation never executes payment.",
+      "created_at": "2026-11-10T19:10:50.090117+00:00"
+    }
+  ],
+  "pages": null,
+  "extraction": null,
+  "decision": null
+}

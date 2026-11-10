@@ -7,7 +7,13 @@ import {
 } from "@testing-library/react";
 import { afterEach, beforeEach, expect, it, vi } from "vitest";
 import { MemoryRouter } from "react-router-dom";
-import { SampleInitialization, WorkspaceProvider } from "./workspaces";
+import {
+  SampleInitialization,
+  WorkspaceProvider,
+  WorkspaceSelector,
+  workspaceLabel,
+  normalWorkspaces,
+} from "./workspaces";
 const api = vi.hoisted(() => ({
   request: vi.fn(),
   status: "PROCESSING" as string | null,
@@ -20,6 +26,7 @@ beforeEach(() => {
   api.status = "PROCESSING";
   api.request.mockReset();
   sessionStorage.clear();
+  localStorage.clear();
   api.request.mockImplementation(async (path: string) => {
     if (path === "/workspaces/bootstrap")
       return {
@@ -34,6 +41,11 @@ beforeEach(() => {
             version: 1,
           },
         ],
+      };
+    if (path === "/workspaces")
+      return {
+        ...(await api.request("/workspaces/bootstrap")),
+        workspace_id: "private-sample",
       };
     if (path === "/workspaces/sample-initialization/resume") {
       api.status = "COMPLETE";
@@ -88,10 +100,8 @@ it("shows technical failure and explicitly resumes before announcing completion"
   fireEvent.click(
     screen.getByRole("button", { name: "Resume sample initialization" }),
   );
-  expect(await screen.findByText("Sample invoices ready")).toBeVisible();
-  expect(screen.getByText(/21 of 21/)).toHaveTextContent(
-    "Real decisions and source evidence are ready",
-  );
+  expect(await screen.findByText(/Sample invoices ready/)).toBeVisible();
+  expect(screen.getByText(/21 of 21/)).toHaveTextContent("21 of 21 processed");
   expect(api.request).toHaveBeenCalledWith(
     "/workspaces/sample-initialization/resume",
     { method: "POST" },
@@ -109,4 +119,70 @@ it("offers explicit backfill for an old sample without an installation", async (
     }),
   );
   expect(await screen.findByText(/4 of 21/)).toHaveTextContent("not complete");
+});
+
+it("dismisses completed progress while retaining an unobtrusive sample label", async () => {
+  api.status = "COMPLETE";
+  app();
+  fireEvent.click(await screen.findByRole("button", { name: "Dismiss" }));
+  expect(screen.queryByRole("progressbar")).toBeNull();
+  expect(screen.queryByText(/Sample invoices ready/)).toBeNull();
+  expect(screen.getByText("Sample data · Fictional company")).toBeVisible();
+  expect(api.request).not.toHaveBeenCalledWith(
+    "/workspaces/sample",
+    expect.anything(),
+  );
+});
+
+it("preserves company names and sample provenance after rename", () => {
+  expect(workspaceLabel({ name: "Nandi Pipes", kind: "CUSTOM" })).toBe(
+    "Nandi Pipes",
+  );
+  expect(
+    workspaceLabel({ name: "Company · Sample company", kind: "CUSTOM" }),
+  ).toBe("Company · Sample company");
+  const records = [
+    {
+      id: "00000000-0000-0000-0000-000000000001",
+      name: "Legacy",
+      kind: "DEMO",
+    },
+    { id: "new", name: "Asterfield", kind: "DEMO" },
+  ];
+  expect(
+    normalWorkspaces(records as Parameters<typeof normalWorkspaces>[0]),
+  ).toHaveLength(2);
+});
+it("asks for the company name and workspace type before creating", async () => {
+  render(
+    <MemoryRouter>
+      <WorkspaceProvider>
+        <WorkspaceSelector />
+      </WorkspaceProvider>
+    </MemoryRouter>,
+  );
+  fireEvent.click(
+    await screen.findByRole("button", {
+      name: "Create Workspace",
+    }),
+  );
+  expect(screen.getByLabelText("Workspace type")).toHaveValue("EMPTY");
+  expect(
+    screen.getByRole("button", { name: "Confirm creation" }),
+  ).toBeDisabled();
+  fireEvent.change(screen.getByLabelText("Workspace name"), {
+    target: { value: "Nandi Pipes" },
+  });
+  fireEvent.click(screen.getByRole("button", { name: "Confirm creation" }));
+  await waitFor(() =>
+    expect(api.request).toHaveBeenCalledWith(
+      "/workspaces",
+      expect.objectContaining({
+        method: "POST",
+        body: expect.stringContaining(
+          '"name":"Nandi Pipes","workspace_type":"EMPTY"',
+        ),
+      }),
+    ),
+  );
 });

@@ -31,10 +31,9 @@ test("isolated Asterfield initialization shows real progress, outcomes, evidence
       { timeout: 120000 },
     )
     .toBe("COMPLETE");
-  await expect(section).toContainText("21 of 21");
-  await expect(section).toContainText(
-    "Real decisions and source evidence are ready",
-  );
+  await expect(
+    page.getByRole("region", { name: "Sample data", exact: true }),
+  ).toContainText("21 of 21");
   const metrics = await (
     await request.get("/api/v1/dashboard", {
       headers: { "X-Workspace-ID": workspace_id },

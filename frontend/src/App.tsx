@@ -145,7 +145,7 @@ function Shell() {
             </strong>
             {active?.kind === "DEMO" && (
               <span className="demo-disclosure">
-                Demo workspace · Sample company data
+                Sample workspace · Fictional company data
               </span>
             )}
           </div>

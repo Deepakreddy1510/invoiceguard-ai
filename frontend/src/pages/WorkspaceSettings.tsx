@@ -82,7 +82,7 @@ export default function WorkspaceSettings() {
             <h2>{workspaceLabel(w)}</h2>
             <p>
               {w.kind === "DEMO"
-                ? "Demo workspace · Sample company data"
+                ? "Sample workspace · Fictional company data"
                 : w.kind === "MY"
                   ? "Your personal company workspace"
                   : "Company workspace"}

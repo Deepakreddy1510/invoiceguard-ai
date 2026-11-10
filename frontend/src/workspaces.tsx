@@ -5,7 +5,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Link, useLocation, useNavigate } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { request, setActiveWorkspace } from "./client";
 import { Notice, Skeleton } from "./ui";
 export type Workspace = {
@@ -18,18 +18,16 @@ export type Workspace = {
   version: number;
 };
 export function workspaceLabel(workspace: Pick<Workspace, "name" | "kind">) {
-  const name = workspace.name.replace(/ · Sample company$/, "");
+  const name =
+    workspace.kind === "DEMO"
+      ? workspace.name.replace(/ · Sample company$/, "")
+      : workspace.name;
   return workspace.kind === "DEMO" && /synthetic|demonstration/i.test(name)
     ? "Demo Workspace"
     : name;
 }
 export function normalWorkspaces(workspaces: Workspace[]) {
-  const hasAsterfield = workspaces.some((w) => w.name.startsWith("Asterfield"));
-  return workspaces.filter(
-    (w) =>
-      !hasAsterfield ||
-      !["00000000-0000-0000-0000-000000000001"].includes(w.id),
-  );
+  return workspaces;
 }
 type Catalog = {
   workspaces: Workspace[];
@@ -41,12 +39,14 @@ type Context = {
   workspaces: Workspace[];
   choose: (id: string) => void;
   reload: () => void;
+  created: (catalog: Catalog, id: string) => void;
 };
 const Workspaces = createContext<Context>({
   active: null,
   workspaces: [],
   choose: () => {},
   reload: () => {},
+  created: () => {},
 });
 export const useWorkspace = () => useContext(Workspaces);
 export function WorkspaceProvider({ children }: { children: ReactNode }) {
@@ -132,6 +132,12 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
         workspaces: catalog!.workspaces,
         choose,
         reload: () => setRetry((v) => v + 1),
+        created: (result, id) => {
+          setCatalog(result);
+          setActiveWorkspace(id);
+          setSelected(id);
+          navigate("/", { replace: true });
+        },
       }}
     >
       <div className="workspace-frame" key={active.id}>
@@ -141,18 +147,28 @@ export function WorkspaceProvider({ children }: { children: ReactNode }) {
   );
 }
 export function WorkspaceSelector() {
-  const { active, workspaces, choose, reload } = useWorkspace();
+  const { active, workspaces, choose, created } = useWorkspace();
   const [confirm, setConfirm] = useState(false);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [nonce, setNonce] = useState(crypto.randomUUID());
-  async function sample() {
+  const [name, setName] = useState("");
+  const [workspaceType, setWorkspaceType] = useState("EMPTY");
+  async function create() {
     setBusy(true);
     setError("");
     try {
       const result = await request<Catalog & { workspace_id: string }>(
-        "/workspaces/sample",
-        { method: "POST" },
+        "/workspaces",
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            request_id: nonce,
+            name: name.trim(),
+            workspace_type: workspaceType,
+          }),
+        },
       );
       try {
         sessionStorage.setItem(
@@ -162,36 +178,9 @@ export function WorkspaceSelector() {
       } catch {
         /* Storage is optional. */
       }
-      reload();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
-  async function fresh() {
-    setBusy(true);
-    setError("");
-    try {
-      const result = await request<Catalog & { workspace_id: string }>(
-        "/workspaces/fresh-demo",
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ request_id: nonce, confirm_create: true }),
-        },
-      );
-      try {
-        sessionStorage.setItem(
-          "invoiceguard.workspace." + result.subject,
-          result.workspace_id,
-        );
-      } catch {
-        /* selection still defaults to the newest demo */
-      }
       setConfirm(false);
       setNonce(crypto.randomUUID());
-      reload();
+      created(result, result.workspace_id);
     } catch (e) {
       setError((e as Error).message);
     } finally {
@@ -210,7 +199,7 @@ export function WorkspaceSelector() {
         {workspaces.map((workspace, index) => (
           <option key={workspace.id} value={workspace.id}>
             {workspaceLabel(workspace)}
-            {workspace.name.startsWith("Asterfield") ? " · Sample company" : ""}
+            {workspace.kind === "DEMO" ? " · Fictional sample" : ""}
             {workspace.kind === "DEMO" &&
             !workspace.name.startsWith("Asterfield") &&
             workspaces.slice(0, index).some((w) => w.kind === "DEMO")
@@ -219,18 +208,9 @@ export function WorkspaceSelector() {
           </option>
         ))}
       </select>
-      {!workspaces.some((w) => w.name.startsWith("Asterfield")) && (
-        <div className="sample-offer">
-          <p>
-            Explore with your own Asterfield sample. Includes fictional
-            suppliers, POs and 21 invoices processed by the worker. Gmail starts
-            disconnected.
-          </p>
-          <button disabled={busy} onClick={() => void sample()}>
-            {busy ? "Creating…" : "Create sample company"}
-          </button>
-        </div>
-      )}
+      <button type="button" onClick={() => setConfirm(true)}>
+        Create Workspace
+      </button>
       <details className="workspace-actions">
         <summary>Workspace settings</summary>
         <div
@@ -253,36 +233,54 @@ export function WorkspaceSelector() {
           )}
         </div>
       </details>
-      {active?.role === "ADMIN" && (
-        <details>
-          <summary>More demo options</summary>
-          <button
-            type="button"
-            className="text-button"
-            onClick={() => setConfirm((v) => !v)}
-          >
-            Create fresh demo
-          </button>
-        </details>
-      )}
       {confirm && (
-        <div className="fresh-demo-confirm">
+        <form
+          className="fresh-demo-confirm"
+          aria-label="Create Workspace"
+          onSubmit={(event) => {
+            event.preventDefault();
+            void create();
+          }}
+        >
+          <label htmlFor="new-workspace-name">Workspace name</label>
+          <input
+            id="new-workspace-name"
+            required
+            maxLength={160}
+            value={name}
+            disabled={busy}
+            onChange={(event) => setName(event.target.value)}
+          />
+          <label htmlFor="new-workspace-type">Workspace type</label>
+          <select
+            id="new-workspace-type"
+            value={workspaceType}
+            disabled={busy}
+            onChange={(event) => setWorkspaceType(event.target.value)}
+          >
+            <option value="EMPTY">Empty workspace</option>
+            <option value="SAMPLE">Sample workspace</option>
+          </select>
           <p>
-            Create a new isolated demo with 18 vendors and 36 POs? Existing
-            workspaces, decisions and commitments stay intact. Sample invoices
-            will be queued for processing.
+            {workspaceType === "EMPTY"
+              ? "Private company workspace with no vendors, purchase orders, invoices or commitments. Gmail starts disconnected. Add your own records when ready."
+              : "Fictional suppliers and purchase orders, with 21 original sample PDFs queued for the worker. Includes Validated, Needs Review and Blocked examples. Gmail starts disconnected."}
           </p>
-          <button type="button" disabled={busy} onClick={fresh}>
-            {busy ? "Creating…" : "Confirm new demo"}
+          <p>
+            Existing history is preserved. Duplicate names are allowed; each
+            workspace has its own identity.
+          </p>
+          <button type="submit" disabled={busy || !name.trim()}>
+            {busy ? "Creating…" : "Confirm creation"}
           </button>
           <button
             type="button"
             disabled={busy}
             onClick={() => setConfirm(false)}
           >
-            Keep current workspace
+            Cancel
           </button>
-        </div>
+        </form>
       )}
       <Notice error={error} />
     </div>
@@ -298,7 +296,6 @@ type Initialization = {
   run_ids?: string[];
 };
 export function SampleInitialization() {
-  const location = useLocation();
   const { active } = useWorkspace();
   const [data, setData] = useState<{
     eligible: boolean;
@@ -307,6 +304,14 @@ export function SampleInitialization() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [revision, setRevision] = useState(0);
+  const acknowledgementKey = "invoiceguard.sample-ack." + active?.id;
+  const [acknowledged, setAcknowledged] = useState(() => {
+    try {
+      return localStorage.getItem(acknowledgementKey) === "true";
+    } catch {
+      return false;
+    }
+  });
   useEffect(() => {
     if (active?.kind !== "DEMO") return;
     const controller = new AbortController();
@@ -355,20 +360,50 @@ export function SampleInitialization() {
   }
   if (active?.kind !== "DEMO" || (!data?.eligible && !error)) return null;
   const installation = data?.initialization;
-  if (
+  const complete =
     installation?.status === "COMPLETE" &&
-    location.pathname.startsWith("/reviews")
-  )
-    return null;
+    installation.completed === installation.total &&
+    !installation.error;
+  if (complete) {
+    return (
+      <section className="sample-complete" aria-label="Sample data">
+        <span>Sample data · Fictional company</span>{" "}
+        {!acknowledged && (
+          <>
+            <span role="status">
+              Sample invoices ready — {installation.completed} of{" "}
+              {installation.total} processed.
+            </span>{" "}
+            <button
+              type="button"
+              onClick={() => {
+                setAcknowledged(true);
+                try {
+                  localStorage.setItem(acknowledgementKey, "true");
+                } catch {
+                  /* Optional storage. */
+                }
+              }}
+            >
+              Dismiss
+            </button>{" "}
+          </>
+        )}
+        {installation.run_ids?.[0] && (
+          <Link to={"/runs/" + installation.run_ids[0]}>
+            View recorded invoice stages
+          </Link>
+        )}
+      </section>
+    );
+  }
   return (
     <section
       className="sample-initialization"
       aria-label="Sample invoice initialization"
     >
       <strong>
-        {installation?.status === "COMPLETE"
-          ? "Sample invoices ready"
-          : "Sample invoice initialization"}
+        {complete ? "Sample invoices ready" : "Sample invoice initialization"}
       </strong>
       {!installation && (
         <>
@@ -389,20 +424,22 @@ export function SampleInitialization() {
           <p role="status">
             {installation.completed} of {installation.total} sample invoices
             processed.
-            {installation.status === "COMPLETE"
+            {complete
               ? " Real decisions and source evidence are ready."
-              : installation.status === "FAILED"
-                ? " Initialization stopped; this demo is not complete."
-                : installation.status === "QUEUED"
-                  ? " Waiting for the background worker; this demo is not complete."
-                  : " The worker is processing the sample; this demo is not complete. Editing is paused until initialization finishes."}
+              : installation.status === "COMPLETE"
+                ? " Completion records are inconsistent; inspect initialization before continuing."
+                : installation.status === "FAILED"
+                  ? " Initialization stopped; this demo is not complete."
+                  : installation.status === "QUEUED"
+                    ? " Waiting for the background worker; this demo is not complete."
+                    : " The worker is processing the sample; this demo is not complete. Editing is paused until initialization finishes."}
           </p>
           <progress
             aria-label="Sample invoices processed"
             value={installation.completed}
             max={installation.total}
           />
-          {installation.status === "COMPLETE" && installation.run_ids?.[0] && (
+          {complete && installation.run_ids?.[0] && (
             <Link to={"/runs/" + installation.run_ids[0]}>
               View recorded invoice stages
             </Link>

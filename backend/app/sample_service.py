@@ -10,6 +10,7 @@ from sqlalchemy import func, select, text
 from app.audit import audit, financial_lock
 from app.ingestion import ingest
 from app.models import (
+    AuditEvent,
     Decision,
     FinancialCommitment,
     GmailConnection,
@@ -31,13 +32,29 @@ def sample_id(subject):
     return uuid5(NAMESPACE_URL, "invoiceguard:sample:" + subject)
 
 
+def is_owned_sample(session, workspace, subject):
+    return bool(
+        workspace
+        and workspace.owner_subject == subject
+        and workspace.kind == "DEMO"
+        and (
+            workspace.id == sample_id(subject)
+            or session.scalar(
+                select(AuditEvent.id)
+                .where(
+                    AuditEvent.workspace_id == workspace.id,
+                    AuditEvent.actor == subject,
+                    AuditEvent.action == "SAMPLE_COMPANY_CREATED",
+                )
+                .limit(1)
+            )
+        )
+    )
+
+
 def start(session, workspace, user):
     # A membership or a similar workspace name is not sufficient to install sample data.
-    if (
-        workspace.id != sample_id(user.subject)
-        or workspace.owner_subject != user.subject
-        or workspace.kind != "DEMO"
-    ):
+    if not is_owned_sample(session, workspace, user.subject):
         raise HTTPException(403, "Only your isolated Asterfield sample may be initialized.")
     if (
         session.scalar(
@@ -288,11 +305,7 @@ def _advance(factory, wid):
 def resume(session, workspace, user):
     financial_lock(session, workspace.id)
     row = session.get(SampleInstallation, workspace.id)
-    if (
-        not row
-        or workspace.id != sample_id(user.subject)
-        or workspace.owner_subject != user.subject
-    ):
+    if not row or not is_owned_sample(session, workspace, user.subject):
         raise HTTPException(404, "Sample initialization not found.")
     if row.status != "FAILED":
         return row

@@ -1,0 +1,65 @@
+/* One visible indicator per control, shared across auth and company screens. */
+:is(input, select, textarea):focus,
+:is(input, select, textarea):focus-visible {
+  outline: 2px solid #405b9f;
+  outline-offset: 2px;
+  box-shadow: none;
+  border-color: #cbd4e0;
+}
+.search-field:focus-within {
+  outline: 2px solid #405b9f;
+  outline-offset: 2px;
+  border-color: var(--border-strong);
+  box-shadow: none;
+}
+.search-field input:focus,
+.search-field input:focus-visible {
+  outline: none; /* The containing search field supplies the same indicator. */
+  border: 0;
+  box-shadow: none;
+}
+input:disabled,
+select:disabled,
+textarea:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+}
+input[aria-invalid="true"],
+textarea[aria-invalid="true"] {
+  border-color: var(--danger-text);
+}
+.sample-complete {
+  padding: 8px 20px;
+  font-size: 12px;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+@media (forced-colors: active) {
+  :is(input, select, textarea):focus,
+  :is(input, select, textarea):focus-visible,
+  .search-field:focus-within {
+    outline-color: Highlight;
+  }
+  .search-field input:focus,
+  .search-field input:focus-visible {
+    outline: none;
+  }
+}
+.sidebar .fresh-demo-confirm label {
+  color: #40516c;
+  letter-spacing: normal;
+}
+.sidebar .fresh-demo-confirm :is(input, select, textarea):focus,
+.sidebar .fresh-demo-confirm :is(input, select, textarea):focus-visible {
+  outline: 2px solid #405b9f;
+  outline-offset: 2px;
+  box-shadow: none;
+}
+@media (forced-colors: active) {
+  .sidebar .fresh-demo-confirm :is(input, select, textarea):focus,
+  .sidebar .fresh-demo-confirm :is(input, select, textarea):focus-visible {
+    outline-color: Highlight;
+  }
+}
