@@ -1352,3 +1352,64 @@ table td {
     display: none;
   }
 }
+
+/* One scroll owner keeps all controls reachable without nested navigation scrollbars. */
+@media (min-width: 769px) {
+  .sidebar {
+    padding: 18px 16px;
+  }
+  .sidebar-scroll {
+    margin-top: 8px;
+    scrollbar-gutter: auto;
+  }
+  .sidebar nav {
+    flex: 0 0 auto;
+    overflow: visible;
+    padding: 3px;
+    margin-top: 4px;
+  }
+  .sidebar nav a {
+    min-height: 40px;
+    padding: 8px 12px;
+    margin-bottom: 3px;
+  }
+  .sidebar .workspace-selector {
+    padding: 4px 0 6px;
+    max-height: none;
+    overflow: visible;
+  }
+  .sidebar .workspace-selector select {
+    padding-block: 8px;
+  }
+  .sidebar .workspace-actions {
+    margin-block: 6px;
+  }
+  .sidebar-note {
+    padding: 12px;
+    margin-top: 10px;
+  }
+  .sidebar-note strong {
+    font-size: 12px;
+  }
+  .sidebar-note p {
+    font-size: 11px;
+    margin-block: 4px 0;
+  }
+  .sample-offer p {
+    margin-block: 6px;
+  }
+}
+.sample-initialization {
+  padding: 14px 18px;
+  margin-bottom: 18px;
+  border: 1px solid #cbd4e0;
+  background: #f0f3f8;
+  border-radius: 10px;
+}
+.sample-initialization p {
+  margin: 6px 0;
+}
+.sample-initialization progress {
+  margin-right: 12px;
+  max-width: 100%;
+}

@@ -487,6 +487,9 @@ def process(job, factory=SessionLocal):
 
 
 def run_once(factory=SessionLocal, run_id=None):
+    from app.sample_service import advance
+
+    advance(factory)
     job = claim(factory, run_id)
     if job:
         process(job, factory)

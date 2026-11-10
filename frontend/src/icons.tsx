@@ -1,5 +1,7 @@
 import type { CSSProperties } from "react";
 type Name =
+  | "eye"
+  | "eye-off"
   | "check-circle"
   | "alert-circle"
   | "x-circle"
@@ -21,6 +23,9 @@ type Name =
   | "menu"
   | "refresh";
 const paths: Record<Name, string> = {
+  eye: "M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7S2 12 2 12 M15 12a3 3 0 1 1-6 0 3 3 0 0 1 6 0",
+  "eye-off":
+    "M3 3l18 18 M9 5a12 12 0 0 1 3 0c6.5 0 10 7 10 7a18 18 0 0 1-4 5 M6 6a19 19 0 0 0-4 6s3.5 7 10 7a12 12 0 0 0 4-1 M10 10a3 3 0 0 0 4 4",
   "check-circle": "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0 M7 12l3 3 7-7",
   "alert-circle": "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0 M12 7v6 M12 17h.01",
   "x-circle": "M22 12a10 10 0 1 1-20 0 10 10 0 0 1 20 0 M8 8l8 8 M16 8l-8 8",

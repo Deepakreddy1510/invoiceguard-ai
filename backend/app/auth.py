@@ -114,6 +114,14 @@ def guard_mutation(session, user, request):
         from app.audit import financial_lock
 
         financial_lock(session, user.workspace_id)
+        from app.models import SampleInstallation
+
+        installation = session.get(SampleInstallation, user.workspace_id)
+        if installation and installation.status != "COMPLETE":
+            raise HTTPException(
+                409,
+                "Sample invoices are still initializing. Wait for completion or resume a failed installation before editing this workspace.",
+            )
 
 
 def reviewer(user: Annotated[Access, Depends(access)]) -> Access:

@@ -104,6 +104,20 @@ def test_isolated_sample_copies_never_copy_gmail_or_share_mutations(secure_clien
         assert not session.scalar(
             select(GmailConnection).where(GmailConnection.workspace_id.in_([UUID(a), UUID(b)]))
         )
+    from app.models import SampleInstallation
+    from app.worker.main import run_once
+
+    for _ in range(100):
+        with factory() as session:
+            if all(
+                session.get(SampleInstallation, UUID(wid)).status == "COMPLETE" for wid in [a, b]
+            ):
+                break
+        run_once(factory)
+    with factory() as session:
+        assert all(
+            session.get(SampleInstallation, UUID(wid)).status == "COMPLETE" for wid in [a, b]
+        )
     assert (
         client.post(
             "/api/v1/vendors",

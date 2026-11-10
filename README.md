@@ -140,3 +140,6 @@ Use a new report path. Reports include numerators, denominators, unsupported ext
 Fallback extraction is deliberately conservative and still sends many unfamiliar/ambiguous invoices to review. OCR can misread scans; evidence matching is not a guarantee of semantic correctness. English Tesseract is installed by default. Gemini and live Supabase require live credentialed verification. Real AWS IAM/encryption, Render provisioning, public HTTPS and evaluator login cannot be claimed from local tests. Dashboard/review queries suit demonstration volume, not an unbounded enterprise ledger. No antivirus service, payment integrations, arbitrary accounting policies or real-world extraction benchmark is claimed. See [verification](docs/completion-verification.md) for measured results and remaining blockers.
 
 Customer authentication, Supabase setup, safe legacy workspace archival and Windows update instructions: [customer access guide](docs/customer-access.md).
+
+
+Private Asterfield sample workspaces now initialize 21 real PDF assessments through the ordered background worker, with visible progress and safe resume. Existing empty, unmodified samples have an explicit backfill option; existing financial histories and Gmail setup are preserved. See [sample initialization and authentication UX verification](docs/auth-sample-sidebar-verification.md).

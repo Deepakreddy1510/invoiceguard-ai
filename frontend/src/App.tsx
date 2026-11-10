@@ -14,6 +14,7 @@ import InvoiceWorkflow from "./InvoiceWorkflow";
 import EmailIntake from "./pages/EmailIntake";
 import Vendors from "./pages/Vendors";
 import {
+  SampleInitialization,
   WorkspaceProvider,
   WorkspaceSelector,
   useWorkspace,
@@ -156,6 +157,7 @@ function Shell() {
           <AccountControl />
         </header>
         <main id="main-content" className="content" tabIndex={-1}>
+          <SampleInitialization />
           <TechnicalScope>
             <Routes>
               <Route path="/" element={<Dashboard />} />

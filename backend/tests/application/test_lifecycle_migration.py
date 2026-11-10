@@ -68,7 +68,13 @@ def test_workspace_upgrade_repairs_optional_legacy_evidence_and_keeps_ledger(mon
                 with engine.connect() as conn:
                     result = {
                         table: conn.execute(
-                            text(f'SELECT row_to_json(t)::text FROM "{table}" t ORDER BY id')
+                            text(
+                                f'SELECT row_to_json(t)::text FROM "{table}" t ORDER BY '
+                                + ",".join(
+                                    f'"{column.name}"'
+                                    for column in Base.metadata.tables[table].primary_key.columns
+                                )
+                            )
                         )
                         .scalars()
                         .all()

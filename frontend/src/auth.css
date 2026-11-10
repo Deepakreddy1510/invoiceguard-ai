@@ -157,3 +157,34 @@
   display: block;
   margin-top: 12px;
 }
+
+.password-field {
+  margin: 18px 0;
+  text-align: left;
+}
+.auth-card .password-field > label {
+  margin: 0 0 8px;
+}
+.password-input {
+  position: relative;
+}
+.auth-card .password-input input {
+  padding-right: 50px;
+}
+.password-toggle {
+  position: absolute;
+  top: 2px;
+  bottom: 2px;
+  right: 2px;
+  width: 44px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  background: transparent;
+  color: #33455e;
+  border-radius: 6px;
+}
+.password-toggle:focus-visible {
+  outline: 2px solid #a83f28;
+  outline-offset: -2px;
+}

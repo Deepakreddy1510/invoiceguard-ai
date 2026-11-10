@@ -440,3 +440,21 @@ class EmailIntakeEvent(Base):
     detail: Mapped[str] = mapped_column(String(500))
     evidence: Mapped[dict | None] = mapped_column(JSONB)
     created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class SampleInstallation(Base):
+    __tablename__ = "sample_installations"
+    workspace_id: Mapped[UUID] = mapped_column(ForeignKey("workspaces.id"), primary_key=True)
+    version: Mapped[str] = mapped_column(String(40))
+    status: Mapped[str] = mapped_column(String(20), default="QUEUED")
+    completed: Mapped[int] = mapped_column(default=0)
+    current_run_id: Mapped[UUID | None] = mapped_column(ForeignKey("processing_runs.id"))
+    run_ids: Mapped[list] = mapped_column(JSONB, default=list)
+    error: Mapped[str | None] = mapped_column(Text)
+    __table_args__ = (
+        CheckConstraint(
+            "status IN ('QUEUED','PROCESSING','FAILED','COMPLETE')",
+            name="sample_installation_status",
+        ),
+        CheckConstraint("completed >= 0 AND completed <= 21", name="sample_installation_progress"),
+    )

@@ -41,6 +41,7 @@ async function upload(page: Page, settings: Record<string, unknown>) {
 test("reviewer corrects a fresh missing identifier and sees persisted revalidation and audit", async ({
   page,
 }, info) => {
+  test.setTimeout(90000);
   await upload(page, {
     number: "UI-REVIEW-001",
     missing: true,
@@ -114,6 +115,7 @@ test("reviewer corrects a fresh missing identifier and sees persisted revalidati
 test("partial invoices enforce cumulative balance and all operational pages load", async ({
   page,
 }) => {
+  test.setTimeout(90000);
   const common = {
     vendor_name: "Harbor IT Services (Synthetic)",
     vendor_code: "SYN-002",

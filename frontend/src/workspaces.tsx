@@ -5,7 +5,7 @@ import {
   useState,
   type ReactNode,
 } from "react";
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useLocation, useNavigate } from "react-router-dom";
 import { request, setActiveWorkspace } from "./client";
 import { Notice, Skeleton } from "./ui";
 export type Workspace = {
@@ -223,8 +223,8 @@ export function WorkspaceSelector() {
         <div className="sample-offer">
           <p>
             Explore with your own Asterfield sample. Includes fictional
-            suppliers and POs; upload sample invoices to see decisions. Gmail
-            starts disconnected.
+            suppliers, POs and 21 invoices processed by the worker. Gmail starts
+            disconnected.
           </p>
           <button disabled={busy} onClick={() => void sample()}>
             {busy ? "Creating…" : "Create sample company"}
@@ -286,5 +286,151 @@ export function WorkspaceSelector() {
       )}
       <Notice error={error} />
     </div>
+  );
+}
+
+type Initialization = {
+  status: string;
+  completed: number;
+  total: number;
+  error: string | null;
+  current_run_id: string | null;
+  run_ids?: string[];
+};
+export function SampleInitialization() {
+  const location = useLocation();
+  const { active } = useWorkspace();
+  const [data, setData] = useState<{
+    eligible: boolean;
+    initialization: Initialization | null;
+  } | null>(null);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+  const [revision, setRevision] = useState(0);
+  useEffect(() => {
+    if (active?.kind !== "DEMO") return;
+    const controller = new AbortController();
+    let timer: ReturnType<typeof setTimeout>;
+    async function poll() {
+      try {
+        const next = await request<{
+          eligible: boolean;
+          initialization: Initialization | null;
+        }>("/workspaces/sample-initialization", { signal: controller.signal });
+        if (controller.signal.aborted) return;
+        setData(next);
+        setError("");
+        if (
+          next.initialization &&
+          ["QUEUED", "PROCESSING"].includes(next.initialization.status)
+        )
+          timer = setTimeout(() => void poll(), 1500);
+      } catch (cause) {
+        if (!controller.signal.aborted) setError((cause as Error).message);
+      }
+    }
+    void poll();
+    return () => {
+      controller.abort();
+      clearTimeout(timer);
+    };
+  }, [active?.id, active?.kind, revision]);
+  async function initialize(resume: boolean) {
+    if (busy) return;
+    setBusy(true);
+    setError("");
+    try {
+      await request(
+        resume
+          ? "/workspaces/sample-initialization/resume"
+          : "/workspaces/sample",
+        { method: "POST" },
+      );
+      setRevision((value) => value + 1);
+    } catch (cause) {
+      setError((cause as Error).message);
+    } finally {
+      setBusy(false);
+    }
+  }
+  if (active?.kind !== "DEMO" || (!data?.eligible && !error)) return null;
+  const installation = data?.initialization;
+  if (
+    installation?.status === "COMPLETE" &&
+    location.pathname.startsWith("/reviews")
+  )
+    return null;
+  return (
+    <section
+      className="sample-initialization"
+      aria-label="Sample invoice initialization"
+    >
+      <strong>
+        {installation?.status === "COMPLETE"
+          ? "Sample invoices ready"
+          : "Sample invoice initialization"}
+      </strong>
+      {!installation && (
+        <>
+          <p>
+            Initialize the 21 sample invoices in their original order. Existing
+            invoice history will never be overwritten.
+          </p>
+          <button
+            disabled={busy || active?.role !== "ADMIN"}
+            onClick={() => void initialize(false)}
+          >
+            Initialize sample invoices
+          </button>
+        </>
+      )}
+      {installation && (
+        <>
+          <p role="status">
+            {installation.completed} of {installation.total} sample invoices
+            processed.
+            {installation.status === "COMPLETE"
+              ? " Real decisions and source evidence are ready."
+              : installation.status === "FAILED"
+                ? " Initialization stopped; this demo is not complete."
+                : installation.status === "QUEUED"
+                  ? " Waiting for the background worker; this demo is not complete."
+                  : " The worker is processing the sample; this demo is not complete. Editing is paused until initialization finishes."}
+          </p>
+          <progress
+            aria-label="Sample invoices processed"
+            value={installation.completed}
+            max={installation.total}
+          />
+          {installation.status === "COMPLETE" && installation.run_ids?.[0] && (
+            <Link to={"/runs/" + installation.run_ids[0]}>
+              View recorded invoice stages
+            </Link>
+          )}
+          {installation.current_run_id && (
+            <Link to={"/runs/" + installation.current_run_id}>
+              View current invoice stages
+            </Link>
+          )}
+          {installation.error && <p role="alert">{installation.error}</p>}
+          {installation.status === "FAILED" && (
+            <button
+              disabled={busy || active?.role !== "ADMIN"}
+              onClick={() => void initialize(true)}
+            >
+              Resume sample initialization
+            </button>
+          )}
+        </>
+      )}
+      {error && (
+        <>
+          <p role="alert">{error}</p>
+          <button onClick={() => setRevision((value) => value + 1)}>
+            Retry status
+          </button>
+        </>
+      )}
+    </section>
   );
 }

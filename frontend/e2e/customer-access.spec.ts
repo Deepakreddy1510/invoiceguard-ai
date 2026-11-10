@@ -19,6 +19,11 @@ test("Supabase signup, confirmation, login errors and recovery", async ({
     if (r.request().url().includes("token"))
       return r.fulfill({
         status: 400,
+        headers: {
+          "x-supabase-api-version": "2024-01-01",
+          "access-control-expose-headers": "X-Supabase-Api-Version",
+          "access-control-allow-origin": "*",
+        },
         json: { code: "invalid_credentials", msg: "Invalid login credentials" },
       });
     return r.fulfill({ json: {} });
@@ -39,10 +44,30 @@ test("Supabase signup, confirmation, login errors and recovery", async ({
   await page
     .getByLabel("Password", { exact: true })
     .fill("secure-password-123");
+  await page.screenshot({
+    path: info.outputPath("signin-hidden.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Show password" }).focus();
+  await page.keyboard.press("Space");
+  await expect(page.getByLabel("Password", { exact: true })).toHaveAttribute(
+    "type",
+    "text",
+  );
+  await expect(page.getByLabel("Password", { exact: true })).toBeFocused();
+  await page.screenshot({
+    path: info.outputPath("signin-visible.png"),
+    fullPage: true,
+  });
+  await page.getByRole("button", { name: "Hide password" }).click();
   await page.getByRole("button", { name: "Sign in securely" }).click();
   await expect(page.getByRole("alert")).toContainText(
-    "Invalid login credentials",
+    "Invalid email or password. Please try again.",
   );
+  await page.screenshot({
+    path: info.outputPath("signin-invalid.png"),
+    fullPage: true,
+  });
   await page
     .getByRole("button", { name: "Create account", exact: true })
     .click();
@@ -81,41 +106,43 @@ test("sidebar access at native zoom and short window heights", async ({
         windowId,
         bounds: { width: 1440, height: height + 87 },
       });
-      for (const zoom of [1, 1.25, 1.5, 2]) {
-        await settings.evaluate(
-          `chrome.settingsPrivate.setDefaultZoom(${zoom})`,
-        );
-        await page.goto(baseURL! + "/");
-        await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
-        await expect
-          .poll(() => page.evaluate(() => devicePixelRatio))
-          .toBeCloseTo(zoom);
-        const toggle = page.getByRole("button", {
-          name: "Open navigation",
-          exact: true,
+      for (const zoom of [0.9, 1, 1.25, 1.5, 2]) {
+        await test.step(`${height}px window at ${zoom * 100}% native zoom`, async () => {
+          await settings.evaluate(
+            `chrome.settingsPrivate.setDefaultZoom(${zoom})`,
+          );
+          await page.goto(baseURL! + "/");
+          await expect(page.getByRole("heading", { level: 1 })).toBeVisible();
+          await expect
+            .poll(() => page.evaluate(() => devicePixelRatio))
+            .toBeCloseTo(zoom);
+          const toggle = page.getByRole("button", {
+            name: "Open navigation",
+            exact: true,
+          });
+          if (await toggle.isVisible()) await toggle.click();
+          const nav = page.getByRole("navigation", { name: "Main navigation" });
+          await nav.focus();
+          await page.keyboard.press("End");
+          await page.locator(".sidebar-scroll").hover();
+          await page.mouse.wheel(0, 1200);
+          const link = nav.getByRole("link", { name: "Settings", exact: true });
+          await link.focus();
+          await expect(link).toBeInViewport();
+          await expect(link).toBeFocused();
+          expect(
+            await link.evaluate((n) => getComputedStyle(n).outlineStyle),
+          ).not.toBe("none");
+          await page.keyboard.press("Enter");
+          await expect(page).toHaveURL(/\/settings$/);
+          if (zoom === 1 && height === 768)
+            await captureNativeWindow(page, info.outputPath("sidebar-100.png"));
+          expect(
+            await page.evaluate(
+              () => document.documentElement.scrollWidth <= innerWidth,
+            ),
+          ).toBe(true);
         });
-        if (await toggle.isVisible()) await toggle.click();
-        const nav = page.getByRole("navigation", { name: "Main navigation" });
-        await nav.focus();
-        await page.keyboard.press("End");
-        await nav.hover();
-        await page.mouse.wheel(0, 1200);
-        const link = nav.getByRole("link", { name: "Settings", exact: true });
-        await link.focus();
-        await expect(link).toBeInViewport();
-        await expect(link).toBeFocused();
-        expect(
-          await link.evaluate((n) => getComputedStyle(n).outlineStyle),
-        ).not.toBe("none");
-        await page.keyboard.press("Enter");
-        await expect(page).toHaveURL(/\/settings$/);
-        if (zoom === 1 && height === 768)
-          await captureNativeWindow(page, info.outputPath("sidebar-100.png"));
-        expect(
-          await page.evaluate(
-            () => document.documentElement.scrollWidth <= innerWidth,
-          ),
-        ).toBe(true);
       }
     }
   } finally {

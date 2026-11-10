@@ -1,10 +1,11 @@
-import { createContext, useContext, useEffect, useState } from "react";
+import { createContext, useContext, useEffect, useState, useRef } from "react";
 import {
   createClient,
   type SupabaseClient,
   type Session as SupabaseSession,
 } from "@supabase/supabase-js";
 import { clearSession, setAccessToken, setSessionSubject } from "./client";
+import { Icon } from "./icons";
 import { Dialog } from "./Experience";
 import "./auth.css";
 type PublicConfig = {
@@ -42,6 +43,8 @@ export function AuthEntry({
   const [reset, setReset] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [visible, setVisible] = useState(false);
+  const passwordInput = useRef<HTMLInputElement>(null);
   return (
     <main className="auth-page">
       <section className="auth-story" aria-label="InvoiceGuard introduction">
@@ -91,6 +94,7 @@ export function AuthEntry({
               <button
                 aria-pressed={!signup}
                 onClick={() => {
+                  setVisible(false);
                   onModeChange?.();
                   setSignup(false);
                   setReset(false);
@@ -101,6 +105,7 @@ export function AuthEntry({
               <button
                 aria-pressed={signup}
                 onClick={() => {
+                  setVisible(false);
                   onModeChange?.();
                   setSignup(true);
                   setReset(false);
@@ -119,6 +124,7 @@ export function AuthEntry({
           <form
             onSubmit={(event) => {
               event.preventDefault();
+              if (busy) return;
               onContinue(
                 recovery
                   ? "reset"
@@ -137,6 +143,7 @@ export function AuthEntry({
                 Email address
                 <input
                   type="email"
+                  name="email"
                   autoComplete="email"
                   required
                   value={email}
@@ -145,19 +152,36 @@ export function AuthEntry({
               </label>
             )}
             {(!reset || recovery) && (
-              <label>
-                Password
-                <input
-                  type="password"
-                  required
-                  minLength={signup || recovery ? 8 : undefined}
-                  autoComplete={
-                    signup || recovery ? "new-password" : "current-password"
-                  }
-                  value={password}
-                  onChange={(event) => setPassword(event.target.value)}
-                />
-              </label>
+              <div className="password-field">
+                <label htmlFor="auth-password">Password</label>
+                <div className="password-input">
+                  <input
+                    id="auth-password"
+                    name="password"
+                    ref={passwordInput}
+                    type={visible ? "text" : "password"}
+                    required
+                    minLength={signup || recovery ? 8 : undefined}
+                    autoComplete={
+                      signup || recovery ? "new-password" : "current-password"
+                    }
+                    value={password}
+                    onChange={(event) => setPassword(event.target.value)}
+                  />
+                  <button
+                    type="button"
+                    className="password-toggle"
+                    aria-label={visible ? "Hide password" : "Show password"}
+                    aria-pressed={visible}
+                    onClick={() => {
+                      setVisible((value) => !value);
+                      passwordInput.current?.focus();
+                    }}
+                  >
+                    <Icon name={visible ? "eye-off" : "eye"} />
+                  </button>
+                </div>
+              </div>
             )}
             <button className="primary auth-continue" disabled={busy}>
               {busy
@@ -172,7 +196,13 @@ export function AuthEntry({
             </button>
           </form>
           {recovery && (
-            <button className="text-button" onClick={onCancelRecovery}>
+            <button
+              className="text-button"
+              onClick={() => {
+                setVisible(false);
+                onCancelRecovery?.();
+              }}
+            >
               Back to sign in
             </button>
           )}
@@ -180,6 +210,7 @@ export function AuthEntry({
             <button
               className="text-button"
               onClick={() => {
+                setVisible(false);
                 onModeChange?.();
                 setReset(!reset);
               }}
@@ -228,6 +259,8 @@ function SignedIn({
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
   const [message, setMessage] = useState("");
+  const submitting = useRef(false);
+  const modeRevision = useRef(0);
   const [recovery, setRecovery] = useState(
     new URLSearchParams(window.location.search).get("auth") === "recovery",
   );
@@ -274,6 +307,9 @@ function SignedIn({
     };
   }, [client]);
   async function perform(action: Action, email: string, password: string) {
+    if (submitting.current) return;
+    submitting.current = true;
+    const revision = modeRevision.current;
     setBusy(true);
     setError("");
     setMessage("");
@@ -307,7 +343,18 @@ function SignedIn({
           options: { emailRedirectTo: redirect },
         });
       else result = await client.auth.signInWithPassword({ email, password });
+      if (revision !== modeRevision.current) return;
       if (result.error) throw result.error;
+      if (action === "login") {
+        const authenticated =
+          "data" in result
+            ? (result.data as { session?: SupabaseSession | null })
+            : null;
+        if (!authenticated?.session) throw new Error("missing_session");
+        window.history.replaceState({}, "", "/");
+        setSessionSubject(authenticated.session.user.id);
+        setSession(authenticated.session);
+      }
       if (action === "signup" || action === "resend")
         setMessage(
           "Check your inbox to confirm your email. If the account already exists, sign in or reset your password.",
@@ -319,12 +366,55 @@ function SignedIn({
       if (action === "reset")
         setMessage("Password updated. Sign in with your new password.");
     } catch (cause) {
-      setError(
-        cause instanceof Error
-          ? cause.message
-          : "Authentication is unavailable. Please try again.",
-      );
+      if (revision !== modeRevision.current) return;
+      const code =
+        typeof cause === "object" && cause !== null && "code" in cause
+          ? String(cause.code)
+          : "";
+      const legacyProvider =
+        typeof cause === "object" &&
+        cause !== null &&
+        "name" in cause &&
+        cause.name === "AuthApiError" &&
+        "status" in cause &&
+        cause.status === 400;
+      const legacyMessage =
+        legacyProvider && "message" in cause ? String(cause.message) : "";
+      if (
+        action === "login" &&
+        (code === "invalid_credentials" ||
+          legacyMessage === "Invalid login credentials")
+      )
+        setError("Invalid email or password. Please try again.");
+      else if (
+        action === "login" &&
+        (code === "email_not_confirmed" ||
+          legacyMessage === "Email not confirmed")
+      )
+        setError(
+          "Confirm your email before signing in. Check your inbox or resend the verification email.",
+        );
+      else if (
+        action === "signup" &&
+        ["user_already_exists", "email_exists"].includes(code)
+      )
+        setMessage(
+          "Check your inbox to confirm your email. If the account already exists, sign in or reset your password.",
+        );
+      else if (code === "weak_password" || code === "validation_failed")
+        setError(
+          "Use a valid email address and a password of at least 8 characters, then try again.",
+        );
+      else if (
+        ["over_request_rate_limit", "over_email_send_rate_limit"].includes(code)
+      )
+        setError("Too many attempts. Wait a moment, then try again.");
+      else
+        setError(
+          "Unable to complete this request. Check your connection and try again. If it continues, contact your administrator.",
+        );
     } finally {
+      submitting.current = false;
       setBusy(false);
     }
   }
@@ -343,10 +433,12 @@ function SignedIn({
         recovery={recovery}
         onContinue={(...args) => void perform(...args)}
         onModeChange={() => {
+          modeRevision.current += 1;
           setError("");
           setMessage("");
         }}
         onCancelRecovery={() => {
+          modeRevision.current += 1;
           clearSession();
           setSession(null);
           setRecovery(false);

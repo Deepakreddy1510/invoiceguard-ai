@@ -52,7 +52,7 @@ SDK browser tests control provider responses; JWT tests use real generated asymm
 
 - FastAPI validates ES256/RS256 signatures, issuer, audience, subject and token expiry. All existing workspace APIs retain server-controlled memberships and reviewer/admin permissions. Viewer mutation requests fail centrally.
 - Only authenticated `POST /workspaces/bootstrap` may provision a first user's My Workspace before membership exists. Ownership derives from the verified token, ignoring any supplied workspace header. Deterministic IDs and conflict-safe inserts make retries stable. Existing workspace ownership is checked before membership creation.
-- My Workspace starts empty. The existing introduction explains suppliers, POs and PDF processing. “Create sample company” provisions that account's isolated Asterfield catalogue: 18 fictional suppliers, 36 POs and zero fabricated invoice decisions. Upload a sample PDF to exercise extraction and validation. No other account's records or Gmail credentials are copied. Repeated sample creation preserves edits and history; archived samples use the existing restore flow.
+- My Workspace starts empty. The existing introduction explains suppliers, POs and PDF processing. “Create sample company” provisions that account's isolated Asterfield catalogue: 18 fictional suppliers, 36 POs and 21 PDF assessments processed sequentially by the durable worker. The UI shows real queued/processing/failed/completed progress. Decisions and reservations come from the normal financial pipeline. No other account's records or Gmail credentials are copied. Repeated sample creation preserves edits and history; archived samples use the existing restore flow.
 - Existing local Asterfield retains its ID and records and is disclosed as sample data, including after rename. The known legacy synthetic workspace is removed from the normal selector when Asterfield is available, while Settings retains access for history/archive/restore. Other customer workspaces are not deleted or globally hidden.
 - Workspace switches cancel outstanding requests and discard late responses. Account changes, sign-out and expired sessions invalidate request epochs and unmount sensitive views. API responses use `Cache-Control: no-store` to prevent HTTP caches from retaining financial responses after sign-out. Supabase persists its session in SDK-managed browser storage. Session storage holds workspace IDs, not invoice data.
 
@@ -62,3 +62,16 @@ See [Supabase verification](supabase-verification.md) for current results and re
 
 ![Sign in](images/supabase-login.png)
 ![Create account](images/supabase-registration.png)
+
+
+## Sample history initialization and safe backfill
+
+After updating, run `uv run alembic upgrade head` before restarting the API and worker. Additive migration `0010` stores sample initialization progress; it does not alter financial records. Keep the existing root `.env`, PostgreSQL volume, Gmail keys and checkpoints. Never run a reset or reseed command on the current database.
+
+New isolated Asterfield samples initialize automatically. Existing account-owned samples with only the original unmodified suppliers/POs can use **Initialize sample invoices** in that sample workspace. This explicit backfill refuses existing invoices/commitments, changed procurement, Gmail connections or any Gmail consent history. It requires the target workspace's administrator membership and never touches the historical local Asterfield workspace.
+
+The normal worker must be running (`uv run python -m app.worker.main`). Queued progress remains visible if it is unavailable. Editing is paused during initialization so the original scenario order cannot be changed. After a technical failure, **Resume sample initialization** preserves the failed run and retries the same invoice through a new run. An unexpected financial outcome stops initialization for inspection; it is never replaced with an expected decision.
+
+There are 21 assessments: 14 validated, 1 needs review and 6 blocked, including one blocked duplicate. The dashboard counts 20 unique invoices (14 validated, 1 needs review, 5 blocked) and reports the duplicate assessment separately. Repeated initialization retains the same 21 document histories and does not add PO reservations. My Workspace remains empty for real customer records.
+
+See [authentication, sample and sidebar verification](auth-sample-sidebar-verification.md) for test results and screenshots.

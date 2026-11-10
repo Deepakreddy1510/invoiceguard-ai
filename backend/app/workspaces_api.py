@@ -69,6 +69,9 @@ def bootstrap(session: DB, user: User):
 @router.post("/sample", status_code=201)
 def sample_workspace(session: DB, user: User):
     workspace = provision_sample(session, user)
+    from app.sample_service import start
+
+    start(session, workspace, user)
     session.commit()
     return {"workspace_id": str(workspace.id), **listing(session, user)}
 
@@ -209,3 +212,25 @@ def restore_workspace(identifier: UUID, payload: WorkspaceChange, session: DB, u
         "WORKSPACE_RESTORED",
         {"name": workspace.name, "queued_invoices": "resumed"},
     )
+
+
+@router.get("/sample-initialization")
+def sample_initialization(session: DB, user: User):
+    from app.sample_service import progress, sample_id
+
+    own = user.workspace_id == sample_id(user.subject)
+    return {
+        "eligible": own,
+        "initialization": progress(session, user.workspace_id) if own else None,
+    }
+
+
+@router.post("/sample-initialization/resume")
+def resume_sample_initialization(session: DB, user: User):
+    from app.sample_service import resume
+
+    if user.role != "ADMIN":
+        raise HTTPException(403, "Workspace administrator access is required.")
+    resume(session, session.get(Workspace, user.workspace_id), user)
+    session.commit()
+    return sample_initialization(session, user)

@@ -47,7 +47,13 @@ def test_workspace_migration_preserves_real_invoice_history(monkeypatch, tmp_pat
                 with engine.connect() as connection:
                     records = {
                         table: connection.execute(
-                            text(f'SELECT row_to_json(t)::text FROM "{table}" t ORDER BY id')
+                            text(
+                                f'SELECT row_to_json(t)::text FROM "{table}" t ORDER BY '
+                                + ",".join(
+                                    f'"{column.name}"'
+                                    for column in Base.metadata.tables[table].primary_key.columns
+                                )
+                            )
                         )
                         .scalars()
                         .all()
