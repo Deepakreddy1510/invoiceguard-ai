@@ -64,3 +64,63 @@ it("shows backend failure rather than sample records", async () => {
   expect(await screen.findByRole("alert")).toHaveTextContent("Request failed.");
   expect(screen.queryByText("PO-2026-001")).not.toBeInTheDocument();
 });
+
+it.each([false, true])(
+  "gates sidebar and direct Email Intake navigation when flag is %s",
+  async (enabled) => {
+    const fetcher = vi.fn(async (url: string) => ({
+      ok: true,
+      json: async () =>
+        url.endsWith("/workspaces/bootstrap")
+          ? {
+              subject: "feature-test",
+              default_workspace_id: "private",
+              workspaces: [
+                {
+                  id: "private",
+                  name: "My Workspace",
+                  kind: "MY",
+                  role: "ADMIN",
+                },
+              ],
+            }
+          : url.endsWith("/me")
+            ? { workspace_name: "My Workspace", role: "ADMIN" }
+            : url.includes("/runs?")
+              ? { runs: [] }
+              : url.startsWith("/api/v1/email")
+                ? {
+                    available: false,
+                    connections: [],
+                    messages: [],
+                    attachments: [],
+                    metrics: {},
+                  }
+                : {},
+    }));
+    vi.stubGlobal("fetch", fetcher);
+    window.history.replaceState({}, "", "/email-intake?gmail=connected");
+    render(<App enableEmailIntake={enabled} />);
+    await screen.findByRole("link", {
+      name: "Invoice processing",
+      exact: true,
+    });
+    if (enabled) {
+      expect(
+        screen.getByRole("link", { name: "Email Intake", exact: true }),
+      ).toBeVisible();
+      expect(window.location.pathname).toBe("/email-intake");
+    } else {
+      expect(
+        screen.queryByRole("link", { name: "Email Intake", exact: true }),
+      ).not.toBeInTheDocument();
+      expect(
+        await screen.findByRole("button", { name: "+ New invoice" }),
+      ).toBeVisible();
+      expect(window.location.pathname).toBe("/process");
+      expect(
+        fetcher.mock.calls.some(([url]) => url.includes("/api/v1/email")),
+      ).toBe(false);
+    }
+  },
+);

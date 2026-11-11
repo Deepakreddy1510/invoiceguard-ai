@@ -35,6 +35,15 @@ class Settings(BaseSettings):
     gemini_api_key: SecretStr | None = None
     allow_manual_extraction_modes: bool = False
     gemini_model: str = Field(default="gemini-2.5-flash", pattern=r"^[A-Za-z0-9.-]+$")
+    enable_email_intake: bool | None = None
+
+    @property
+    def email_intake_enabled(self) -> bool:
+        # Preserve local development; hosted environments require an explicit opt-in.
+        if self.enable_email_intake is not None:
+            return self.enable_email_intake
+        return self.app_environment == "local"
+
     gmail_client_id: str = ""
     gmail_client_secret: SecretStr | None = None
     gmail_redirect_uri: str = ""

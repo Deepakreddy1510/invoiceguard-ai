@@ -212,6 +212,8 @@ def persist_message(session, c, raw):
 
 
 def sync_connection(factory, identifier):
+    if not get_settings().email_intake_enabled:
+        return False
     with exclusive(factory, identifier) as acquired:
         if not acquired:
             return False
@@ -387,6 +389,8 @@ def fetch_attachment(client, message, attachment):
 
 
 def intake_attachment(factory, identifier):
+    if not get_settings().email_intake_enabled:
+        return False
     with exclusive(factory, identifier) as acquired:
         if not acquired:
             return False
@@ -561,6 +565,8 @@ def intake_attachment(factory, identifier):
 
 
 def mail_once(factory=SessionLocal):
+    if not get_settings().email_intake_enabled:
+        return False
     if not google.configured():
         return False
     with factory() as session:

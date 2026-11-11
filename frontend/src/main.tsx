@@ -14,7 +14,7 @@ async function start() {
     const config = await response.json();
     root.render(
       <Authentication config={config}>
-        <App />
+        <App enableEmailIntake={config.enable_email_intake === true} />
       </Authentication>,
     );
   } catch (e) {

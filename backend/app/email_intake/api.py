@@ -11,7 +11,7 @@ from typing import Annotated, Literal
 from urllib.parse import urlsplit
 from uuid import UUID
 
-from fastapi import APIRouter, HTTPException, Query, Request
+from fastapi import APIRouter, Depends, HTTPException, Query, Request
 from fastapi.responses import JSONResponse, RedirectResponse, Response
 from pydantic import BaseModel, ConfigDict, Field
 from sqlalchemy import func, or_, select, text
@@ -36,7 +36,13 @@ from app.models import (
 )
 from app.workflow_api import DB
 
-router = APIRouter(prefix="/api/v1/email")
+
+def require_email_intake():
+    if not get_settings().email_intake_enabled:
+        raise HTTPException(404, "Email Intake is disabled in this deployment.")
+
+
+router = APIRouter(prefix="/api/v1/email", dependencies=[Depends(require_email_intake)])
 COOKIE = "ig_gmail_oauth"
 
 

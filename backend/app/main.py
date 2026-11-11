@@ -171,6 +171,7 @@ app.include_router(imports_router)
 def public_config():
     s = get_settings()
     return {
+        "enable_email_intake": s.email_intake_enabled,
         "auth_mode": s.auth_mode,
         "supabase_url": s.supabase_url if s.auth_mode == "supabase" else "",
         "supabase_publishable_key": (

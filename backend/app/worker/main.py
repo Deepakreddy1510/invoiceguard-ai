@@ -521,10 +521,11 @@ if __name__ == "__main__":
         try:
             heartbeat("AVAILABLE")
             worked = run_once()
-            from app.email_intake.service import mail_once
+            if get_settings().email_intake_enabled:
+                from app.email_intake.service import mail_once
 
-            mail_worked = mail_once()
-            worked = worked or mail_worked
+                mail_worked = mail_once()
+                worked = worked or mail_worked
             heartbeat("AVAILABLE")
         except Exception:
             logger.error(

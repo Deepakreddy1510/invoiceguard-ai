@@ -2,6 +2,7 @@ import WorkspaceSettings from "./pages/WorkspaceSettings";
 import { TechnicalScope } from "./TechnicalDetails";
 import {
   BrowserRouter,
+  Navigate,
   NavLink,
   Routes,
   Route,
@@ -36,7 +37,7 @@ function WorkflowRoute() {
   );
   return <InvoiceWorkflow initialRunId={id} onSelectRun={select} />;
 }
-function Shell() {
+function Shell({ enableEmailIntake }: { enableEmailIntake: boolean }) {
   const { active } = useWorkspace();
   const { data } = useResource<{ workspace_name: string; role: string }>("/me");
   const location = useLocation();
@@ -61,6 +62,9 @@ function Shell() {
     { to: "/purchase-orders", label: "Purchase orders", icon: "orders" },
     { to: "/settings", label: "Settings", icon: "grid" },
   ] as const;
+  const visibleNav = nav.filter(
+    (item) => enableEmailIntake || item.to !== "/email-intake",
+  );
   return (
     <div className={"app-shell " + (collapsed ? "sidebar-collapsed" : "")}>
       <a className="skip-link" href="#main-content">
@@ -108,7 +112,7 @@ function Shell() {
             aria-label="Main navigation"
             tabIndex={0}
           >
-            {nav.map(({ to, label, icon }) => (
+            {visibleNav.map(({ to, label, icon }) => (
               <NavLink
                 key={to}
                 to={to}
@@ -166,7 +170,16 @@ function Shell() {
               <Route path="/reviews" element={<Reviews />} />
               <Route path="/reviews/:id" element={<Reviews />} />
               <Route path="/purchase-orders" element={<PurchaseOrders />} />
-              <Route path="/email-intake" element={<EmailIntake />} />
+              <Route
+                path="/email-intake"
+                element={
+                  enableEmailIntake ? (
+                    <EmailIntake />
+                  ) : (
+                    <Navigate to="/process" replace />
+                  )
+                }
+              />
               <Route path="/vendors" element={<Vendors />} />
               <Route path="/audit" element={<Audit />} />
               <Route path="/settings" element={<WorkspaceSettings />} />
@@ -196,11 +209,15 @@ function Shell() {
     </div>
   );
 }
-export default function App() {
+export default function App({
+  enableEmailIntake = false,
+}: {
+  enableEmailIntake?: boolean;
+}) {
   return (
     <BrowserRouter>
       <WorkspaceProvider>
-        <Shell />
+        <Shell enableEmailIntake={enableEmailIntake} />
       </WorkspaceProvider>
     </BrowserRouter>
   );
