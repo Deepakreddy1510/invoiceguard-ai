@@ -86,17 +86,28 @@ it.each([false, true])(
             }
           : url.endsWith("/me")
             ? { workspace_name: "My Workspace", role: "ADMIN" }
-            : url.includes("/runs?")
-              ? { runs: [] }
-              : url.startsWith("/api/v1/email")
-                ? {
-                    available: false,
-                    connections: [],
-                    messages: [],
-                    attachments: [],
-                    metrics: {},
-                  }
-                : {},
+            : url.endsWith("/dashboard")
+              ? {
+                  total_invoices: 0,
+                  outcomes: {},
+                  recent_runs: [],
+                  worker: { available: true, last_seen: null },
+                }
+              : url.startsWith("/api/v1/reviews")
+                ? { tasks: [] }
+                : url.startsWith("/api/v1/audit-events")
+                  ? { events: [] }
+                  : url.includes("/runs?")
+                    ? { runs: [] }
+                    : url.startsWith("/api/v1/email")
+                      ? {
+                          available: false,
+                          connections: [],
+                          messages: [],
+                          attachments: [],
+                          metrics: {},
+                        }
+                      : {},
     }));
     vi.stubGlobal("fetch", fetcher);
     window.history.replaceState({}, "", "/email-intake?gmail=connected");
@@ -112,9 +123,11 @@ it.each([false, true])(
         screen.queryByRole("link", { name: "Email Intake" }),
       ).not.toBeInTheDocument();
       expect(
-        await screen.findByRole("button", { name: "+ New invoice" }),
+        await screen.findByRole("heading", {
+          name: "Your invoices. Under control.",
+        }),
       ).toBeVisible();
-      expect(window.location.pathname).toBe("/process");
+      expect(window.location.pathname).toBe("/");
       expect(
         fetcher.mock.calls.some(([url]) => url.includes("/api/v1/email")),
       ).toBe(false);

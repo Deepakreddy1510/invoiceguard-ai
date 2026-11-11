@@ -1,3 +1,4 @@
+import { EmailIntakeFeature } from "./features";
 import WorkspaceSettings from "./pages/WorkspaceSettings";
 import { TechnicalScope } from "./TechnicalDetails";
 import {
@@ -176,7 +177,7 @@ function Shell({ enableEmailIntake }: { enableEmailIntake: boolean }) {
                   enableEmailIntake ? (
                     <EmailIntake />
                   ) : (
-                    <Navigate to="/process" replace />
+                    <Navigate to="/" replace />
                   )
                 }
               />
@@ -215,10 +216,12 @@ export default function App({
   enableEmailIntake?: boolean;
 }) {
   return (
-    <BrowserRouter>
-      <WorkspaceProvider>
-        <Shell enableEmailIntake={enableEmailIntake} />
-      </WorkspaceProvider>
-    </BrowserRouter>
+    <EmailIntakeFeature.Provider value={enableEmailIntake}>
+      <BrowserRouter>
+        <WorkspaceProvider>
+          <Shell enableEmailIntake={enableEmailIntake} />
+        </WorkspaceProvider>
+      </BrowserRouter>
+    </EmailIntakeFeature.Provider>
   );
 }

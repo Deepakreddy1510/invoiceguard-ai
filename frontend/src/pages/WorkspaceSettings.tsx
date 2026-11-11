@@ -1,3 +1,4 @@
+import { useEmailIntake } from "../features";
 import { useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import { request } from "../client";
@@ -5,6 +6,7 @@ import { useWorkspace, workspaceLabel, type Workspace } from "../workspaces";
 import { Notice, PageTitle, Status, useResource, Skeleton } from "../ui";
 import { Dialog, Help } from "../Experience";
 export default function WorkspaceSettings() {
+  const emailEnabled = useEmailIntake();
   const { active, reload } = useWorkspace();
   const [params, setParams] = useSearchParams();
   const catalog = useResource<{ workspaces: Workspace[] }>(
@@ -123,10 +125,9 @@ export default function WorkspaceSettings() {
       <Notice error={catalog.error} onRetry={catalog.reload} />
       <Help title="What happens when I archive a workspace?">
         <p>
-          Its financial history stays available. New uploads, changes and
-          automatic email checks pause. Invoices already processing must finish
-          first. Restore the workspace to resume queued work. Keep at least one
-          workspace active.
+          Its financial history stays available. New uploads and changes pause.
+          Invoices already processing must finish first. Restore the workspace
+          to resume queued work. Keep at least one workspace active.
         </p>
         <p>
           Workspace deletion is not offered because financial containers and
@@ -165,7 +166,7 @@ export default function WorkspaceSettings() {
           </Link>
         </section>
       )}
-      {active?.role === "ADMIN" && (
+      {emailEnabled && active?.role === "ADMIN" && (
         <details
           className="panel settings-secondary"
           id="email-settings"
@@ -209,8 +210,8 @@ export default function WorkspaceSettings() {
             ) : (
               <p>
                 {action === "archive"
-                  ? "Pause new invoices, procurement changes and email checks for"
-                  : "Resume invoice processing and email checks for"}{" "}
+                  ? "Pause new invoices and procurement changes for"
+                  : "Resume invoice processing for"}{" "}
                 <strong>{workspaceLabel(target)}</strong>? All existing
                 documents, decisions and amounts reserved against orders are
                 retained.

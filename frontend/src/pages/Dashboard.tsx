@@ -89,10 +89,10 @@ export default function Dashboard() {
       />
       <Help title="How InvoiceGuard works">
         <p>
-          Upload a supplier PDF or connect Gmail. InvoiceGuard identifies the
-          invoice details, checks the supplier and purchase order, and verifies
-          amounts and duplicates. Open any result to see why it was validated,
-          blocked or sent for review.
+          Upload a supplier PDF. InvoiceGuard identifies the invoice details,
+          checks the supplier and purchase order, and verifies amounts and
+          duplicates. Open any result to see why it was validated, blocked or
+          sent for review.
         </p>
         <p>
           A validated invoice reserves the order amount. It does not execute a

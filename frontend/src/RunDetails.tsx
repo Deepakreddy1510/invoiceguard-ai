@@ -1,3 +1,4 @@
+import { useEmailIntake } from "./features";
 import { InvoiceIdentity } from "./InvoiceIdentity";
 import { WorkbenchTabs } from "./Workbench";
 import { POComparison } from "./POComparison";
@@ -482,6 +483,7 @@ export default function RunDetails({
   onSelect: (id: string) => void;
   onReview: () => void;
 }) {
+  const emailEnabled = useEmailIntake();
   const [tab, setTab] = useState("overview");
   const stages = useMemo(
     () =>
@@ -741,7 +743,7 @@ export default function RunDetails({
               )}
             </dl>
           </TechnicalDetails>
-          {run.intake_context && (
+          {emailEnabled && run.intake_context && (
             <details className="source-panel">
               <summary>Email and invoice purchase order references</summary>
               <p>Email candidates remain separate from PDF-extracted fields.</p>

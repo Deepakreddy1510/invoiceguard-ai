@@ -3,6 +3,7 @@ import {
   fireEvent,
   render,
   screen,
+  waitFor,
   within,
 } from "@testing-library/react";
 import { MemoryRouter, Route, Routes } from "react-router-dom";
@@ -90,6 +91,12 @@ it("preserves an explicit selection, focuses selected details and retains edits 
   expect(
     await screen.findByRole("heading", { name: "INV-two Rivermark Catering" }),
   ).toBeVisible();
+  // The heading can render before the persisted form initialization effect finishes.
+  await waitFor(() =>
+    expect(screen.getByLabelText("Correct invoice number")).toHaveValue(
+      "INV-two",
+    ),
+  );
   fireEvent.change(screen.getByLabelText("Correct invoice number"), {
     target: { value: "SOURCE-VERIFIED-NUMBER" },
   });
@@ -107,9 +114,11 @@ it("preserves an explicit selection, focuses selected details and retains edits 
   expect(
     await screen.findByRole("heading", { name: "INV-one Rivermark Catering" }),
   ).toBeVisible();
-  expect(
-    screen.getByRole("region", { name: "Scrollable review details" }),
-  ).toHaveFocus();
+  await waitFor(() =>
+    expect(
+      screen.getByRole("region", { name: "Scrollable review details" }),
+    ).toHaveFocus(),
+  );
 });
 it("renders a deliberate empty state with no empty detail columns", async () => {
   mount("/reviews", true);

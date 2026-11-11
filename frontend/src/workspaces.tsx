@@ -293,8 +293,8 @@ function WorkspaceCreation({
         </select>
         <p>
           {workspaceType === "EMPTY"
-            ? "Private company workspace with no vendors, purchase orders, invoices or commitments. Gmail starts disconnected. Add your own records when ready."
-            : "Fictional suppliers and purchase orders, with 21 original sample PDFs queued for the worker. Includes Validated, Needs Review and Blocked examples. Gmail starts disconnected."}
+            ? "Private company workspace with no vendors, purchase orders, invoices or commitments. Add your own records when ready."
+            : "Fictional suppliers and purchase orders, with 21 original sample PDFs queued for the worker. Includes Validated, Needs Review and Blocked examples."}
         </p>
         <p>
           Existing history is preserved. Duplicate names are allowed; each
@@ -491,9 +491,9 @@ export function SampleInitialization() {
             /history|procurement.*changed|Gmail|mailbox/i.test(error) && (
               <div className="notice">
                 <p>
-                  Existing invoice or email history must stay in this workspace.
-                  Start the fixed 21-invoice scenario in a separate, clean
-                  sample instead.
+                  Existing workspace history must stay in this workspace. Start
+                  the fixed 21-invoice scenario in a separate, clean sample
+                  instead.
                 </p>
                 <button onClick={() => openCreation("SAMPLE")}>
                   Create Fresh Sample Workspace

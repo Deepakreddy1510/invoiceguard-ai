@@ -1,3 +1,4 @@
+import { useEmailIntake } from "./features";
 import { InvoiceIdentity } from "./InvoiceIdentity";
 import { amount, type RunSummary } from "./models";
 import { useRunDetails } from "./run-data";
@@ -25,6 +26,7 @@ export function OverviewInsights({
   outcomes?: Record<string, number>;
   total?: number;
 }) {
+  const emailEnabled = useEmailIntake();
   const reviews = useResource<{ tasks: Task[] }>("/reviews?status=OPEN", 3000);
   const reviewDetails = useRunDetails(
     (reviews.data?.tasks ?? []).slice(0, 3).map((task) => task.run),
@@ -40,7 +42,7 @@ export function OverviewInsights({
         status: string;
       }[];
     }[];
-  }>("/email?view=actionable", 5000);
+  }>(emailEnabled ? "/email?view=actionable" : null, 5000);
   const categories = [
     { key: "VALIDATED", label: "Validated", color: "#25845f" },
     { key: "NEEDS_REVIEW", label: "Needs review", color: "#ad721b" },
@@ -66,7 +68,7 @@ export function OverviewInsights({
     })
     .join(",");
   return (
-    <div className="insight-grid">
+    <div className={"insight-grid" + (emailEnabled ? "" : " manual-insights")}>
       <section className="panel outcome-insight">
         <div className="panel-heading">
           <div>
@@ -179,48 +181,52 @@ export function OverviewInsights({
           <Link to="/purchase-orders">Check order balances →</Link>
         </div>
       </section>
-      <section className="panel inbox-insight">
-        <div className="panel-heading">
-          <div>
-            <p className="eyebrow">CONNECTED WORKFLOW</p>
-            <h2>From your inbox</h2>
+      {emailEnabled && (
+        <section className="panel inbox-insight">
+          <div className="panel-heading">
+            <div>
+              <p className="eyebrow">CONNECTED WORKFLOW</p>
+              <h2>From your inbox</h2>
+            </div>
+            <Link to="/email-intake">Open inbox →</Link>
           </div>
-          <Link to="/email-intake">Open inbox →</Link>
-        </div>
-        <Notice error={email.error} />
-        {email.loading ? (
-          <Skeleton label="Loading incoming invoices" rows={2} />
-        ) : email.data?.messages.length ? (
-          <ul className="priority-list">
-            {email.data.messages.slice(0, 3).map((m) => (
-              <li key={m.id}>
-                <div>
-                  <Link to={"/email-intake?message=" + m.id}>
-                    {m.subject || "Invoice email"}
-                  </Link>
-                  <p>{m.sender}</p>
-                </div>
-                {m.attachments[0] && (
-                  <Status
-                    value={m.attachments[0].decision ?? m.attachments[0].status}
-                  />
-                )}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div className="email-empty">
-            <h3>Let invoices come to you</h3>
-            <p>
-              Connect Gmail to collect supplier PDFs automatically, or upload
-              one yourself.
-            </p>
-            <Link className="button" to="/email-intake">
-              Set up email intake
-            </Link>
-          </div>
-        )}
-      </section>
+          <Notice error={email.error} />
+          {email.loading ? (
+            <Skeleton label="Loading incoming invoices" rows={2} />
+          ) : email.data?.messages.length ? (
+            <ul className="priority-list">
+              {email.data.messages.slice(0, 3).map((m) => (
+                <li key={m.id}>
+                  <div>
+                    <Link to={"/email-intake?message=" + m.id}>
+                      {m.subject || "Invoice email"}
+                    </Link>
+                    <p>{m.sender}</p>
+                  </div>
+                  {m.attachments[0] && (
+                    <Status
+                      value={
+                        m.attachments[0].decision ?? m.attachments[0].status
+                      }
+                    />
+                  )}
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <div className="email-empty">
+              <h3>Let invoices come to you</h3>
+              <p>
+                Connect Gmail to collect supplier PDFs automatically, or upload
+                one yourself.
+              </p>
+              <Link className="button" to="/email-intake">
+                Set up email intake
+              </Link>
+            </div>
+          )}
+        </section>
+      )}
     </div>
   );
 }
@@ -241,6 +247,7 @@ type Activity = {
   detail: Record<string, unknown>;
 };
 export function BusinessActivity() {
+  const emailEnabled = useEmailIntake();
   const data = useResource<{ events: Activity[] }>(
     "/audit-events?view=recent&limit=5",
     5000,
@@ -273,8 +280,12 @@ export function BusinessActivity() {
                     : e.action === "CORRECTION_SAVED"
                       ? "Invoice corrected · revalidation queued"
                       : e.action === "EMAIL_HANDOFF"
-                        ? "Invoice imported from Gmail"
-                        : humanize(e.action)}
+                        ? emailEnabled
+                          ? "Invoice imported from Gmail"
+                          : "Invoice received"
+                        : !emailEnabled && /^(EMAIL_|GMAIL_)/.test(e.action)
+                          ? "Source activity recorded"
+                          : humanize(e.action)}
                 </strong>
                 <div className="activity-invoice-identity">
                   {e.entity ? (
@@ -299,7 +310,13 @@ export function BusinessActivity() {
               <time dateTime={e.created_at} title={when(e.created_at)}>
                 {relativeTime(e.created_at)}
               </time>
-              <Link to={e.href ?? (e.run_id ? "/runs/" + e.run_id : "/audit")}>
+              <Link
+                to={
+                  (!emailEnabled && e.href?.startsWith("/email-intake")
+                    ? undefined
+                    : e.href) ?? (e.run_id ? "/runs/" + e.run_id : "/audit")
+                }
+              >
                 {e.run_id ? "View invoice" : "View record"}
               </Link>
             </li>
