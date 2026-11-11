@@ -1,5 +1,7 @@
 # Controlled development hosting
 
+For a separate **Free-only temporary assignment demo**, see [render-free-demo.md](render-free-demo.md) and `render-free-demo.yaml`. The paid Blueprint below is unchanged.
+
 No deployment has been performed. This task's runtime reports no preview or forwarding capability. Binding `0.0.0.0` enables listening but does not make Codex reachable from your laptop. Do not use local authentication behind a public tunnel.
 
 The prepared option is **Render Docker web + worker + managed PostgreSQL, Supabase login, and private AWS S3**. React is served by the API on the same HTTPS origin; Vite is not a production service. `render.yaml` is a reviewable Blueprint; provider plan availability, current charges and external provisioning must be validated in the owner's account. Starter web/worker and basic PostgreSQL are named, not purchased. No estimated price is asserted.
