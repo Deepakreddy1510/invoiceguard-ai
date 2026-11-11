@@ -5,9 +5,11 @@ from app.extraction.gemini import PROMPT_VERSION, GeminiUnavailable, extract_gem
 
 
 class ExtractionModeFailure(GeminiUnavailable):
-    def __init__(self, model):
+    def __init__(self, model, diagnostics=None):
         super().__init__(
-            "Required Gemini extraction failed or produced unsupported evidence. No fallback was used."
+            "Required Gemini extraction failed or produced unsupported evidence. No fallback was used.",
+            category=(diagnostics or {}).get("category", "unavailable"),
+            http_status=(diagnostics or {}).get("http_status"),
         )
         self.metadata = {
             "fields": {},
@@ -18,6 +20,7 @@ class ExtractionModeFailure(GeminiUnavailable):
             "attempted_model": model,
             "fallback_reason": None,
             "safe_error": str(self),
+            "provider_diagnostics": self.diagnostics,
         }
 
 
@@ -31,6 +34,7 @@ def structure(pages: list[dict], document_id: str, mode="AUTO") -> dict:
         else "No Gemini key configured; conservative extraction used."
     )
     source = "FALLBACK"
+    diagnostics = None
     if mode != "FALLBACK" and settings.gemini_api_key:
         try:
             result = extract_gemini(
@@ -38,13 +42,16 @@ def structure(pages: list[dict], document_id: str, mode="AUTO") -> dict:
             )
             source = "GEMINI"
             reason = None
-        except GeminiUnavailable:
+        except GeminiUnavailable as exc:
+            diagnostics = exc.diagnostics
             if mode == "GEMINI":
-                raise ExtractionModeFailure(settings.gemini_model) from None
+                raise ExtractionModeFailure(settings.gemini_model, diagnostics) from None
             reason = "Gemini request failed, timed out, or returned invalid structured data. Conservative fallback used."
             result = fallback(pages)
     elif mode == "GEMINI":
-        raise ExtractionModeFailure(settings.gemini_model)
+        raise ExtractionModeFailure(
+            settings.gemini_model, GeminiUnavailable(category="not_configured").diagnostics
+        )
     else:
         result = fallback(pages)
     fields = verify(result, pages, document_id)
@@ -55,8 +62,12 @@ def structure(pages: list[dict], document_id: str, mode="AUTO") -> dict:
         if fields.get("issues") or any(
             v.get("value") is not None and not v.get("verified") for v in values
         ):
-            raise ExtractionModeFailure(settings.gemini_model)
+            raise ExtractionModeFailure(
+                settings.gemini_model,
+                GeminiUnavailable(category="evidence_verification").diagnostics,
+            )
     return {
+        "provider_diagnostics": diagnostics,
         "fields": fields,
         "provider": source,
         "model": settings.gemini_model if source == "GEMINI" else None,

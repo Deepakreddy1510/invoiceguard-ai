@@ -110,7 +110,9 @@ def test_gemini_real_request_contract(tmp_path):
     def handler(request):
         body = json.loads(request.content)
         assert request.headers["x-goog-api-key"] == "synthetic-key"
-        assert body["generationConfig"]["responseJsonSchema"]["additionalProperties"] is False
+        assert body["generationConfig"]["responseMimeType"] == "application/json"
+        assert "responseJsonSchema" not in body["generationConfig"]
+        assert "responseSchema" not in body["generationConfig"]
         assert "Invoice number:" in body["contents"][0]["parts"][0]["text"]
         return httpx.Response(
             200,
