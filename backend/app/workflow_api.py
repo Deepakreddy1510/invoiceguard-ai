@@ -7,7 +7,7 @@ from fastapi import APIRouter, Depends, File, Form, Header, HTTPException, Query
 from fastapi.responses import FileResponse, StreamingResponse
 from pydantic import BaseModel, ConfigDict
 from sqlalchemy import func, or_, select
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, defer
 
 from app.audit import audit, financial_lock
 from app.auth import Reviewer, User, manual_modes_allowed
@@ -153,6 +153,7 @@ def history(
     workspace_id = user.workspace_id
     query = (
         select(ProcessingRun)
+        .options(defer(ProcessingRun.pages))
         .join(InvoiceDocument)
         .outerjoin(Decision)
         .where(InvoiceDocument.workspace_id == workspace_id)

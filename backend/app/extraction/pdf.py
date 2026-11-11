@@ -2,6 +2,7 @@
 
 import csv
 import json
+import logging
 import os
 import subprocess
 import sys
@@ -16,6 +17,8 @@ try:
 except ImportError:  # Native Windows has no Unix resource module.
     resource = None
 
+
+logger = logging.getLogger(__name__)
 
 MAX_PAGES = 20
 MAX_PIXELS = 18_000_000
@@ -123,6 +126,12 @@ def pdf_process(path: Path, extract: bool) -> dict:
             raise PDFError(payload["error"])
         return payload
     except (subprocess.SubprocessError, json.JSONDecodeError) as exc:
+        logger.warning(
+            "PDF subprocess failed: stage=%s category=%s exit_code=%s",
+            "extract" if extract else "inspect",
+            type(exc).__name__,
+            getattr(exc, "returncode", None),
+        )
         raise PDFError("PDF/OCR processing failed or exceeded resource limits.") from exc
 
 

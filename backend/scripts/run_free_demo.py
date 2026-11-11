@@ -9,6 +9,8 @@ import sys
 import threading
 import time
 
+from app.runtime_diagnostics import memory_snapshot
+
 logger = logging.getLogger(__name__)
 
 
@@ -41,6 +43,15 @@ def shutdown(processes, timeout=20):
             break
 
 
+def signal_label(code):
+    if code >= 0:
+        return "none"
+    try:
+        return signal.Signals(-code).name
+    except ValueError:
+        return "signal_" + str(-code)
+
+
 def supervise(migration, services, stop, *, shutdown_timeout=20):
     """Fail the whole container on child exit so a healthy API cannot conceal a dead worker."""
     child = subprocess.Popen(migration, start_new_session=True)
@@ -59,11 +70,26 @@ def supervise(migration, services, stop, *, shutdown_timeout=20):
     try:
         for name, command in services:
             children.append((name, subprocess.Popen(command, start_new_session=True)))
+        logger.info(
+            "Free demo event=services_started resources=%s",
+            memory_snapshot([(name, process.pid) for name, process in children]),
+        )
+        next_sample = time.monotonic() + 15
         while not stop.wait(0.2):
+            if time.monotonic() >= next_sample:
+                logger.info(
+                    "Free demo event=resource_sample resources=%s",
+                    memory_snapshot([(name, process.pid) for name, process in children]),
+                )
+                next_sample = time.monotonic() + 15
             for name, process in children:
                 if process.poll() is not None:
                     logger.error(
-                        "Free demo %s exited; stopping sibling and exiting for restart.", name
+                        "Free demo event=child_exit role=%s exit_code=%s signal=%s resources=%s; stopping sibling for restart.",
+                        name,
+                        process.returncode,
+                        signal_label(process.returncode),
+                        memory_snapshot([(role, child.pid) for role, child in children]),
                     )
                     return 1
         return 0
@@ -111,7 +137,16 @@ def main():
         raise ValueError("PORT must be between 1 and 65535.")
     stop = threading.Event()
     for signum in (signal.SIGTERM, signal.SIGINT):
-        signal.signal(signum, lambda *_: stop.set())
+
+        def request_stop(received, _frame):
+            logger.info(
+                "Free demo event=shutdown_requested signal=%s resources=%s",
+                signal.Signals(received).name,
+                memory_snapshot(),
+            )
+            stop.set()
+
+        signal.signal(signum, request_stop)
     return supervise(
         [sys.executable, "-m", "scripts.run_free_demo", "--migrate"],
         [

@@ -1,5 +1,6 @@
 """Private shared document storage, local for development and S3 for hosting."""
 
+import logging
 import tempfile
 from contextlib import contextmanager
 from functools import lru_cache
@@ -7,8 +8,46 @@ from pathlib import Path
 
 import boto3
 from botocore.config import Config
+from botocore.exceptions import ClientError, NoCredentialsError, PartialCredentialsError
 
 from app.config import get_settings
+
+logger = logging.getLogger(__name__)
+
+
+def log_storage_failure(operation, exc):
+    """Only allowlisted SDK codes/statuses; never bucket names, object keys or exception text."""
+    status = None
+    category = "storage_error"
+    if isinstance(exc, (NoCredentialsError, PartialCredentialsError)):
+        category = "credentials_unavailable"
+    source = exc if isinstance(exc, ClientError) else exc.__context__
+    if isinstance(source, ClientError):
+        code = source.response.get("Error", {}).get("Code")
+        category = (
+            code
+            if isinstance(code, str)
+            and code
+            in {
+                "AccessDenied",
+                "NoSuchBucket",
+                "NoSuchKey",
+                "ExpiredToken",
+                "InvalidAccessKeyId",
+                "SignatureDoesNotMatch",
+                "PermanentRedirect",
+                "RequestTimeout",
+                "SlowDown",
+                "InternalError",
+            }
+            else "provider_error"
+        )
+        candidate = source.response.get("ResponseMetadata", {}).get("HTTPStatusCode")
+        if type(candidate) is int and 100 <= candidate <= 599:
+            status = candidate
+    logger.error(
+        "S3 operation failed: operation=%s category=%s http_status=%s", operation, category, status
+    )
 
 
 @lru_cache(maxsize=4)
@@ -40,12 +79,16 @@ def key(name):
 def persist_document(path, name):
     settings = get_settings()
     if settings.storage_backend == "s3":
-        client().upload_file(
-            str(path),
-            settings.s3_bucket,
-            key(name),
-            ExtraArgs={"ContentType": "application/pdf", "ServerSideEncryption": "AES256"},
-        )
+        try:
+            client().upload_file(
+                str(path),
+                settings.s3_bucket,
+                key(name),
+                ExtraArgs={"ContentType": "application/pdf", "ServerSideEncryption": "AES256"},
+            )
+        except Exception as exc:
+            log_storage_failure("upload", exc)
+            raise
 
 
 def remove_document(name):
@@ -66,15 +109,19 @@ def open_document(name):
     else:
         with tempfile.TemporaryDirectory(prefix="invoiceguard-document-") as temp:
             path = Path(temp) / name
-            body = client().get_object(Bucket=settings.s3_bucket, Key=key(name))["Body"]
             try:
-                size = 0
-                with path.open("wb") as target:
-                    for chunk in body.iter_chunks(65536):
-                        size += len(chunk)
-                        if size > settings.max_upload_bytes:
-                            raise ValueError("Stored document exceeds limit.")
-                        target.write(chunk)
-            finally:
-                body.close()
+                body = client().get_object(Bucket=settings.s3_bucket, Key=key(name))["Body"]
+                try:
+                    size = 0
+                    with path.open("wb") as target:
+                        for chunk in body.iter_chunks(65536):
+                            size += len(chunk)
+                            if size > settings.max_upload_bytes:
+                                raise ValueError("Stored document exceeds limit.")
+                            target.write(chunk)
+                finally:
+                    body.close()
+            except Exception as exc:
+                log_storage_failure("download", exc)
+                raise
             yield path

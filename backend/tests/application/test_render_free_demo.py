@@ -46,18 +46,28 @@ def test_failed_migration_never_starts_services(tmp_path):
     assert result == 1 and not marker.exists()
 
 
-@pytest.mark.parametrize("name,exit_code", [("worker", 0), ("worker", 1), ("web", 1)])
-def test_child_exit_stops_sibling_and_requests_container_restart(tmp_path, name, exit_code):
+@pytest.mark.parametrize(
+    "name,exit_code", [("worker", 0), ("worker", 1), ("worker", -9), ("web", 1)]
+)
+def test_child_exit_stops_sibling_and_requests_container_restart(tmp_path, name, exit_code, caplog):
     marker = tmp_path / "sibling.json"
     sibling = command(
         f"import json,os,time;from pathlib import Path;Path({str(marker)!r}).write_text(json.dumps([os.getpid(),os.getpgrp()]));time.sleep(30)"
     )
-    crashing = command(f"import time;time.sleep(.3);raise SystemExit({exit_code})")
+    crashing = command(
+        "import os,time;time.sleep(.3);os.kill(os.getpid(),9)"
+        if exit_code == -9
+        else f"import time;time.sleep(.3);raise SystemExit({exit_code})"
+    )
     services = [
         ("web", sibling if name == "worker" else crashing),
         ("worker", crashing if name == "worker" else sibling),
     ]
     assert supervise(command("pass"), services, threading.Event(), shutdown_timeout=0.5) == 1
+    assert f"role={name} exit_code={exit_code}" in caplog.text
+    assert "resources=" in caplog.text
+    if exit_code == -9:
+        assert "signal=SIGKILL" in caplog.text
     pid, group = json.loads(marker.read_text())
     with pytest.raises(ProcessLookupError):
         os.kill(pid, 0)
