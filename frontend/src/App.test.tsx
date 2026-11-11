@@ -103,16 +103,13 @@ it.each([false, true])(
     render(<App enableEmailIntake={enabled} />);
     await screen.findByRole("link", {
       name: "Invoice processing",
-      exact: true,
     });
     if (enabled) {
-      expect(
-        screen.getByRole("link", { name: "Email Intake", exact: true }),
-      ).toBeVisible();
+      expect(screen.getByRole("link", { name: "Email Intake" })).toBeVisible();
       expect(window.location.pathname).toBe("/email-intake");
     } else {
       expect(
-        screen.queryByRole("link", { name: "Email Intake", exact: true }),
+        screen.queryByRole("link", { name: "Email Intake" }),
       ).not.toBeInTheDocument();
       expect(
         await screen.findByRole("button", { name: "+ New invoice" }),
