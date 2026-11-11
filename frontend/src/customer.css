@@ -67,6 +67,9 @@
   color: var(--text-secondary);
 }
 @media (min-width: 769px) {
+  .sidebar .workspace-selector > select + button {
+    margin-top: 12px;
+  }
   .topbar {
     min-height: 64px;
     padding: 12px 24px;
