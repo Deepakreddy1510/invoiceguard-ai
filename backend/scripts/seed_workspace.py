@@ -13,7 +13,6 @@ from io import BytesIO
 from pathlib import Path
 from uuid import NAMESPACE_URL, UUID, uuid5
 
-import pymupdf
 from sqlalchemy.dialects.postgresql import insert
 
 from app.config import DEMO_WORKSPACE_ID
@@ -26,6 +25,8 @@ DEFAULT_WORKSPACE = uuid5(NAMESPACE_URL, "invoiceguard-complete-synthetic-demo")
 
 
 def document(po, vendor, number, quantity, missing=False, scanned=False, copy=False):
+    import pymupdf
+
     unit = Decimal(10) ** -(0 if po["currency"] == "JPY" else 3 if po["currency"] == "KWD" else 2)
     item = po["items"][0]
     q = Decimal(quantity)

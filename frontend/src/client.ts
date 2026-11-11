@@ -53,6 +53,16 @@ export async function apiFetch(
     init?.signal?.removeEventListener("abort", abort);
   }
 }
+export class RequestError extends Error {
+  constructor(
+    message: string,
+    public status: number,
+  ) {
+    super(message);
+    this.name = "RequestError";
+  }
+}
+
 export async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const epoch = workspaceEpoch;
   const response = await apiFetch("/api/v1" + path, init);
@@ -60,10 +70,12 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
     const body = await response
       .json()
       .catch(() => ({ detail: "Request failed." }));
-    throw new Error(
-      typeof body.detail === "string"
-        ? body.detail
-        : (body.detail?.message ??
+    throw new RequestError(
+      response.status >= 500
+        ? "The service is temporarily unavailable. Your upload queue is paused. Try again shortly."
+        : typeof body.detail === "string"
+          ? body.detail
+          : (body.detail?.message ??
             (Array.isArray(body.detail)
               ? body.detail
                   .map(
@@ -72,6 +84,7 @@ export async function request<T>(path: string, init?: RequestInit): Promise<T> {
                   )
                   .join("; ")
               : "Request rejected. Check your fields and access.")),
+      response.status,
     );
   }
   const data = await response.json();

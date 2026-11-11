@@ -12,7 +12,7 @@ import os
 import time
 from pathlib import Path
 from urllib.parse import urlsplit
-from uuid import uuid4
+from uuid import UUID, uuid4
 
 import httpx
 
@@ -23,6 +23,9 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--origin", required=True, help="Actual provider-assigned HTTPS origin")
     parser.add_argument("--workflow", action="store_true")
+    parser.add_argument("--workspace", type=UUID, help="Authorized synthetic workspace UUID")
+    parser.add_argument("--include-overbilling", action="store_true")
+    parser.add_argument("--include-ocr", action="store_true")
     parser.add_argument("--verify-receipt", action="store_true")
     parser.add_argument("--receipt", type=Path, default=Path("../.local/hosted-smoke.json"))
     parser.add_argument("--local", action="store_true", help="Internal verifier testing only")
@@ -45,6 +48,10 @@ def main():
             "Set INVOICEGUARD_SMOKE_TOKEN securely; do not pass tokens on the command line."
         )
     headers = {"Authorization": "Bearer " + token} if token else {}
+    if args.verify_receipt and not args.workspace:
+        args.workspace = UUID(json.loads(args.receipt.read_text())["workspace_id"])
+    if args.workspace:
+        headers["X-Workspace-ID"] = str(args.workspace)
     receipt = {}
     with (
         httpx.Client(base_url=args.origin.rstrip("/"), timeout=60) as anonymous,
@@ -85,11 +92,18 @@ def main():
                 "workspace_id": me["workspace_id"],
                 "runs": [],
             }
-            for label, expected, quantity, missing in [
-                ("fresh-invoice", "VALIDATED", "1", False),
-                ("missing-number", "NEEDS_REVIEW", "2", True),
-            ]:
-                pdf = document(po, vendor, marker + "-" + label, quantity, missing=missing)
+            scenarios = [
+                ("fresh-invoice", "VALIDATED", "1", False, False),
+                ("missing-number", "NEEDS_REVIEW", "2", True, False),
+            ]
+            if args.include_ocr:
+                scenarios.append(("scanned-invoice", "VALIDATED", "3", False, True))
+            if args.include_overbilling:
+                scenarios.append(("overbilling", "BLOCKED", "1000", False, False))
+            for label, expected, quantity, missing, scanned in scenarios:
+                pdf = document(
+                    po, vendor, marker + "-" + label, quantity, missing=missing, scanned=scanned
+                )
                 submission = request(
                     "POST",
                     "/api/v1/documents",

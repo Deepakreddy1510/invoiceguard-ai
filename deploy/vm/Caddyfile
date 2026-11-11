@@ -1,0 +1,12 @@
+{
+	email {$ACME_EMAIL}
+	admin off
+}
+
+{$APP_DOMAIN} {
+	# No access log: invoice paths and authenticated requests stay out of access logs.
+	request_body {
+		max_size 12MB
+	}
+	reverse_proxy api:8000
+}

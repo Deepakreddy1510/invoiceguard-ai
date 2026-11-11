@@ -1,3 +1,4 @@
+import InvoiceUpload from "./InvoiceUpload";
 import { InvoiceIdentity } from "./InvoiceIdentity";
 import { Help } from "./Experience";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -26,7 +27,6 @@ import { Dialog } from "./Experience";
 import { useRunDetails } from "./run-data";
 const stopRun = (run: RunDetail) => isTerminal(run);
 const emptyRuns: RunSummary[] = [];
-const maxBytes = 10 * 1024 * 1024;
 export default function InvoiceWorkflow({
   initialRunId,
   onSelectRun,
@@ -37,7 +37,7 @@ export default function InvoiceWorkflow({
   );
   const selectedRef = useRef(selected);
   const manual = useRef(0);
-  const uploadKey = useRef<string | null>(null);
+  const uploadSelection = useRef(0);
   const watched = useRef(new Set<string>());
   const [offset, setOffset] = useState(0);
   const [filter, setFilter] = useState("");
@@ -48,7 +48,6 @@ export default function InvoiceWorkflow({
   const [mobileDetail, setMobileDetail] = useState(
     !!initialRunId || !!new URLSearchParams(window.location.search).get("run"),
   );
-  const [mode, setMode] = useState("AUTO");
   const capabilities = useResource<{
     can_manage_procurement: boolean;
     can_select_extraction_mode: boolean;
@@ -56,17 +55,13 @@ export default function InvoiceWorkflow({
     vendor_count: number;
     po_count: number;
   }>("/me");
-  const [file, setFile] = useState<File | null>(null);
-  const [fileError, setFileError] = useState("");
   const [error, setError] = useState("");
   const [operation, setOperation] = useState<
     "upload" | "retry" | "review" | "organize"
   >("upload");
   const [message, setMessage] = useState("");
   const [busy, setBusy] = useState(false);
-  const [drag, setDrag] = useState(false);
   const [toast, setToast] = useState("");
-  const input = useRef<HTMLInputElement>(null);
   const runPanel = useRef<HTMLElement>(null);
   const focusRun = useRef<string | null>(null);
   const history = useResource<{ runs: RunSummary[] }>(
@@ -128,76 +123,6 @@ export default function InvoiceWorkflow({
       runPanel.current?.focus({ preventScroll: true });
     }
   }, [detail.data, message]);
-  function chooseFile(next: File | null) {
-    setFile(null);
-    uploadKey.current = null;
-    setFileError("");
-    setMessage("");
-    if (input.current) input.current.value = "";
-    if (!next) return;
-    if (
-      !/\.pdf$/i.test(next.name) ||
-      (next.type &&
-        !["application/pdf", "application/x-pdf"].includes(next.type))
-    ) {
-      setFileError(
-        "Choose a PDF document (.pdf). Other file types are not supported.",
-      );
-      return;
-    }
-    if (next.size > maxBytes) {
-      setFileError(
-        "This PDF exceeds the 10 MiB limit. Choose a smaller document.",
-      );
-      return;
-    }
-    if (next.size === 0) {
-      setFileError("This PDF is empty. Choose a readable invoice.");
-      return;
-    }
-    setFile(next);
-  }
-  async function upload(e?: React.FormEvent) {
-    setOperation("upload");
-    e?.preventDefault();
-    if (!file || busy) return;
-    const selectionAtStart = manual.current;
-    setBusy(true);
-    setError("");
-    setMessage("");
-    try {
-      const body = new FormData();
-      body.append("file", file);
-      body.append("extraction_mode", mode);
-      const result = await request<{ run_id: string; replayed: boolean }>(
-        "/documents",
-        {
-          method: "POST",
-          body,
-          headers: {
-            "Idempotency-Key": (uploadKey.current ??= crypto.randomUUID()),
-          },
-        },
-      );
-      if (!result.replayed) watched.current.add(result.run_id);
-      setMessage(
-        result.replayed
-          ? "Already uploaded — showing the existing processing record."
-          : "Invoice received. Follow its progress and decision below.",
-      );
-      if (manual.current === selectionAtStart) {
-        focusRun.current = result.run_id;
-        selectRun(result.run_id, false);
-      }
-      setUploadOpen(false);
-      setOffset(0);
-      history.reload();
-    } catch (e) {
-      setError((e as Error).message);
-    } finally {
-      setBusy(false);
-    }
-  }
   async function retry() {
     setOperation("retry");
     if (!selected || busy) return;
@@ -277,205 +202,50 @@ export default function InvoiceWorkflow({
           <button
             className="primary"
             disabled={busy}
-            onClick={() => setUploadOpen(true)}
+            onClick={() => {
+              uploadSelection.current = manual.current;
+              setUploadOpen(true);
+            }}
           >
             + New invoice
           </button>
         }
       />
-      {uploadOpen && (
-        <Dialog title="New invoice" onClose={() => setUploadOpen(false)}>
-          <section className="upload-panel">
-            <div className="upload-intro">
-              <span className="section-index">01</span>
-              <div>
-                <h2 id="processing-title">Process an invoice</h2>
-                <p>
-                  PDF documents up to 10 MiB · 20 pages · Digital text or
-                  English scans
-                </p>
-              </div>
-            </div>
-            {capabilities.data &&
-              (capabilities.data.vendor_count === 0 ||
-                capabilities.data.po_count === 0) && (
-                <div className="notice">
-                  Start by adding a vendor and creating a purchase order. Then
-                  upload your first invoice.{" "}
-                  <a href="/vendors">Manage vendors</a> ·{" "}
-                  <a href="/purchase-orders">Create purchase order</a>
-                </div>
-              )}
-            <div className="extraction-mode">
-              <label htmlFor="extraction-mode">Extraction mode</label>
-              <select
-                id="extraction-mode"
-                aria-label="Extraction mode"
-                disabled={busy}
-                value={mode}
-                onChange={(e) => {
-                  setMode(e.target.value);
-                  uploadKey.current = null;
-                }}
-              >
-                <option value="AUTO">Automatic — Recommended</option>
-                {capabilities.data?.can_select_extraction_mode && (
-                  <>
-                    <option
-                      value="GEMINI"
-                      disabled={!capabilities.data.gemini_configured}
-                    >
-                      AI-assisted
-                      {!capabilities.data.gemini_configured
-                        ? " — not configured"
-                        : ""}
-                    </option>
-                    <option value="FALLBACK">Standard extraction</option>
-                  </>
-                )}
-              </select>
-              <p className="footnote">
-                {mode === "AUTO"
-                  ? capabilities.data?.gemini_configured
-                    ? "Uses Gemini when available, with standard extraction as a backup. The actual method is recorded on each invoice."
-                    : "Uses standard extraction. Gemini is not configured. The same financial checks apply."
-                  : mode === "GEMINI"
-                    ? "Uses Gemini-assisted extraction. If it cannot complete, processing stops and the failure is recorded."
-                    : "Uses built-in document reading, including scanned PDFs. The same supplier, order and financial checks always apply."}
-                {capabilities.data?.can_select_extraction_mode &&
-                  !capabilities.data.gemini_configured &&
-                  " AI-assisted reading is not available in this workspace yet. Standard extraction is available."}
-              </p>
-            </div>
-            <form onSubmit={upload} className="upload-form">
-              <input
-                className="sr-only"
-                id="invoice-pdf"
-                ref={input}
-                tabIndex={-1}
-                type="file"
-                accept="application/pdf,.pdf"
-                aria-label="Invoice PDF"
-                aria-describedby="upload-help"
-                onChange={(e) => chooseFile(e.target.files?.[0] ?? null)}
-              />
-              <button
-                type="button"
-                className={"dropzone " + (drag ? "is-dragging" : "")}
-                onClick={() => input.current?.click()}
-                onDragOver={(e) => {
-                  e.preventDefault();
-                  setDrag(true);
-                }}
-                onDragLeave={() => setDrag(false)}
-                onDrop={(e) => {
-                  e.preventDefault();
-                  setDrag(false);
-                  if (e.dataTransfer.files.length !== 1) {
-                    setFileError("Choose one PDF at a time.");
-                    return;
-                  }
-                  chooseFile(e.dataTransfer.files[0]);
-                }}
-              >
-                <span className="dropzone-icon">
-                  <Icon name="upload" />
-                </span>
-                <span>
-                  <strong>
-                    {file ? "Choose a different PDF" : "Drop your invoice here"}
-                  </strong>
-                  <span id="upload-help">
-                    Upload an invoice PDF. Scanned invoices are supported.
-                  </span>
-                </span>
-                <span className="file-format">PDF</span>
-              </button>
-              <div className="upload-action">
-                {file ? (
-                  <div className="selected-file">
-                    <Icon name="file" />
-                    <div>
-                      <strong>{file.name}</strong>
-                      <span>{(file.size / 1024 / 1024).toFixed(2)} MiB</span>
-                    </div>
-                    <button
-                      type="button"
-                      className="icon-button"
-                      aria-label="Remove selected PDF"
-                      onClick={() => chooseFile(null)}
-                    >
-                      <Icon name="close" />
-                    </button>
-                  </div>
-                ) : (
-                  <p className="muted-text">
-                    Your document is checked by the actual verification
-                    pipeline.
-                  </p>
-                )}
-                <button
-                  className="primary"
-                  disabled={!file || busy}
-                  type="submit"
-                >
-                  <Icon name="arrow" />
-                  {busy ? "Submitting…" : "Upload and process"}
-                </button>
-              </div>
-            </form>
-            {fileError && (
-              <p className="inline-error" role="alert">
-                {fileError}
-              </p>
-            )}
-            {file && (
-              <details className="source-panel upload-preview">
-                <summary>Preview selected PDF</summary>
-                <PdfPreview file={file} />
-              </details>
-            )}
-            {message && (
-              <p role="status" className="submission-message">
-                <Icon name="check" />
-                {message}
-              </p>
-            )}
-            <Notice
-              error={error}
-              onRetry={() => {
-                if (operation === "upload") void upload();
-                else if (operation === "retry") void retry();
-                else void review();
-              }}
-            />
-          </section>
-        </Dialog>
-      )}
-      {busy && operation === "upload" && !uploadOpen && (
-        <p role="status">
-          Uploading document… You can continue browsing the queue.
-        </p>
-      )}
+      <InvoiceUpload
+        open={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        capabilities={capabilities.data ?? undefined}
+        onAccepted={(id, replayed, autoSelect) => {
+          if (!replayed) watched.current.add(id);
+          setMessage(
+            replayed
+              ? "Already uploaded — showing the existing processing record."
+              : "Invoice received. Follow its recorded progress and decision.",
+          );
+          if (autoSelect && manual.current === uploadSelection.current) {
+            focusRun.current = id;
+            selectRun(id, false);
+          }
+          setOffset(0);
+          history.reload();
+        }}
+        onUpdated={history.reload}
+      />
       {message && !uploadOpen && (
         <p role="status" className="submission-message">
           {message}
         </p>
       )}
-      {!uploadOpen && (
-        <Notice
-          error={error}
-          onRetry={
-            operation === "upload"
-              ? () => void upload()
-              : operation === "retry"
-                ? retry
-                : operation === "organize"
-                  ? organize
-                  : review
-          }
-        />
-      )}
+      <Notice
+        error={error}
+        onRetry={
+          operation === "retry"
+            ? retry
+            : operation === "organize"
+              ? organize
+              : review
+        }
+      />
       <div className="workflow-columns">
         <section className="panel history">
           <div className="section-heading">

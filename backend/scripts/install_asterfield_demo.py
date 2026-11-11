@@ -15,7 +15,6 @@ from io import BytesIO
 from pathlib import Path
 from uuid import NAMESPACE_URL, UUID, uuid5
 
-import pymupdf
 from sqlalchemy import func, select, text
 
 from app.audit import audit
@@ -225,6 +224,8 @@ def cases():
 
 
 def invoice(case, catalog, layout):
+    import pymupdf
+
     po = catalog["purchase_orders"][case["po"] - 1]
     vendor = catalog["vendors"][case.get("vendor_index", po["vendor_index"])]
     item = po["items"][0]

@@ -1,5 +1,7 @@
 # Controlled development hosting
 
+For the separate VM configuration (Oracle Always Free preferred when eligible, EC2 only after cost approval), see [vm/README.md](vm/README.md). Current PDF admission changes, resource measurements, batch behavior and exact live checks are documented in [pdf-upload-verification.md](pdf-upload-verification.md). No deployment success is implied by these files.
+
 For a separate **Free-only temporary assignment demo**, see [render-free-demo.md](render-free-demo.md) and `render-free-demo.yaml`. The paid Blueprint below is unchanged.
 
 No deployment has been performed. This task's runtime reports no preview or forwarding capability. Binding `0.0.0.0` enables listening but does not make Codex reachable from your laptop. Do not use local authentication behind a public tunnel.

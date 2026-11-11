@@ -2904,3 +2904,22 @@ details summary:focus-visible {
     grid-template-columns: 1fr;
   }
 }
+
+.pdf-upload-queue ul {
+  list-style: none;
+  padding: 0;
+}
+.pdf-upload-queue li {
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+  overflow-wrap: anywhere;
+}
+.pdf-upload-queue li p {
+  margin: 6px 0;
+}
+.pdf-upload-queue li button {
+  margin: 8px 8px 0 0;
+}
+.pdf-upload-queue li a {
+  display: block;
+}

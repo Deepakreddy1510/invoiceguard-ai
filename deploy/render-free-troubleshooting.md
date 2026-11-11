@@ -1,5 +1,7 @@
 # Free demo upload/restart investigation
 
+**Historical investigation:** the owner subsequently supplied inspection-timeout and memory-pressure evidence. See [the current PDF fix and verification report](pdf-upload-verification.md) for the implemented admission optimization and batch UI. Hosted success remains unverified.
+
 ## Status
 
 The deployed single-PDF failure remains unresolved. This investigation could not reach the Render origin: the execution environment's outbound proxy rejected CONNECT with HTTP 403. That is not a response from Render. Render runtime logs, exit events and memory graphs were unavailable. No live upload, S3 operation or deployment was performed. Multi-PDF upload is deliberately deferred until the single-PDF failure is resolved and verified.

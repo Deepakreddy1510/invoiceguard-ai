@@ -10,8 +10,6 @@ import tempfile
 from io import StringIO
 from pathlib import Path
 
-import pymupdf
-
 try:
     import resource
 except ImportError:  # Native Windows has no Unix resource module.
@@ -29,6 +27,9 @@ class PDFError(ValueError):
 
 
 def read_pdf(path: str, extract: bool = True) -> dict:
+    # Native PDF libraries belong only in the bounded parsing child, not API/worker parents.
+    import pymupdf
+
     with pymupdf.open(path) as doc:
         if not doc.is_pdf or doc.needs_pass or not 1 <= len(doc) <= MAX_PAGES:
             raise PDFError("PDF must be readable, unencrypted and contain 1–20 pages.")
@@ -40,11 +41,12 @@ def read_pdf(path: str, extract: bool = True) -> dict:
                 or page.rect.width * page.rect.height * 4 > MAX_PIXELS
             ):
                 raise PDFError("Page exceeds rendering limits.")
+            if not extract:
+                # Admission checks page geometry only; text decoding/OCR belongs to the worker.
+                continue
             text = "\n".join(
                 block[4].strip() for block in page.get_text("blocks", sort=True) if block[6] == 0
             )
-            if not extract:
-                continue
             word_data = [
                 {"text": w[4], "x0": w[0], "y0": w[1], "x1": w[2], "y1": w[3]}
                 for w in page.get_text("words")
@@ -132,7 +134,12 @@ def pdf_process(path: Path, extract: bool) -> dict:
             type(exc).__name__,
             getattr(exc, "returncode", None),
         )
-        raise PDFError("PDF/OCR processing failed or exceeded resource limits.") from exc
+        raise PDFError(
+            "PDF checking could not finish. The service may be busy. Try again; "
+            "if it continues, contact the workspace administrator."
+            if not extract and isinstance(exc, subprocess.TimeoutExpired)
+            else "PDF/OCR processing failed or exceeded resource limits."
+        ) from exc
 
 
 if __name__ == "__main__":

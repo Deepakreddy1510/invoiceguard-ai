@@ -42,6 +42,7 @@ def ingest(
     digest = hashlib.sha256()
     size = 0
     committing = False
+    storage_attempted = False
     with tempfile.NamedTemporaryFile(dir=storage, delete=False) as target:
         temporary = Path(target.name)
         try:
@@ -53,7 +54,9 @@ def ingest(
                 target.write(chunk)
             target.flush()
             target.close()
-            if size == 0 or temporary.read_bytes()[:5] != b"%PDF-":
+            with temporary.open("rb") as signature:
+                is_pdf = signature.read(5) == b"%PDF-"
+            if size == 0 or not is_pdf:
                 raise HTTPException(422, "A real PDF signature is required.")
             try:
                 metadata = pdf_process(temporary, False)
@@ -163,6 +166,7 @@ def ingest(
                     replayed = False
             else:
                 document = session.get(InvoiceDocument, doc_id)
+                storage_attempted = True
                 persist_document(path, path.name)
                 run = ProcessingRun(
                     document_id=doc_id,
@@ -229,10 +233,14 @@ def ingest(
             # artifact rather than risk deleting a document whose metadata committed.
             if not committing:
                 path.unlink(missing_ok=True)
-                try:
-                    remove_document(path.name)
-                except Exception:
-                    pass
+                if storage_attempted:
+                    try:
+                        remove_document(path.name)
+                    except Exception:
+                        pass
             raise
         finally:
             temporary.unlink(missing_ok=True)
+            if settings.storage_backend == "s3":
+                # S3 is authoritative, even when commit acknowledgement is ambiguous.
+                path.unlink(missing_ok=True)
